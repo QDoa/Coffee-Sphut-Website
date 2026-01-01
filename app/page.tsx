@@ -1,3 +1,5 @@
+import { Card, CardContent } from "@/components/ui/card";
+import { BookOpen, Coffee, MapPin } from "lucide-react";
 import Image from "next/image";
 
 export default function Home() {
@@ -47,7 +49,58 @@ export default function Home() {
       <section id="hero">
       </section>
 
-      <section id="features">
+      {/* Features Section */}
+      <section id="features" className="border-b border-border bg-card py-16 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-balance text-3xl font-bold tracking-tight text-card-foreground sm:text-4xl lg:text-5xl">
+              Everything you need for coffee
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
+              From discovering brewing techniques to finding your next favorite café, Coffee Sphut has you covered.
+            </p>
+          </div>
+
+          <div className="mt-16 grid gap-8 sm:grid-cols-1 lg:grid-cols-3">
+            <Card className="border-border bg-background">
+              <CardContent className="p-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                  <BookOpen className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="mt-4 text-xl font-semibold text-foreground">Curated Content</h3>
+                <p className="mt-2 text-muted-foreground leading-relaxed">
+                  Access expertly curated articles, guides, and tips to perfect your coffee brewing skills and
+                  knowledge.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border bg-background">
+              <CardContent className="p-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                  <MapPin className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="mt-4 text-xl font-semibold text-foreground">Find Coffee Stores</h3>
+                <p className="mt-2 text-muted-foreground leading-relaxed">
+                  Discover select coffee stores around you with detailed information, hours, and directions.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border bg-background">
+              <CardContent className="p-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                  <Coffee className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="mt-4 text-xl font-semibold text-foreground">Coffee Education</h3>
+                <p className="mt-2 text-muted-foreground leading-relaxed">
+                  Learn about different coffee beans, brewing methods, and sustainable practices from our comprehensive
+                  guides.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </section>
 
       {/* App Preview Section */}
