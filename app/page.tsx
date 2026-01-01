@@ -1,22 +1,47 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, Coffee, MapPin, Sparkles } from "lucide-react";
+import { BookOpen, Coffee, MapPin } from "lucide-react";
 import Image from "next/image";
 
 export default function Home() {
-  const [download_ios_text, setDownloadIosText] = useState("Download for iOS");
-  const [download_andriod_text, setDownloadAndriodText] = useState("Download for Android");
+  const [downloadIosText, setDownloadIosText] = useState("Download for iOS");
+  const [downloadAndriodText, setDownloadAndriodText] = useState("Download for Android");
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
+  const images = [
+    {
+      src: "/images/home.png",
+      alt: "Coffee Sphut app home screen showing coffee content",
+    },
+    {
+      src: "/images/map.png",
+      alt: "Coffee Sphut map showing nearby coffee stores",
+    },
+    {
+      src: "/images/account.png",
+      alt: "Coffee Sphut account screen",
+    },
+  ]
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length)
+    }, 5000)
+
+    return () => clearInterval(timer)
+  })
 
   return (
     <div className="min-h-screen">
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
+          <div className="flex h-18 items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center">
+              <div className="flex h-10 w-30 items-center justify-center">
                 <Image
                   src="/icon.png"
                   alt="Next.js logo"
@@ -25,7 +50,6 @@ export default function Home() {
                   priority
                 />
               </div>
-              <span className="text-xl font-bold text-foreground">Coffee Sphut</span>
             </div>
           <nav className="hidden gap-6 md:flex">
             <a
@@ -47,7 +71,7 @@ export default function Home() {
               Download
             </a>
           </nav>
-          <span className="text-xl font-bold text-foreground">Comming Soon!</span>
+          <span className="text-xl font-bold text-[#B40317]">Coming Soon!</span>
           </div>
         </div>
       </header>
@@ -65,28 +89,48 @@ export default function Home() {
                 you. Your perfect cup is just a tap away.
               </p>
               <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-                <Button size="lg" className="text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Download for iOS")}>
-                  {download_ios_text}
+                <Button size="lg" className="w-64 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Download for iOS")}>
+                  {downloadIosText}
                 </Button>
                 <Button size="lg" variant="outline" className="w-64 text-base bg-transparent"
                   onMouseEnter={() => setDownloadAndriodText("Coming soon on Android!")}
                   onMouseLeave={() => setDownloadAndriodText("Download for Android")}
                 >
-                  {download_andriod_text}
+                  {downloadAndriodText}
                 </Button>
               </div>
             </div>
             <div className="relative flex items-center justify-center lg:justify-end">
               <div className="relative">
                 <div className="absolute inset-0 -m-12 rounded-full bg-primary/5 blur-3xl"></div>
-                <Image
-                  src="/images/home.png"
-                  alt="Coffee Sphut app home screen showing coffee content"
-                  width={300}
-                  height={650}
-                  className="relative z-10 rounded-[2.5rem] shadow-2xl ring-1 ring-border"
-                  priority
-                />
+                <div className="relative h-162.5 w-75">
+                  {images.map((image, index) => (
+                    <Image
+                      key={index}
+                      src={image.src}
+                      alt={image.alt}
+                      width={300}
+                      height={650}
+                      className={`absolute left-0 top-0 z-10 rounded-[2.5rem] shadow-2xl ring-1 ring-border transition-opacity duration-700 ease-in-out ${
+                        index === currentImageIndex ? "opacity-100" : "opacity-0"
+                      }`}
+                      priority={index === 0}
+                    />
+                  ))}
+                </div>
+                <div className="mt-6 flex justify-center gap-2">
+                  {images.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`h-2 z-10 rounded-full transition-opacity ease-in-out ${
+                        index === currentImageIndex ? "w-8 bg-primary" : "w-2 bg-primary/30"
+                      }`}
+                      aria-label={`Go to slide ${index + 1}`}
+                      type="button"
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -166,7 +210,7 @@ export default function Home() {
                 alt="Coffee Sphut home feed with articles"
                 width={250}
                 height={541}
-                className="rounded-[2rem] shadow-xl ring-1 ring-border"
+                className="rounded-[2rem] shadow-xl ring-1 ring-border transition-transform duration-700 ease-in-out hover:scale-110"
               />
               <h3 className="mt-6 txt-xl font-semibold text-foreground">Discover Content</h3>
               <p className="mt-2 text-center text-muted-foreground">
@@ -180,7 +224,7 @@ export default function Home() {
                 alt="Coffee Sphut map showing nearby coffee stores"
                 width={250}
                 height={541}
-                className="rounded-[2rem] shadow-xl ring-1 ring-border"
+                className="rounded-[2rem] shadow-xl ring-1 ring-border transition-transform duration-700 ease-in-out hover:scale-110"
               />
               <h3 className="mt-6 txt-xl font-semibold text-foreground">Find Stores</h3>
               <p className="mt-2 text-center text-muted-foreground">
@@ -194,7 +238,7 @@ export default function Home() {
                 alt="Coffee Sphut account screen"
                 width={250}
                 height={541}
-                className="rounded-[2rem] shadow-xl ring-1 ring-border"
+                className="rounded-[2rem] shadow-xl ring-1 ring-border transition-transform duration-700 ease-in-out hover:scale-110"
               />
               <h3 className="mt-6 txt-xl font-semibold text-foreground">Save Favourites</h3>
               <p className="mt-2 text-center text-muted-foreground">
@@ -217,7 +261,7 @@ export default function Home() {
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Button size="lg" variant="secondary" className="w-64 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Download for iOS")}>
-              {download_ios_text}
+              {downloadIosText}
             </Button>
             <Button
               size="lg"
@@ -226,7 +270,7 @@ export default function Home() {
               onMouseEnter={() => setDownloadAndriodText("Coming soon on Android!")}
               onMouseLeave={() => setDownloadAndriodText("Download for Android")}
             >
-              {download_andriod_text}
+              {downloadAndriodText}
             </Button>
           </div>
         </div>
@@ -236,7 +280,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center">
+              <div className="flex h-18 w-18 items-center justify-center">
                 <Image
                   src="/icon.png"
                   alt="Next.js logo"
