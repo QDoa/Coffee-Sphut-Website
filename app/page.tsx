@@ -1,8 +1,14 @@
+"use client";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Coffee, MapPin } from "lucide-react";
 import Image from "next/image";
 
 export default function Home() {
+  const [download_ios_text, setDownloadIosText] = useState("Download for iOS");
+  const [download_andriod_text, setDownloadAndriodText] = useState("Download for Android");
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -162,8 +168,32 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="download">
+      {/* CTA Section */}
+      <section id="download" className="bg-primary py-16 text-primary-foreground sm:py-24">
+        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+          <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+            Ready to elevate your coffee experience?
+          </h2>
+          <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg opacity-90">
+            Join thousands of coffee enthusiasts discovering new flavors, techniques, and their next favorite café.
+          </p>
+          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Button size="lg" variant="secondary" className="w-64 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Download for iOS")}>
+              {download_ios_text}
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-64 border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 text-base"
+              onMouseEnter={() => setDownloadAndriodText("Coming soon on Android!")}
+              onMouseLeave={() => setDownloadAndriodText("Download for Android")}
+            >
+              {download_andriod_text}
+            </Button>
+          </div>
+        </div>
       </section>
+
       <footer className="border-t border-border bg-card py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
