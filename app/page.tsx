@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, Coffee, MapPin } from "lucide-react";
+import { BookOpen, Coffee, MapPin, Sparkles } from "lucide-react";
 import Image from "next/image";
 
 export default function Home() {
@@ -52,7 +52,45 @@ export default function Home() {
         </div>
       </header>
       
-      <section id="hero">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden border-b border-border bg-background">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+          <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+            <div className="flex flex-col justify-center">
+              <h1 className="text-balance text-5xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
+                Discover coffee like never before
+              </h1>
+              <p className="mt-6 text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">
+                Coffee Sphut brings you curated coffee content and helps you find the best select coffee stores around
+                you. Your perfect cup is just a tap away.
+              </p>
+              <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+                <Button size="lg" className="text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Download for iOS")}>
+                  {download_ios_text}
+                </Button>
+                <Button size="lg" variant="outline" className="w-64 text-base bg-transparent"
+                  onMouseEnter={() => setDownloadAndriodText("Coming soon on Android!")}
+                  onMouseLeave={() => setDownloadAndriodText("Download for Android")}
+                >
+                  {download_andriod_text}
+                </Button>
+              </div>
+            </div>
+            <div className="relative flex items-center justify-center lg:justify-end">
+              <div className="relative">
+                <div className="absolute inset-0 -m-12 rounded-full bg-primary/5 blur-3xl"></div>
+                <Image
+                  src="/images/home.png"
+                  alt="Coffee Sphut app home screen showing coffee content"
+                  width={300}
+                  height={650}
+                  className="relative z-10 rounded-[2.5rem] shadow-2xl ring-1 ring-border"
+                  priority
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Features Section */}
