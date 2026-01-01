@@ -50,7 +50,63 @@ export default function Home() {
       <section id="features">
       </section>
 
-      <section id="app">
+      {/* App Preview Section */}
+      <section id="app" className="border-b border-border bg-background py-16 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+              Explore the App
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
+              A seamless experience designed for coffee lovers.
+            </p>
+          </div>
+
+          <div className="mt-16 grid gap-12 md:grid-cols-3 md:gap-8">
+            <div className="flex flex-col items-center">
+              <Image
+                src="/images/home.png"
+                alt="Coffee Sphut home feed with articles"
+                width={250}
+                height={541}
+                className="rounded-[2rem] shadow-xl ring-1 ring-border"
+              />
+              <h3 className="mt-6 txt-xl font-semibold text-foreground">Discover Content</h3>
+              <p className="mt-2 text-center text-muted-foreground">
+                Browse expertly curated articles and guides
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <Image
+                src="/images/map.png"
+                alt="Coffee Sphut map showing nearby coffee stores"
+                width={250}
+                height={541}
+                className="rounded-[2rem] shadow-xl ring-1 ring-border"
+              />
+              <h3 className="mt-6 txt-xl font-semibold text-foreground">Find Stores</h3>
+              <p className="mt-2 text-center text-muted-foreground">
+                Locate select coffee stores with interactive maps
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <Image
+                src="/images/account.png"
+                alt="Coffee Sphut account screen"
+                width={250}
+                height={541}
+                className="rounded-[2rem] shadow-xl ring-1 ring-border"
+              />
+              <h3 className="mt-6 txt-xl font-semibold text-foreground">Save Favourites</h3>
+              <p className="mt-2 text-center text-muted-foreground">
+                Bookmark articles and store for quick access
+              </p>
+            </div>
+
+          </div>
+        </div>
       </section>
 
       <section id="download">
