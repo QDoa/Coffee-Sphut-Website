@@ -6,6 +6,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Coffee, MapPin } from "lucide-react";
 import Image from "next/image";
 
+interface JobPosting {
+  title: string;
+  location: string;
+  type: string;
+  jobDescriptionLink: string;
+}
+
+const jobPostings: JobPosting[] = [
+  {
+    title: "Social Media & Growth Coordinator",
+    location: "Lagos, Nigeria (Hybrid)",
+    type: "Contract, 6-Months",
+    jobDescriptionLink: "/SocialMedia&GrowthCoordinatorJobPosting.pdf",
+  },
+];
+
 export default function Home() {
   const [downloadIosText, setDownloadIosText] = useState("Download for iOS");
   const [downloadAndriodText, setDownloadAndriodText] = useState("Download for Android");
@@ -277,42 +293,46 @@ export default function Home() {
       </section>
 
       {/* Job Posting Section */}
+      {jobPostings.length > 0 &&
       <section id="jobs" className="border-b border-border bg-card py-16 sm:py-24">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <h3 className="font-bold text-3xl sm:text-4xl lg:text-5xl">We&apos;re Hiring!</h3>
           <h4 className="mt-6 font-semibold">Current Positions</h4>
           <div className="mt-6 max-w-7xl items-center justify-center grid grid-cols-1">
-            <Card className="border-border bg-background">
-              <CardContent className="">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-4">
-                    {/* Company Logo Placeholder */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Social Media & Growth Coordinator</h3>
+            {jobPostings.map((job, index) => (
+              <Card key={index} className="border-border bg-background my-2">
+                <CardContent className="">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-4">
+                      {/* Company Logo Placeholder */}
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Social Media & Growth Coordinator</h3>
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Contract, 6-Months
+                    </span>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-600">
+                    <div className="flex items-center text-primary">
+                      <MapPin className="h-6 w-6 text-primary" />
+                      Lagos, Nigeria(Remote)
                     </div>
                   </div>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Contract, 6-Months
-                  </span>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-600">
-                  <div className="flex items-center text-primary">
-                    <MapPin className="h-6 w-6 text-primary" />
-                    Lagos, Nigeria(Remote)
+                  <div className="mt-6">
+                    <a href="/SocialMedia&GrowthCoordinatorJobPosting.pdf" download="Job_Description_Social_Media_and_Growth_Coordinator.pdf">
+                      <Button size="lg" variant="outline" className="w-64 text-secondary bg-primary">
+                        Download Job Details (PDF)
+                      </Button>
+                    </a>
                   </div>
-                </div>
-                <div className="mt-6">
-                  <a href="/SocialMedia&GrowthCoordinatorJobPosting.pdf" download="Job_Description_Social_Media_and_Growth_Coordinator.pdf">
-                    <Button size="lg" variant="outline" className="w-64 text-secondary bg-primary">
-                      Download Job Details (PDF)
-                    </Button>
-                  </a>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
+      }
 
       <footer className="border-t border-border bg-card py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
