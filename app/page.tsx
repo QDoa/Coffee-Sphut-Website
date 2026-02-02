@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, Coffee, MapPin } from "lucide-react";
+import { BookOpen, Coffee, MapPin, Eye, Users, TrendingUp, Trophy, Headphones } from "lucide-react";
 import Image from "next/image";
 
 interface JobPosting {
@@ -13,12 +13,46 @@ interface JobPosting {
   jobDescriptionLink: string;
 }
 
+interface VendorBenefit {
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
 const jobPostings: JobPosting[] = [
   {
     title: "Social Media & Growth Coordinator",
     location: "Lagos, Nigeria (Hybrid)",
     type: "Contract, 6-Months",
     jobDescriptionLink: "/SocialMedia&GrowthCoordinatorJobPosting.pdf",
+  },
+];
+
+const vendorBenefits: VendorBenefit[] = [
+  {
+    title: "Increased Visibility",
+    description: "Reach thousands of coffee enthusiasts actively seeking quality coffee stores and specialty vendors.",
+    icon: Eye,
+  },
+  {
+    title: "Customer Connection",
+    description: "Build loyalty and meaningful relationships with customers who appreciate your brand and offerings.",
+    icon: Users,
+  },
+  {
+    title: "Growth Analytics",
+    description: "Access valuable insights about your store performance, customer preferences, and engagement metrics.",
+    icon: TrendingUp,
+  },
+  {
+    title: "Brand Authority",
+    description: "Establish your authority in the specialty coffee market and showcase your expertise to coffee lovers.",
+    icon: Trophy,
+  },
+  {
+    title: "Dedicated Support",
+    description: "Get dedicated partnership support to help grow your business and maximize your presence on Coffee Sphut.",
+    icon: Headphones,
   },
 ];
 
@@ -79,6 +113,12 @@ export default function Home() {
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               App
+            </a>
+            <a
+              href="#partners"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Partners
             </a>
             <a 
               href="#download"
@@ -262,6 +302,66 @@ export default function Home() {
               </p>
             </div>
 
+          </div>
+        </div>
+      </section>
+
+      {/* Partner with Us Section */}
+      <section id="partners" className="border-b border-border bg-card py-16 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-balance text-3xl font-bold tracking-tight text-card-foreground sm:text-4xl lg:text-5xl">
+              Partner with Us
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
+              Grow your coffee business and reach thousands of dedicated coffee enthusiasts.
+            </p>
+          </div>
+
+          <div className="mt-16 grid gap-8 sm:grid-cols-1 lg:grid-cols-3">
+            {vendorBenefits.slice(0, 3).map((benefit, index) => {
+              const IconComponent = benefit.icon;
+              return (
+                <Card key={index} className="border-border bg-background">
+                  <CardContent className="p-6">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                      <IconComponent className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="mt-4 text-xl font-semibold text-foreground">{benefit.title}</h3>
+                    <p className="mt-2 text-muted-foreground leading-relaxed">
+                      {benefit.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          <div className="mt-12 grid gap-8 sm:grid-cols-1 lg:grid-cols-2">
+            {vendorBenefits.slice(3).map((benefit, index) => {
+              const IconComponent = benefit.icon;
+              return (
+                <Card key={index + 3} className="border-border bg-background">
+                  <CardContent className="p-6">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                      <IconComponent className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="mt-4 text-xl font-semibold text-foreground">{benefit.title}</h3>
+                    <p className="mt-2 text-muted-foreground leading-relaxed">
+                      {benefit.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          <div className="mt-12 flex justify-center">
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSf0NIlA7OQJWSNzjjKGbE1CInV9Ff5MQI65y5IN8yDXBRHITg/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">
+              <Button size="lg" className="text-base">
+                Join Our Partner Network
+              </Button>
+            </a>
           </div>
         </div>
       </section>
