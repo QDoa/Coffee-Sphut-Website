@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { track } from '@vercel/analytics';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Coffee, MapPin, Eye, Users, TrendingUp, Trophy, Headphones } from "lucide-react";
@@ -358,7 +359,9 @@ export default function Home() {
 
           <div className="mt-12 flex justify-center">
             <a href="https://docs.google.com/forms/d/e/1FAIpQLSf0NIlA7OQJWSNzjjKGbE1CInV9Ff5MQI65y5IN8yDXBRHITg/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">
-              <Button size="lg" className="text-base">
+              <Button size="lg" className="text-base"
+               onClick={() => track('Signup')}
+               >
                 Join Our Partner Network
               </Button>
             </a>
