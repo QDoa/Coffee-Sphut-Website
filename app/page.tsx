@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { track } from '@vercel/analytics';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, Coffee, MapPin, Eye, Users, TrendingUp, Trophy, Headphones } from "lucide-react";
+import { BookOpen, Coffee, MapPin, Eye, Users, TrendingUp, Trophy, Headphones, Instagram, Linkedin } from "lucide-react";
 import Image from "next/image";
 
 interface JobPosting {
@@ -453,16 +453,26 @@ export default function Home() {
               <span className="text-lg font-bold text-card-foreground">Coffee Sphut</span>
             </div>
             <p className="text-sm text-muted-foreground">© 2026 Coffee Sphut. All rights reserved.</p>
-            <div className="flex gap-6">
-              <a href="#privacy" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
-                Privacy Policy
-              </a>
-              <a href="#terms" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
-                Terms of Service
-              </a>
-              <a href="#contact" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
-                Contact Us
-              </a>
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+              <div className="flex gap-6">
+                <a href="#privacy" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
+                  Privacy Policy
+                </a>
+                <a href="#terms" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
+                  Terms of Service
+                </a>
+                <a href="#contact" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
+                  Contact Us
+                </a>
+              </div>
+              <div className="flex gap-5">
+                <a href="https://www.instagram.com/coffeesphut/" className="text-muted-foreground transition-colors hover:text-card-foreground" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
+                  <Instagram className="h-5 w-5" />
+                </a>
+                <a href="https://www.linkedin.com/company/coffeesphut/" className="text-muted-foreground transition-colors hover:text-card-foreground" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer">
+                  <Linkedin className="h-5 w-5" />
+                </a>
+              </div>
             </div>
           </div>
         </div>
