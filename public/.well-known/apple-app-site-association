@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["76TF6WR84X.com.example.mobileApp"],
+        "components": [
+          { "/": "/blog/*", "comment": "Matches any blog post" }
+        ]
+      }
+    ]
+  }
+}
