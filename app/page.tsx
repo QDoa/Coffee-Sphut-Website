@@ -21,12 +21,6 @@ interface VendorBenefit {
 }
 
 const jobPostings: JobPosting[] = [
-  {
-    title: "Social Media & Growth Coordinator",
-    location: "Lagos, Nigeria (Hybrid)",
-    type: "Contract, 6-Months",
-    jobDescriptionLink: "/SocialMedia&GrowthCoordinatorJobPosting.pdf",
-  },
 ];
 
 const vendorBenefits: VendorBenefit[] = [
