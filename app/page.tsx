@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useFormStatus } from "react-dom";
+import { toast } from "sonner";
 import { track } from '@vercel/analytics';
 import Form from 'next/form'
 import { Button } from "@/components/ui/button";
@@ -54,10 +56,26 @@ const vendorBenefits: VendorBenefit[] = [
   },
 ];
 
+function JoinWaitlistButton() {
+  const { pending } = useFormStatus();
+  
+  return (
+    <Button 
+      type='submit' 
+      className="text-base ml-4"
+      disabled={pending}
+    >
+      {pending ? "Joining..." : "Join waiting list"}
+    </Button>
+  );
+}
+
+
 export default function Home() {
   const [downloadIosText, setDownloadIosText] = useState("Download for iOS");
   const [downloadAndriodText, setDownloadAndriodText] = useState("Download for Android");
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const formRef = useRef<HTMLFormElement>(null);
 
   const images = [
     {
@@ -81,6 +99,24 @@ export default function Home() {
 
     return () => clearInterval(timer)
   })
+
+  async function handleJoinWaitlist(formData: FormData) {
+    try {
+      const result = await sendSubcribeRequest(formData);
+      
+      // Check if subscription was successful
+      if (!result.error) {
+        // Show success toast
+        toast.success("You've been added to the waiting list!");
+        
+        // Clear the email input
+        formRef.current?.reset();
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      // No error toast (as per requirement)
+    }
+  }
 
   return (
     <div className="min-h-screen">
@@ -142,14 +178,12 @@ export default function Home() {
                 Coffee Sphut brings you curated coffee content and helps you find the best select coffee stores around
                 you. Your perfect cup is just a tap away.
               </p>
-              <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-                <Form action={sendSubcribeRequest} className="flex w-full items-center sm:flex-row">
-                  <Input required type='email' placeholder="Email" name='email'/>
-                  <Button type='submit' className="text-base ml-4" >
-                    Join waiting list
-                  </Button>
-                </Form>
-              </div>
+               <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+                 <form ref={formRef} action={handleJoinWaitlist} className="flex w-full items-center sm:flex-row">
+                   <Input required type='email' placeholder="Email" name='email'/>
+                   <JoinWaitlistButton />
+                 </form>
+               </div>
             </div>
             <div className="relative flex items-center justify-center lg:justify-end">
               <div className="relative">
