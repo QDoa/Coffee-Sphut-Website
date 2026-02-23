@@ -1,37 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useRef } from "react";
+import { useFormStatus } from "react-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import Form from 'next/form'
 import { Input } from "@/components/ui/input"
 import { sendUnsubcribeRequest } from "@/app/unsubscribe/server";
 
-export default function Unsubscribe() {
-  const [ completed, setCompleted ] = useState(false)
+function UnsubscribeButton() {
+  const { pending } = useFormStatus();
+  
+  return (
+    <Button 
+      type='submit' 
+      size="lg" 
+      className="mt-4 text-base"
+      disabled={pending}
+    >
+      {pending ? "Unsubscribing..." : "Unsubscribe"}
+    </Button>
+  );
+}
 
-  async function unsubcribe(formData: FormData) {
+export default function Unsubscribe() {
+  const formRef = useRef<HTMLFormElement>(null);
+
+  async function unsubscribe(formData: FormData) {
     try {
       const { data, error } = await sendUnsubcribeRequest(formData)
       console.log("Unsubscribe response:", data, error)
       if (!error) {
-        setCompleted(true);
+        toast.success("You have successfully been removed from our waiting list");
+        formRef.current?.reset();
       }
     } catch (error) {
       console.error("Error sending unsubscribe request:", error);
     }
   }
 
-  return completed ? (
-    <div className="py-16 sm:py-24">
-      <div className="items-center mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h2 className="text-balance text-xl font-bold tracking-tight text-card-foreground sm:text-xl lg:text-xl">
-            Your email has been successfully unsubscribed. You will no longer receive updates from us.
-          </h2>
-        </div>
-      </div>
-    </div>
-  ) : (
+  return (
     <div className="py-16 sm:py-24">
       <div className="items-center mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
@@ -44,12 +51,10 @@ export default function Unsubscribe() {
         </div>
 
         <div className="mt-4 flex justify-center">
-          <Form action={unsubcribe} className="grid grid-cols-1 w-full max-w-md items-center sm:flex-row">
+          <form ref={formRef} action={unsubscribe} className="grid grid-cols-1 w-full max-w-md items-center sm:flex-row">
             <Input required type='email' placeholder="Enter your email" name='email'/>
-            <Button type='submit' size="lg" className="mt-4 text-base" >
-              Unsubscribe
-            </Button>
-          </Form>
+            <UnsubscribeButton />
+          </form>
         </div>
       </div>
     </div>
