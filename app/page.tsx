@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { track } from '@vercel/analytics';
+import Form from 'next/form'
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Coffee, MapPin, Eye, Users, TrendingUp, Trophy, Headphones, Instagram, Linkedin } from "lucide-react";
 import Image from "next/image";
+import { sendSubcribeRequest } from "@/app/unsubscribe/server";
 
 interface JobPosting {
   title: string;
@@ -140,15 +143,12 @@ export default function Home() {
                 you. Your perfect cup is just a tap away.
               </p>
               <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-                <Button size="lg" className="w-64 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Download for iOS")}>
-                  {downloadIosText}
-                </Button>
-                <Button size="lg" variant="outline" className="w-64 text-base bg-transparent"
-                  onMouseEnter={() => setDownloadAndriodText("Coming soon on Android!")}
-                  onMouseLeave={() => setDownloadAndriodText("Download for Android")}
-                >
-                  {downloadAndriodText}
-                </Button>
+                <Form action={sendSubcribeRequest} className="flex w-full items-center sm:flex-row">
+                  <Input required type='email' placeholder="Email" name='email'/>
+                  <Button type='submit' className="text-base ml-4" >
+                    Join waiting list
+                  </Button>
+                </Form>
               </div>
             </div>
             <div className="relative flex items-center justify-center lg:justify-end">
