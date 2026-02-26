@@ -8,7 +8,7 @@ import Form from 'next/form'
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, Coffee, MapPin, Eye, Users, TrendingUp, Trophy, Headphones, Instagram, Linkedin } from "lucide-react";
+import { BookOpen, Database, Newspaper, MapPin, Eye, Users, TrendingUp, Trophy, Headphones, Instagram, Linkedin } from "lucide-react";
 import Image from "next/image";
 import { sendSubcribeRequest } from "@/app/unsubscribe/server";
 
@@ -234,16 +234,28 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mt-16 grid gap-8 sm:grid-cols-1 lg:grid-cols-3">
+          <div className="mt-16 grid gap-8 sm:grid-cols-1 lg:grid-cols-4">
             <Card className="border-border bg-background">
               <CardContent className="p-6">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
                   <BookOpen className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="mt-4 text-xl font-semibold text-foreground">Curated Content</h3>
+                <h3 className="mt-4 text-xl font-semibold text-foreground">Simplify Café Discovery</h3>
                 <p className="mt-2 text-muted-foreground leading-relaxed">
-                  Access expertly curated articles, guides, and tips to perfect your coffee brewing skills and
-                  knowledge.
+                  Make it easy for users to find, explore, and choose cafés and coffee shops around them.
+                </p>
+              </CardContent>
+            </Card>
+
+
+            <Card className="border-border bg-background">
+              <CardContent className="p-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                  <Newspaper className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="mt-4 text-xl font-semibold text-foreground">Deliver Curated Coffee Content</h3>
+                <p className="mt-2 text-muted-foreground leading-relaxed">
+                  Provide relevant, curated content that educates and inspires both new and seasoned coffee drinkers.
                 </p>
               </CardContent>
             </Card>
@@ -251,11 +263,11 @@ export default function Home() {
             <Card className="border-border bg-background">
               <CardContent className="p-6">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <MapPin className="h-6 w-6 text-primary" />
+                  <Users className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="mt-4 text-xl font-semibold text-foreground">Find Coffee Stores</h3>
+                <h3 className="mt-4 text-xl font-semibold text-foreground">Strengthen Customer Retention</h3>
                 <p className="mt-2 text-muted-foreground leading-relaxed">
-                  Discover select coffee stores around you with detailed information, hours, and directions.
+                  Offer digital loyalty tools that help cafés turn occasional visitors into repeat customers.
                 </p>
               </CardContent>
             </Card>
@@ -263,12 +275,11 @@ export default function Home() {
             <Card className="border-border bg-background">
               <CardContent className="p-6">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Coffee className="h-6 w-6 text-primary" />
+                  <Database className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="mt-4 text-xl font-semibold text-foreground">Coffee Education</h3>
+                <h3 className="mt-4 text-xl font-semibold text-foreground">Build a Reliable Data Foundation</h3>
                 <p className="mt-2 text-muted-foreground leading-relaxed">
-                  Learn about different coffee beans, brewing methods, and sustainable practices from our comprehensive
-                  guides.
+                  Create reliable data that supports cafés, brands, and investors.
                 </p>
               </CardContent>
             </Card>
