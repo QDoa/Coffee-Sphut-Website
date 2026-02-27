@@ -79,15 +79,19 @@ export default function Home() {
 
   const images = [
     {
-      src: "/images/home.png",
+      src: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/home.png",
       alt: "Coffee Sphut app home screen showing coffee content",
     },
     {
-      src: "/images/map.png",
+      src: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/map.png",
       alt: "Coffee Sphut map showing nearby coffee stores",
     },
     {
-      src: "/images/account.png",
+      src: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/reward.png",
+      alt: "Coffee Sphut reward program",
+    },
+    {
+      src: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/account.png",
       alt: "Coffee Sphut account screen",
     },
   ]
@@ -188,7 +192,7 @@ export default function Home() {
             <div className="relative flex items-center justify-center lg:justify-end">
               <div className="relative">
                 <div className="absolute inset-0 -m-12 rounded-full bg-primary/5 blur-3xl"></div>
-                <div className="relative h-162.5 w-75">
+                <div className="relative h-162.5 w-75 overflow-hidden">
                   {images.map((image, index) => (
                     <Image
                       key={index}
@@ -196,7 +200,7 @@ export default function Home() {
                       alt={image.alt}
                       width={300}
                       height={650}
-                      className={`absolute left-0 top-0 z-10 rounded-[2.5rem] shadow-2xl ring-1 ring-border transition-opacity duration-700 ease-in-out ${
+                      className={`absolute left-0 top-0 z-10 rounded-[2.5rem] transition-opacity duration-700 ease-in-out ${
                         index === currentImageIndex ? "opacity-100" : "opacity-0"
                       }`}
                       priority={index === 0}
@@ -302,11 +306,11 @@ export default function Home() {
           <div className="mt-16 grid gap-12 md:grid-cols-3 md:gap-8">
             <div className="flex flex-col items-center">
               <Image
-                src="/images/home.png"
+                src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/home.png"
                 alt="Coffee Sphut home feed with articles"
                 width={250}
                 height={541}
-                className="rounded-[2rem] shadow-xl ring-1 ring-border transition-transform duration-700 ease-in-out hover:scale-110"
+                className="rounded-[2rem] transition-transform duration-700 ease-in-out hover:scale-110"
               />
               <h3 className="mt-6 txt-xl font-semibold text-foreground">Discover Content</h3>
               <p className="mt-2 text-center text-muted-foreground">
@@ -316,11 +320,11 @@ export default function Home() {
 
             <div className="flex flex-col items-center">
               <Image
-                src="/images/map.png"
+                src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/map.png"
                 alt="Coffee Sphut map showing nearby coffee stores"
                 width={250}
                 height={541}
-                className="rounded-[2rem] shadow-xl ring-1 ring-border transition-transform duration-700 ease-in-out hover:scale-110"
+                className="rounded-[2rem] transition-transform duration-700 ease-in-out hover:scale-110"
               />
               <h3 className="mt-6 txt-xl font-semibold text-foreground">Find Stores</h3>
               <p className="mt-2 text-center text-muted-foreground">
@@ -330,11 +334,11 @@ export default function Home() {
 
             <div className="flex flex-col items-center">
               <Image
-                src="/images/account.png"
+                src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/account.png"
                 alt="Coffee Sphut account screen"
                 width={250}
                 height={541}
-                className="rounded-[2rem] shadow-xl ring-1 ring-border transition-transform duration-700 ease-in-out hover:scale-110"
+                className="rounded-[2rem] transition-transform duration-700 ease-in-out hover:scale-110"
               />
               <h3 className="mt-6 txt-xl font-semibold text-foreground">Save Favourites</h3>
               <p className="mt-2 text-center text-muted-foreground">
