@@ -4,13 +4,26 @@
     "details": [
       {
         "appID": "76TF6WR84X.com.coffeesphut.app",
-        "paths": [
-          "/blog/*",
-          "/home",
-          "/map",
-          "/account",
-          "/account/*",
-          "/"
+        "paths": ["*"],
+        "components": [
+        {
+            "/": "/home"
+        },
+        {
+            "/": "/map"
+        },
+        {
+            "/": "/reward"
+        },
+        {
+            "/": "/base/*"
+        },
+        {
+            "/": "/account"
+        },
+        {
+            "/": "/blog/*"
+        },
         ]
       }
     ]
