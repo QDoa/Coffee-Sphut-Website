@@ -1,10 +1,16 @@
 {
   "applinks": {
+    "apps": [],
     "details": [
       {
-        "appIDs": ["76TF6WR84X.com.example.mobileApp"],
-        "components": [
-          { "/": "/blog/*", "comment": "Matches any blog post" }
+        "appID": "76TF6WR84X.com.coffeesphut.app",
+        "paths": [
+          "/blog/*",
+          "/home",
+          "/map",
+          "/account",
+          "/account/*",
+          "/"
         ]
       }
     ]
