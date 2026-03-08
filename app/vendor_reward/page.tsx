@@ -26,7 +26,6 @@ function PunchRewardCardButton() {
 
 export default function VendorReward() {
   const searchParams = useSearchParams();
-  console.log("Search params:", searchParams.toString());
   const formRef = useRef<HTMLFormElement>(null);
   const frirstName = searchParams.get('firstName');
   const userId = searchParams.get('userId');
