@@ -46,6 +46,22 @@ export default function VendorReward() {
     }
   }
 
+  if (!frirstName || !userId) {
+    return (
+      <div className="py-16 sm:py-24">
+        <div className="items-center mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-balance text-xl font-bold tracking-tight text-card-foreground sm:text-xl lg:text-xl">
+              Coffee Sphut Reward Program
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
+              Invalid reward link. Please check the link and try again.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="py-16 sm:py-24">
       <div className="items-center mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

@@ -14,6 +14,7 @@ export async function rewardAvailable(rewardId: string) {
   console.log("Checking reward availability...");
   return true;
 }
+
 export async function redeemRewardRequest(formData: FormData, rewardId: string) {
   try {
     const supabase = createClient(process.env.SUPABASE_URL as string, process.env.SUPABASE_ANON_KEY as string)

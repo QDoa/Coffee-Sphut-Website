@@ -29,7 +29,7 @@ export default function RedeemReward() {
   const formRef = useRef<HTMLFormElement>(null);
   const firstName = searchParams.get('firstName');
   const cafeChainName = searchParams.get('cafeChain');
-  const rewardId = searchParams.get('rewardId');
+  const rewardId = searchParams.get('rewardId') ?? '';
   const [isRewardAvailable, setIsRewardAvailable] = useState(false);
   const [checkingRewardAvailability, setCheckingRewardAvailability] = useState(true);
 
@@ -65,27 +65,27 @@ export default function RedeemReward() {
     )
   }
   if (isRewardAvailable) {
-  return (
-    <div className="py-16 sm:py-24">
-      <div className="items-center mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h2 className="text-balance text-xl font-bold tracking-tight text-card-foreground sm:text-xl lg:text-xl">
-            Coffee Sphut Reward Program
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-            Redeem reward for {firstName} at {cafeChainName}.
-          </p>
-        </div>
-
-        <div className="mt-4 flex justify-center">
-          <form ref={formRef} action={redeemReward} className="grid grid-cols-1 w-full max-w-md items-center sm:flex-row">
-            <Input required type='text' placeholder="Enter cafe code" name='cafeCode'/>
-            <RedeemRewardButton />
-          </form>
+    return (
+      <div className="py-16 sm:py-24">
+        <div className="items-center mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-balance text-xl font-bold tracking-tight text-card-foreground sm:text-xl lg:text-xl">
+              Coffee Sphut Reward Program
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
+              Redeem reward for {firstName} at {cafeChainName}.
+            </p>
+          </div>
+ 
+          <div className="mt-4 flex justify-center">
+            <form ref={formRef} action={redeemReward} className="grid grid-cols-1 w-full max-w-md items-center sm:flex-row">
+              <Input required type='text' placeholder="Enter cafe code" name='cafeCode'/>
+              <RedeemRewardButton />
+            </form>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
   } else {
     return (
       <div className="py-16 sm:py-24">
