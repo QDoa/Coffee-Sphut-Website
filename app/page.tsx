@@ -165,7 +165,21 @@ export default function Home() {
               Download
             </a>
           </nav>
-          <span className="text-xl font-bold text-[#B40317]">Coming Soon!</span>
+          <div className="flex items-center gap-4">
+          <a href="https://play.google.com/store/apps/details?id=com.coffeesphut.app" target="_blank" rel="noopener noreferrer">
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-48 bg-primary text-primary-foreground hover:bg-primary text-base"
+              onClick={() => track('Download')}
+            >
+              {downloadAndriodText}
+            </Button>
+          </a>
+          <Button size="lg" variant="secondary" className="w-48 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Download for iOS")}>
+            {downloadIosText}
+          </Button>
+          </div>
           </div>
         </div>
       </header>
@@ -425,15 +439,16 @@ export default function Home() {
             <Button size="lg" variant="secondary" className="w-64 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Download for iOS")}>
               {downloadIosText}
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="w-64 border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 text-base"
-              onMouseEnter={() => setDownloadAndriodText("Coming soon on Android!")}
-              onMouseLeave={() => setDownloadAndriodText("Download for Android")}
-            >
-              {downloadAndriodText}
-            </Button>
+            <a href="https://play.google.com/store/apps/details?id=com.coffeesphut.app" target="_blank" rel="noopener noreferrer">
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-64 border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 text-base"
+                onClick={() => track('Download')}
+              >
+                {downloadAndriodText}
+              </Button>
+            </a>
           </div>
         </div>
       </section>
