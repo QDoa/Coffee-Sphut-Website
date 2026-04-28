@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import { track } from '@vercel/analytics';
-import Form from 'next/form'
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card";
@@ -166,19 +165,25 @@ export default function Home() {
             </a>
           </nav>
           <div className="flex items-center gap-4">
+          <Button size="lg" variant="secondary" className="w-48 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Download for iOS")}>
+            {downloadIosText}
+          </Button>
           <a href="https://play.google.com/store/apps/details?id=com.coffeesphut.app" target="_blank" rel="noopener noreferrer">
             <Button
               size="lg"
               variant="outline"
-              className="w-48 bg-primary text-primary-foreground hover:bg-primary text-base"
+              className="w-56 bg-primary text-primary-foreground hover:bg-primary text-base"
               onClick={() => track('Download')}
             >
-              {downloadAndriodText}
+              <Image
+                src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/play_store.png"
+                alt="Google Play Store logo"
+                width={24}
+                height={24}
+              />
+              <span>{downloadAndriodText}</span>
             </Button>
           </a>
-          <Button size="lg" variant="secondary" className="w-48 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Download for iOS")}>
-            {downloadIosText}
-          </Button>
           </div>
           </div>
         </div>
@@ -446,6 +451,12 @@ export default function Home() {
                 className="w-64 border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 text-base"
                 onClick={() => track('Download')}
               >
+                <Image
+                  src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/play_store.png"
+                  alt="Google Play Store logo"
+                  width={24}
+                  height={24}
+                />
                 {downloadAndriodText}
               </Button>
             </a>
