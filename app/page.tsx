@@ -165,15 +165,17 @@ export default function Home() {
             </a>
           </nav>
           <div className="flex items-center gap-4">
-          <Button size="lg" variant="secondary" className="w-48 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Get on iOS!")}>
-            <Image
-              src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
-              alt="Apple logo"
-              width={24}
-              height={24}
-            />
-            {downloadIosText}
-          </Button>
+            <a href="#hero">
+              <Button size="lg" variant="secondary" className="w-48 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Get on iOS!")}>
+                <Image
+                  src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
+                  alt="Apple logo"
+                  width={24}
+                  height={24}
+                />
+                {downloadIosText}
+              </Button>
+            </a>
           <a href="https://play.google.com/store/apps/details?id=com.coffeesphut.app" target="_blank" rel="noopener noreferrer">
             <Button
               size="lg"
@@ -196,7 +198,7 @@ export default function Home() {
       </header>
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-border bg-background">
+      <section id="hero" className="relative overflow-hidden border-b border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
             <div className="flex flex-col justify-center">
@@ -206,6 +208,9 @@ export default function Home() {
               <p className="mt-6 text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">
                 Coffee Sphut brings you curated coffee content and helps you find the best select coffee stores around
                 you. Your perfect cup is just a tap away.
+              </p>
+              <p className="mt-6 text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">
+                Download now on Android or join the waiting list for iOS!
               </p>
                <div className="mt-10 flex flex-col gap-4 sm:flex-row">
                  <form ref={formRef} action={handleJoinWaitlist} className="flex w-full items-center sm:flex-row">
@@ -447,15 +452,17 @@ export default function Home() {
             Join thousands of coffee enthusiasts discovering new flavors, techniques, and their next favorite café.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button size="lg" variant="secondary" className="w-48 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Get on iOS!")}>
-              <Image
-                src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
-                alt="Apple logo"
-                width={24}
-                height={24}
-              />
-              {downloadIosText}
-            </Button>
+            <a href="#hero">
+              <Button size="lg" variant="secondary" className="w-48 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Get on iOS!")}>
+                <Image
+                  src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
+                  alt="Apple logo"
+                  width={24}
+                  height={24}
+                />
+                {downloadIosText}
+              </Button>
+            </a>
             <a href="https://play.google.com/store/apps/details?id=com.coffeesphut.app" target="_blank" rel="noopener noreferrer">
               <Button
                 size="lg"
