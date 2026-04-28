@@ -71,8 +71,8 @@ function JoinWaitlistButton() {
 
 
 export default function Home() {
-  const [downloadIosText, setDownloadIosText] = useState("Download for iOS");
-  const [downloadAndriodText, setDownloadAndriodText] = useState("Download for Android");
+  const [downloadIosText, setDownloadIosText] = useState("Get on iOS!");
+  const [downloadAndriodText, setDownloadAndriodText] = useState("Get on Android!");
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -165,7 +165,13 @@ export default function Home() {
             </a>
           </nav>
           <div className="flex items-center gap-4">
-          <Button size="lg" variant="secondary" className="w-48 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Download for iOS")}>
+          <Button size="lg" variant="secondary" className="w-48 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Get on iOS!")}>
+            <Image
+              src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
+              alt="Apple logo"
+              width={24}
+              height={24}
+            />
             {downloadIosText}
           </Button>
           <a href="https://play.google.com/store/apps/details?id=com.coffeesphut.app" target="_blank" rel="noopener noreferrer">
@@ -441,14 +447,20 @@ export default function Home() {
             Join thousands of coffee enthusiasts discovering new flavors, techniques, and their next favorite café.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button size="lg" variant="secondary" className="w-64 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Download for iOS")}>
+            <Button size="lg" variant="secondary" className="w-48 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Get on iOS!")}>
+              <Image
+                src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
+                alt="Apple logo"
+                width={24}
+                height={24}
+              />
               {downloadIosText}
             </Button>
             <a href="https://play.google.com/store/apps/details?id=com.coffeesphut.app" target="_blank" rel="noopener noreferrer">
               <Button
                 size="lg"
                 variant="outline"
-                className="w-64 border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 text-base"
+                className="w-48 border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 text-base"
                 onClick={() => track('Download')}
               >
                 <Image
