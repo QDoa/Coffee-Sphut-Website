@@ -166,21 +166,21 @@ export default function Home() {
           </nav>
           <div className="flex items-center gap-4">
             <a href="#hero">
-              <Button size="lg" variant="secondary" className="w-48 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Get on iOS!")}>
+              <Button size="lg" variant="secondary" className="text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Get on iOS!")}>
                 <Image
                   src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
                   alt="Apple logo"
                   width={24}
                   height={24}
                 />
-                {downloadIosText}
+                <span className="hidden md:inline">{downloadIosText}</span>
               </Button>
             </a>
           <a href="https://play.google.com/store/apps/details?id=com.coffeesphut.app" target="_blank" rel="noopener noreferrer">
             <Button
               size="lg"
               variant="outline"
-              className="w-56 bg-primary text-primary-foreground hover:bg-primary text-base"
+              className="bg-primary text-primary-foreground hover:bg-primary text-base"
               onClick={() => track('Download')}
             >
               <Image
@@ -189,7 +189,7 @@ export default function Home() {
                 width={24}
                 height={24}
               />
-              <span>{downloadAndriodText}</span>
+              <span className="hidden md:inline">{downloadAndriodText}</span>
             </Button>
           </a>
           </div>
