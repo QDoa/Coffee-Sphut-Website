@@ -165,7 +165,7 @@ export default function Home() {
             </a>
           </nav>
           <div className="flex items-center gap-4">
-            <a href="#hero">
+            <a href="https://apps.apple.com/us/app/coffee-sphut/id6759900667">
               <Button size="lg" variant="secondary" className="text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Get on iOS!")}>
                 <Image
                   src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
@@ -209,15 +209,6 @@ export default function Home() {
                 Coffee Sphut brings you curated coffee content and helps you find the best select coffee stores around
                 you. Your perfect cup is just a tap away.
               </p>
-              <p className="mt-6 text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">
-                Download now on Android or join the waiting list for iOS!
-              </p>
-               <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-                 <form ref={formRef} action={handleJoinWaitlist} className="flex w-full items-center sm:flex-row">
-                   <Input required type='email' placeholder="Email" name='email'/>
-                   <JoinWaitlistButton />
-                 </form>
-               </div>
             </div>
             <div className="relative flex items-center justify-center lg:justify-end">
               <div className="relative">
@@ -452,7 +443,7 @@ export default function Home() {
             Join thousands of coffee enthusiasts discovering new flavors, techniques, and their next favorite café.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <a href="#hero">
+            <a href="https://apps.apple.com/us/app/coffee-sphut/id6759900667">
               <Button size="lg" variant="secondary" className="w-48 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Get on iOS!")}>
                 <Image
                   src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
