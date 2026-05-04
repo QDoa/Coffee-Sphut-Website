@@ -166,7 +166,7 @@ export default function Home() {
           </nav>
           <div className="flex items-center gap-4">
             <a href="https://apps.apple.com/us/app/coffee-sphut/id6759900667">
-              <Button size="lg" variant="secondary" className="text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Get on iOS!")}>
+              <Button size="lg" variant="secondary" className="text-base" >
                 <Image
                   src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
                   alt="Apple logo"
@@ -444,7 +444,7 @@ export default function Home() {
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a href="https://apps.apple.com/us/app/coffee-sphut/id6759900667">
-              <Button size="lg" variant="secondary" className="w-48 text-base" onMouseEnter={() => setDownloadIosText("Coming soon on iOS!")} onMouseLeave={() => setDownloadIosText("Get on iOS!")}>
+              <Button size="lg" variant="secondary" className="w-48 text-base" >
                 <Image
                   src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
                   alt="Apple logo"
