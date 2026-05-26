@@ -5,7 +5,7 @@ import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import { track } from '@vercel/analytics';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"
+import { Marquee } from "@/components/ui/marquee";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Database, Newspaper, MapPin, Eye, Users, TrendingUp, Trophy, Headphones, Instagram, Linkedin } from "lucide-react";
 import Image from "next/image";
@@ -26,6 +26,21 @@ interface VendorBenefit {
 
 const jobPostings: JobPosting[] = [
 ];
+
+const currentPatners = [
+  {
+    name: "Happy Coffee",
+    logo: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/HappyCoffeeLogo.jpg",
+  },
+  {
+    name: "Purple Jasmine Cafe",
+    logo: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/PurpleJasmineCafeLogo.jpg",
+  },
+  {
+    name: "Top Bean",
+    logo: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/TopBeanLogo.png",
+  },
+]
 
 const vendorBenefits: VendorBenefit[] = [
   {
@@ -432,6 +447,38 @@ export default function Home() {
           </div>
         </div>
       </section>
+      
+      {/* Current Cafes on the App Section */}
+      <section id="cafes" className="border-b border-border bg-background py-16 sm:py-24">
+        <div className="text-center">
+          <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+            Current Partners on Coffee Sphut
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
+            A selection of the amazing cafés already on Coffee Sphut.
+          </p>
+          <div className="relative flex w-full py-8 flex-col items-center justify-center overflow-hidden
+                        [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
+            <Marquee className="[--duration:15s]">
+              {currentPatners.slice(0, 3).map((partner, index) => (
+                <div className="px-16">
+                  <Image
+                    src={partner.logo}
+                    alt={`${partner.name} logo`}
+                    width={192}
+                    height={192}
+                  />
+                </div>
+              ))}
+            </Marquee>
+          </div>
+          <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
+            More cafés are joining every week, so stay tuned for updates and new additions to our growing community of coffee shops.
+          </p>
+        </div>
+      </section>
+
+
 
       {/* CTA Section */}
       <section id="download" className="bg-primary py-16 text-primary-foreground sm:py-24">
