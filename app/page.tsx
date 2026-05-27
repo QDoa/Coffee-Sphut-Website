@@ -7,68 +7,12 @@ import { track } from '@vercel/analytics';
 import { Button } from "@/components/ui/button";
 import { Marquee } from "@/components/ui/marquee";
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, Database, Newspaper, MapPin, Eye, Users, TrendingUp, Trophy, Headphones, Instagram, Linkedin } from "lucide-react";
+import { Accordion, AccordionItem, AccordionContent, AccordionTrigger } from "@/components/ui/accordion";
+import { BookOpen, Database, Newspaper, MapPin, Users, Instagram, Linkedin } from "lucide-react";
 import Image from "next/image";
 import { sendSubcribeRequest } from "@/app/unsubscribe/server";
+import { currentPatners, jobPostings, vendorBenefits, vendorFAQs } from "./constants";
 
-interface JobPosting {
-  title: string;
-  location: string;
-  type: string;
-  jobDescriptionLink: string;
-}
-
-interface VendorBenefit {
-  title: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
-
-const jobPostings: JobPosting[] = [
-];
-
-const currentPatners = [
-  {
-    name: "Happy Coffee",
-    logo: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/HappyCoffeeLogo.jpg",
-  },
-  {
-    name: "Purple Jasmine Cafe",
-    logo: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/PurpleJasmineCafeLogo.jpg",
-  },
-  {
-    name: "Top Bean",
-    logo: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/TopBeanLogo.png",
-  },
-]
-
-const vendorBenefits: VendorBenefit[] = [
-  {
-    title: "Increased Visibility",
-    description: "Reach thousands of coffee enthusiasts actively seeking quality coffee stores and specialty vendors.",
-    icon: Eye,
-  },
-  {
-    title: "Customer Connection",
-    description: "Build loyalty and meaningful relationships with customers who appreciate your brand and offerings.",
-    icon: Users,
-  },
-  {
-    title: "Growth Analytics",
-    description: "Access valuable insights about your store performance, customer preferences, and engagement metrics.",
-    icon: TrendingUp,
-  },
-  {
-    title: "Brand Authority",
-    description: "Establish your authority in the specialty coffee market and showcase your expertise to coffee lovers.",
-    icon: Trophy,
-  },
-  {
-    title: "Dedicated Support",
-    description: "Get dedicated partnership support to help grow your business and maximize your presence on Coffee Sphut.",
-    icon: Headphones,
-  },
-];
 
 function JoinWaitlistButton() {
   const { pending } = useFormStatus();
@@ -461,7 +405,7 @@ export default function Home() {
                         [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
             <Marquee className="[--duration:15s]">
               {currentPatners.slice(0, 3).map((partner, index) => (
-                <div className="px-16">
+                <div className="px-16" key={index}>
                   <Image
                     src={partner.logo}
                     alt={`${partner.name} logo`}
@@ -479,6 +423,27 @@ export default function Home() {
       </section>
 
 
+      {/* FAQs Section */}
+      <section id="FAQs" className="border-b border-border bg-card py-16 sm:py-24">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+            FAQs
+          </h2>
+          <h3 className="text-balance text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
+            For Partners
+          </h3>
+          <Accordion type="single" collapsible className="w-full mt-6">
+          {vendorFAQs.map((faq, index) => (
+            <AccordionItem value={'item'+index.toString()} key={index}>
+              <AccordionTrigger>{faq.question}</AccordionTrigger>
+              <AccordionContent>
+                {faq.answer}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+          </Accordion>
+        </div>
+      </section>
 
       {/* CTA Section */}
       <section id="download" className="bg-primary py-16 text-primary-foreground sm:py-24">
