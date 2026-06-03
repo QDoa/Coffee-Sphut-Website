@@ -29,6 +29,10 @@ export const currentPatners = [
     name: "Top Bean",
     logo: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/TopBeanLogo.png",
   },
+  {
+    name: "Kastanos Cafe",
+    logo: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/KastanosCafeLogo.jpg",
+  },
 ]
 
 export const vendorBenefits: VendorBenefit[] = [

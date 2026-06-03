@@ -404,7 +404,7 @@ export default function Home() {
           <div className="relative flex w-full py-8 flex-col items-center justify-center overflow-hidden
                         [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
             <Marquee className="[--duration:15s]">
-              {currentPatners.slice(0, 3).map((partner, index) => (
+              {currentPatners.slice(0, 4).map((partner, index) => (
                 <div className="px-16" key={index}>
                   <Image
                     src={partner.logo}
