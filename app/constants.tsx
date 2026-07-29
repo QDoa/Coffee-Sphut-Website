@@ -14,6 +14,12 @@ interface VendorBenefit {
 }
 
 export const jobPostings: JobPosting[] = [
+  {
+    title: "Growth & Marketing Coordinator",
+    location: "Lagos, Nigeria · Hybrid",
+    type: "Full-time",
+    jobDescriptionLink: "/Growth&MarketingCoordinatiorJobPosting.pdf",
+  },
 ];
 
 export const currentPatners = [
