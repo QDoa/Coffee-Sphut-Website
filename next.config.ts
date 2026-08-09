@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
 
 export default nextConfig;
 module.exports = {
-  allowedDevOrigins: ['192.168.5.26'],
+  allowedDevOrigins: ['192.168.5.26', 'localhost'],
   images: {
     remotePatterns: [
       {
@@ -14,6 +14,12 @@ module.exports = {
         hostname: '*.public.blob.vercel-storage.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'tcxenxliwzykhxzhlien.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/**',
       },
     ],
   },
