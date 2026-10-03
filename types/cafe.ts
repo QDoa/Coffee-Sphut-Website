@@ -5,4 +5,6 @@ export interface Cafe {
   image_url: string;
   latitude: number;
   longitude: number;
+  description?: string | null;
+  distance_meters?: number | null;
 }

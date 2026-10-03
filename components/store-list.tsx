@@ -14,9 +14,18 @@ interface StoreListProps {
   selectedCafeId: Cafe["id"] | null
   onSelectCafe: (id: Cafe["id"] | null) => void
   userLocation: UserLocation | null
+  query: string
 }
 
-export function StoreList({ cafes, selectedCafeId, onSelectCafe, userLocation }: StoreListProps) {
+export function StoreList({
+  cafes,
+  selectedCafeId,
+  onSelectCafe,
+  userLocation,
+  query,
+}: StoreListProps) {
+  const trimmedQuery = query.trim()
+
   const sortedCafes = useMemo(() => {
     if (!userLocation) return cafes
 
@@ -29,14 +38,14 @@ export function StoreList({ cafes, selectedCafeId, onSelectCafe, userLocation }:
 
   if (sortedCafes.length === 0) {
     return (
-      <div className="flex h-full min-h-[200px] items-center justify-center rounded-xl border p-6 text-center text-sm text-muted-foreground">
-        No coffee shops found yet.
+      <div className="flex min-h-[200px] flex-1 items-center justify-center rounded-xl border p-6 text-center text-sm text-muted-foreground">
+        {trimmedQuery ? `No stores match “${trimmedQuery}”.` : "No coffee shops found yet."}
       </div>
     )
   }
 
   return (
-    <div className="flex h-full flex-col gap-3 overflow-y-auto pr-1">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
       {sortedCafes.map((cafe) => (
         <Card
           key={cafe.id}
