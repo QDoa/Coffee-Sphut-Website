@@ -57,13 +57,11 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
   }, [selectedCafeId, cafes])
 
   if (!MAPBOX_TOKEN) {
+    console.debug("Missing Mapbox token. Set NEXT_PUBLIC_MAPBOX_TOKEN in your environment to enable the map.")
     return (
       <div className="flex h-full min-h-[400px] w-full flex-col items-center justify-center gap-2 rounded-xl border bg-muted/30 p-6 text-center">
         <MapPin className="h-8 w-8 text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">Map unavailable</p>
-        <p className="text-sm text-muted-foreground">
-          Missing Mapbox token. Set NEXT_PUBLIC_MAPBOX_TOKEN in your environment to enable the map.
-        </p>
       </div>
     )
   }
