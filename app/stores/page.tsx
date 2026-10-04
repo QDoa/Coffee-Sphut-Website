@@ -13,7 +13,7 @@ function StoreFinderSkeleton() {
   return (
     <div className="flex flex-col gap-4 md:h-[70vh] md:flex-row">
       <div className="order-2 flex min-h-0 flex-col gap-3 md:order-1 md:h-full md:w-2/5 md:min-w-[320px]">
-        <div className="h-9 w-full animate-pulse rounded-md bg-muted" />
+        <div className="h-9 w-full animate-pulse rounded-full bg-muted" />
         <div className="h-3 w-20 animate-pulse rounded bg-muted" />
         <div className="flex min-h-0 flex-1 flex-col gap-3">
           {Array.from({ length: 5 }).map((_, index) => (

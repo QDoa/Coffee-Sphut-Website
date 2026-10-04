@@ -31,13 +31,16 @@ npm run lint      # ESLint (eslint.config.mjs)
 
 ## Known Issues & Setup Quirks
 
-### ESLint Version Mismatch
-Currently there's a dependency conflict: `eslint-config-next@16.1.1` expects `eslint@^16.x` but the project has `eslint@9.39.4`. This causes `npm run lint` to fail with `"TypeError: expand is not a function"`. The pnpm-workspace.yaml has overrides to prevent this, but using `npm` directly bypasses them.
+### Lint (`brace-expansion` override)
 
-**Workaround:** Use `pnpm` instead of `npm` for package management (pnpm-lock.yaml is present and locked).
+`pnpm lint` used to crash with `TypeError: expand is not a function`. The cause was **not** an eslint version mismatch: the pnpm override `brace-expansion@<1.1.13: '>=1.1.13'` was unbounded, so it forced `brace-expansion@5.0.6` onto `minimatch@3.1.5` (which needs the 1.x callable-export shape). It is now pinned to `'>=1.1.13 <2'`, so `minimatch@3` resolves `brace-expansion@1.1.21` while `minimatch@10` keeps `5.0.6`.
+
+**When adding pnpm overrides, always bound the upper end** (`>=x <nextMajor`). An unbounded `>=x` silently forces a major-version bump onto transitive deps and breaks them at runtime.
+
+`pnpm lint` still exits non-zero on pre-existing errors in `app/page.tsx`, `app/privacy/page.tsx`, `app/reset-password/page.tsx`, `app/vendor_reward/VendorRewardClient.tsx` (unescaped entities) and `components/store-finder.tsx` (`react-hooks/set-state-in-effect`). These are unrelated to lint working.
 
 ### Package Manager
-The project has both `npm` and `pnpm` lock files. Use **`pnpm`** for consistency with the workspace overrides. Running `npm install` after `pnpm` may reintroduce version conflicts.
+Use **`pnpm`**. The repo has both `npm` and `pnpm` lock files; `pnpm-lock.yaml` is the authoritative one and is what encodes the `overrides` above. Running `npm install` will not honour `pnpm-workspace.yaml` and can reintroduce conflicts.
 
 ### Environment Variables
 - Required at runtime: `SUPABASE_URL`, `SUPABASE_ANON_KEY` (stored in `.env.local`)
