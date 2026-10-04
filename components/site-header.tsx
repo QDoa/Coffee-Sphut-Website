@@ -35,7 +35,7 @@ function StoreBadges({ fullWidth = false }: { fullWidth?: boolean }) {
   return (
     <>
       <a href={APPLE_STORE_URL} target="_blank" rel="noopener noreferrer" className={fullWidth ? "w-full" : undefined}>
-        <Button size="lg" variant="secondary" className={cn("text-base", fullWidth && "w-full h-12")}>
+        <Button size="lg" variant="secondary" className={cn("text-base", fullWidth ? "w-full h-12" : "h-11")}>
           <Image
             src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
             alt="Apple logo"
@@ -57,7 +57,7 @@ function StoreBadges({ fullWidth = false }: { fullWidth?: boolean }) {
         <Button
           size="lg"
           variant="outline"
-          className={cn("bg-primary text-primary-foreground hover:bg-primary text-base", fullWidth && "w-full h-12")}
+          className={cn("bg-primary text-primary-foreground hover:bg-primary text-base", fullWidth ? "w-full h-12" : "h-11")}
           onClick={() => track("Download")}
         >
           <Image
@@ -118,7 +118,7 @@ export function SiteHeader() {
             <Button
               asChild
               size="default"
-              className="h-11 rounded-full px-5 text-sm md:h-10 md:px-4"
+              className="h-11 px-5 text-sm md:h-10 md:px-4"
               onClick={() => track("Find Coffee")}
             >
               <Link href="/stores">Find Coffee</Link>
@@ -162,7 +162,7 @@ export function SiteHeader() {
                 </nav>
 
                 <SheetFooter>
-                  <Button asChild className="h-12 w-full rounded-full text-base" onClick={() => track("Find Coffee")}>
+                  <Button asChild className="h-12 w-full text-base" onClick={() => track("Find Coffee")}>
                     <Link href="/stores">Find Coffee</Link>
                   </Button>
                   <StoreBadges fullWidth />
