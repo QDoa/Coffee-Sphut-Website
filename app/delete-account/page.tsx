@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { sendDeleteAccountRequest } from "@/app/delete-account/server";
 
 
@@ -10,12 +11,9 @@ function DeleteAccountButton() {
   const { pending } = useFormStatus();
   
   return (
-    <button 
-      type='submit'
-      className="bg-primary text-white px-4 py-2 my-2 rounded hover:bg-primary/80"
-    >
+    <Button type='submit' className="my-2">
       {pending ? "Processing...": "Delete Account"}
-    </button>
+    </Button>
   )
 }
 
