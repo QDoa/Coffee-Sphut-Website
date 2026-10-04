@@ -36,7 +36,7 @@ export function StoreSearch({ value, onChange, onClear, isPending, resultCount }
             type="button"
             onClick={onClear}
             aria-label="Clear search"
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             <X className="h-4 w-4" />
           </button>
