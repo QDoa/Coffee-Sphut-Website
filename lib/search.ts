@@ -1,4 +1,4 @@
-export const SEARCH_RESULT_LIMIT = 50;
+export const SEARCH_RESULT_LIMIT = 100;
 
 export const SEARCH_FALLBACK_CENTER = {
   latitude: 6.5244,
