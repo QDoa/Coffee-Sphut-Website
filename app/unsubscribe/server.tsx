@@ -1,9 +1,9 @@
 "use server"
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseServerClient } from "@/lib/supabase"
 
 export async function sendUnsubcribeRequest(formData: FormData) {
   try {
-    const supabase = createClient(process.env.SUPABASE_URL as string, process.env.SUPABASE_ANON_KEY as string)
+    const supabase = getSupabaseServerClient()
     const { data, error } = await supabase.functions.invoke('wishlist', {
       body: { email: formData.get('email') },
       method: 'DELETE',
@@ -17,7 +17,7 @@ export async function sendUnsubcribeRequest(formData: FormData) {
 
 export async function sendSubcribeRequest(formData: FormData) {
   try {
-    const supabase = createClient(process.env.SUPABASE_URL as string, process.env.SUPABASE_ANON_KEY as string)
+    const supabase = getSupabaseServerClient()
     const { data, error } = await supabase.functions.invoke('wishlist', {
       body: { email: formData.get('email') },
       method: 'POST',

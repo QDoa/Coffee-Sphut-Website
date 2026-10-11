@@ -1,14 +1,14 @@
 "use server"
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseServerClient } from "@/lib/supabase"
 
 export async function rewardAvailable(rewardId: string) {
-  const supabase = createClient(process.env.SUPABASE_URL as string, process.env.SUPABASE_ANON_KEY as string)
+  const supabase = getSupabaseServerClient()
   const { data: rewardData, error: rewardError } = await supabase
     .from('Rewards')
     .select()
     .eq('id', rewardId)
     .single()
-  if (rewardData.status !== 'issued' || rewardError) {
+  if (rewardError || !rewardData || rewardData.status !== 'issued') {
     return false;
   }
   console.log("Checking reward availability...");
@@ -17,7 +17,7 @@ export async function rewardAvailable(rewardId: string) {
 
 export async function redeemRewardRequest(formData: FormData, rewardId: string) {
   try {
-    const supabase = createClient(process.env.SUPABASE_URL as string, process.env.SUPABASE_ANON_KEY as string)
+    const supabase = getSupabaseServerClient()
     // get chain id from cafe code
     const {data: cafeIdData, error: cafeIdError} = await supabase
       .from('Cafe')

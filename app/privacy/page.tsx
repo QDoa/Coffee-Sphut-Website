@@ -1,4 +1,9 @@
-"use client";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy | Coffee Sphut",
+  description: "Privacy policy for the Coffee Sphut mobile application and services.",
+};
 
 export default function Privacy() {
   return (
@@ -7,9 +12,9 @@ export default function Privacy() {
         Privacy Policy
       </h1>
       <p>
-        This privacy policy applies to the Coffee Sphut app (hereby referred to as "Application") for mobile devices 
-        that was created by Coffee Sphut (hereby referred to as "Service Provider") as an Ad Supported service. This 
-        service is intended for use "AS IS".
+        This privacy policy applies to the Coffee Sphut app (hereby referred to as &quot;Application&quot;) for mobile devices 
+        that was created by Coffee Sphut (hereby referred to as &quot;Service Provider&quot;) as an Ad Supported service. This 
+        service is intended for use &quot;AS IS&quot;.
       </p>
       <br />
       <h2 className="text-xl font-bold">Information Collection and Use</h2>
@@ -18,7 +23,7 @@ export default function Privacy() {
         such as 
       </p>
       <ul className="list-disc list-inside">
-        <li>Your device's Internet Protocol address (e.g. IP address)</li>
+        <li>Your device&apos;s Internet Protocol address (e.g. IP address)</li>
         <li>The pages of the Application that you visit, the time and date of your visit, the time spent on those pages</li>
         <li>The time spent on the Application</li>
         <li>The operating system you use on your mobile device</li>
@@ -27,7 +32,7 @@ export default function Privacy() {
       <br />
       <div>
         <p>
-          The Application collects your device's location, which helps the Service Provider determine your approximate 
+          The Application collects your device&apos;s location, which helps the Service Provider determine your approximate 
           geographical location and make use of in below ways:
         </p>
         <ul className="list-disc list-inside">
@@ -101,7 +106,7 @@ export default function Privacy() {
       <br />
       <h2 className="text-xl font-bold">Data Retention Policy</h2>
       <p>
-        The Service Provider will retain User Provided data for as long as you use the Application. If you'd like them to delete User Provided Data that you have provided via the Application, please contact them at info@coffeesphut.com and they will respond in a reasonable time.
+        The Service Provider will retain User Provided data for as long as you use the Application. If you&apos;d like them to delete User Provided Data that you have provided via the Application, please contact them at info@coffeesphut.com and they will respond in a reasonable time.
       </p>
       <br />
       <h2 className="text-xl font-bold">Children</h2>

@@ -66,38 +66,28 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
     })
   }, [selectedCafeId, cafes])
 
-  if (!MAPBOX_TOKEN) {
-    console.debug("Missing Mapbox token. Set NEXT_PUBLIC_MAPBOX_TOKEN in your environment to enable the map.")
-    return (
-      <div className="flex h-full min-h-[400px] w-full flex-col items-center justify-center gap-2 rounded-xl border bg-muted/30 p-6 text-center">
-        <MapPin className="h-8 w-8 text-muted-foreground" />
-        <p className="text-sm font-medium text-foreground">Map unavailable</p>
-        <p className="text-sm text-muted-foreground">
-          Missing Mapbox token. Set NEXT_PUBLIC_MAPBOX_TOKEN in your environment to enable the map.
-        </p>
-      </div>
-    )
-  }
-
   const popupCafe = cafes.find((cafe) => cafe.id === popupCafeId) ?? null
 
   const popupCafeDistance = useMemo(() => {
     if (!popupCafe || !userLocation) return null
-    const meters = getDistanceKm(
-      popupCafe.latitude,
-      popupCafe.longitude,
-      userLocation.latitude,
-      userLocation.longitude
-    ) * 1000
-    return formatDistanceKm(meters / 1000)
+    const distanceKm =
+      popupCafe.distance_meters != null
+        ? popupCafe.distance_meters / 1000
+        : getDistanceKm(
+            popupCafe.latitude,
+            popupCafe.longitude,
+            userLocation.latitude,
+            userLocation.longitude
+          )
+    return formatDistanceKm(distanceKm)
   }, [popupCafe, userLocation])
 
   const geojson = useMemo(() => {
     return {
       type: "FeatureCollection" as const,
       features: cafes.map((cafe) => {
-        let distanceMeters: number | null = null
-        if (userLocation) {
+        let distanceMeters: number | null = cafe.distance_meters ?? null
+        if (distanceMeters === null && userLocation) {
           const km = getDistanceKm(
             cafe.latitude,
             cafe.longitude,
@@ -125,6 +115,19 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
       }),
     }
   }, [cafes, userLocation])
+
+  if (!MAPBOX_TOKEN) {
+    console.debug("Missing Mapbox token. Set NEXT_PUBLIC_MAPBOX_TOKEN in your environment to enable the map.")
+    return (
+      <div className="flex h-full min-h-[400px] w-full flex-col items-center justify-center gap-2 rounded-xl border bg-muted/30 p-6 text-center">
+        <MapPin className="h-8 w-8 text-muted-foreground" />
+        <p className="text-sm font-medium text-foreground">Map unavailable</p>
+        <p className="text-sm text-muted-foreground">
+          Missing Mapbox token. Set NEXT_PUBLIC_MAPBOX_TOKEN in your environment to enable the map.
+        </p>
+      </div>
+    )
+  }
 
   const handleRecenter = () => {
     if (!userLocation) return
@@ -155,11 +158,13 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
               layers: ["clusters"],
             })
             if (clusterFeatures.length > 0) {
-              const feature = clusterFeatures[0] as any
-                const clusterId = feature.properties?.cluster_id
+              const feature = clusterFeatures[0] as unknown as {
+                properties?: Record<string, unknown> | null
+              }
+              const clusterId = feature.properties?.cluster_id as number | undefined
               if (clusterId !== undefined) {
-                const source = map.getSource("cafes") as any
-                source.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
+                const source = map.getSource("cafes") as mapboxgl.GeoJSONSource | undefined
+                source?.getClusterExpansionZoom(clusterId, (err, zoom) => {
                   if (err) return
                   map.easeTo({
                     center: e.lngLat.toArray() as [number, number],
@@ -175,8 +180,10 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
               layers: ["unclustered-point"],
             })
             if (pointFeatures.length > 0) {
-              const feature = pointFeatures[0] as any
-              const props = (feature.properties as Record<string, unknown>) ?? {}
+              const feature = pointFeatures[0] as unknown as {
+                properties?: Record<string, unknown> | null
+              }
+              const props = feature.properties ?? {}
               const id = props?.id as Cafe["id"]
               if (id != null) {
                 onSelectCafe(id)

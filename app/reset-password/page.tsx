@@ -28,7 +28,11 @@ export default function ResetPasswordPage() {
     setError(null)
 
     try {
-      const { data, error } = await updatePasswordRequest(password)
+      const { error: updateError } = await updatePasswordRequest(password)
+      if (updateError) {
+        setError(updateError instanceof Error ? updateError.message : String(updateError))
+        return
+      }
       router.push('https://coffeesphut.com/home')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')

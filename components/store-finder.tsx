@@ -8,6 +8,7 @@ import { StoreMap } from "@/components/store-map"
 import { StoreSearch } from "@/components/store-search"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUserLocation } from "@/hooks/use-user-location"
+import { getDistanceKm } from "@/lib/geo"
 import { SEARCH_FALLBACK_CENTER, SEARCH_RESULT_LIMIT } from "@/lib/search"
 import { cn } from "@/lib/utils"
 import type { Cafe } from "@/types/cafe"
@@ -19,19 +20,20 @@ interface StoreFinderProps {
 }
 
 export function StoreFinder({ cafes: initialCafes }: StoreFinderProps) {
-  const [query, setQuery] = useState("")
-  const [results, setResults] = useState<Cafe[]>(initialCafes)
-  const [selectedCafeId, setSelectedCafeId] = useState<Cafe["id"] | null>(null)
-  const [isPending, startTransition] = useTransition()
-
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const router = useRouter()
   const userLocation = useUserLocation()
+
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "")
+  const [results, setResults] = useState<Cafe[]>(initialCafes)
+  const [selectedCafeId, setSelectedCafeId] = useState<Cafe["id"] | null>(null)
+  const [isPending, startTransition] = useTransition()
+
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
 
   const requestIdRef = useRef(0)
-  const lastSyncedQueryRef = useRef<string | null>(null)
+  const lastSyncedQueryRef = useRef<string | null>(searchParams.get("q") ?? "")
   const initialCafesRef = useRef(initialCafes)
 
   const location = useMemo(() => userLocation ?? SEARCH_FALLBACK_CENTER, [userLocation])
@@ -90,12 +92,30 @@ export function StoreFinder({ cafes: initialCafes }: StoreFinderProps) {
     })
   }, [debouncedQuery, location])
 
-  useEffect(() => {
-    if (selectedCafeId === null) return
-    if (results.some((cafe) => cafe.id === selectedCafeId)) return
+  const cafesWithDistance = useMemo(() => {
+    if (!userLocation) return results
 
-    setSelectedCafeId(null)
-  }, [results, selectedCafeId])
+    return results
+      .map((cafe) => ({
+        ...cafe,
+        distance_meters: Math.round(
+          getDistanceKm(
+            userLocation.latitude,
+            userLocation.longitude,
+            cafe.latitude,
+            cafe.longitude
+          ) * 1000
+        ),
+      }))
+      .sort((a, b) => (a.distance_meters ?? Infinity) - (b.distance_meters ?? Infinity))
+  }, [results, userLocation])
+
+  const activeSelectedCafeId = useMemo(() => {
+    if (selectedCafeId === null) return null
+    return cafesWithDistance.some((cafe) => cafe.id === selectedCafeId)
+      ? selectedCafeId
+      : null
+  }, [cafesWithDistance, selectedCafeId])
 
   return (
     <div className="flex flex-col gap-4 md:h-[70vh] md:flex-row">
@@ -105,7 +125,7 @@ export function StoreFinder({ cafes: initialCafes }: StoreFinderProps) {
           onChange={setQuery}
           onClear={() => setQuery("")}
           isPending={isPending}
-          resultCount={results.length}
+          resultCount={cafesWithDistance.length}
         />
         <div
           aria-busy={isPending}
@@ -115,8 +135,8 @@ export function StoreFinder({ cafes: initialCafes }: StoreFinderProps) {
           )}
         >
           <StoreList
-            cafes={results}
-            selectedCafeId={selectedCafeId}
+            cafes={cafesWithDistance}
+            selectedCafeId={activeSelectedCafeId}
             onSelectCafe={setSelectedCafeId}
             userLocation={userLocation}
             query={query}
@@ -125,8 +145,8 @@ export function StoreFinder({ cafes: initialCafes }: StoreFinderProps) {
       </div>
       <div className="order-1 h-[400px] md:order-2 md:h-full md:flex-1">
         <StoreMap
-          cafes={results}
-          selectedCafeId={selectedCafeId}
+          cafes={cafesWithDistance}
+          selectedCafeId={activeSelectedCafeId}
           onSelectCafe={setSelectedCafeId}
           userLocation={userLocation}
         />

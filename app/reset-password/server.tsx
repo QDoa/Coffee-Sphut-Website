@@ -1,9 +1,9 @@
 "use server"
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseServerClient } from "@/lib/supabase"
 
 export async function updatePasswordRequest(password: string) {
   try {
-    const supabase = createClient(process.env.SUPABASE_URL as string, process.env.SUPABASE_ANON_KEY as string)
+    const supabase = getSupabaseServerClient()
     const new_password = password;
     if (new_password == null) {
       return{data: null, error: "Unable to reset password"};

@@ -28,10 +28,17 @@ export function StoreList({
 
   const sortedCafes = useMemo(() => {
     if (!userLocation) return cafes
+    if (cafes.every((cafe) => cafe.distance_meters != null)) return cafes
 
     return [...cafes].sort((a, b) => {
-      const distanceA = getDistanceKm(userLocation.latitude, userLocation.longitude, a.latitude, a.longitude)
-      const distanceB = getDistanceKm(userLocation.latitude, userLocation.longitude, b.latitude, b.longitude)
+      const distanceA =
+        a.distance_meters != null
+          ? a.distance_meters / 1000
+          : getDistanceKm(userLocation.latitude, userLocation.longitude, a.latitude, a.longitude)
+      const distanceB =
+        b.distance_meters != null
+          ? b.distance_meters / 1000
+          : getDistanceKm(userLocation.latitude, userLocation.longitude, b.latitude, b.longitude)
       return distanceA - distanceB
     })
   }, [cafes, userLocation])
@@ -46,46 +53,52 @@ export function StoreList({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
-      {sortedCafes.map((cafe) => (
-        <Card
-          key={cafe.id}
-          onClick={() => onSelectCafe(cafe.id)}
-          className={cn(
-            "cursor-pointer flex-row items-center gap-4 py-3 transition-colors hover:border-primary/60",
-            cafe.id === selectedCafeId && "border-primary"
-          )}
-        >
-          <CardContent className="flex w-full items-center gap-4 px-4">
-            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
-              {cafe.image_url ? (
-                <Image
-                  src={cafe.image_url}
-                  alt={cafe.name}
-                  fill
-                  sizes="56px"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <MapPin className="h-6 w-6 text-muted-foreground" />
-                </div>
-              )}
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{cafe.name}</p>
-              <p className="truncate text-xs text-muted-foreground">{cafe.address}</p>
-              {userLocation && (
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {formatDistanceKm(
-                    getDistanceKm(userLocation.latitude, userLocation.longitude, cafe.latitude, cafe.longitude)
-                  )}{" "}
-                  away
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+      {sortedCafes.map((cafe) => {
+        const distanceKm =
+          cafe.distance_meters != null
+            ? cafe.distance_meters / 1000
+            : userLocation
+              ? getDistanceKm(userLocation.latitude, userLocation.longitude, cafe.latitude, cafe.longitude)
+              : null
+
+        return (
+          <Card
+            key={cafe.id}
+            onClick={() => onSelectCafe(cafe.id)}
+            className={cn(
+              "cursor-pointer flex-row items-center gap-4 py-3 transition-colors hover:border-primary/60",
+              cafe.id === selectedCafeId && "border-primary"
+            )}
+          >
+            <CardContent className="flex w-full items-center gap-4 px-4">
+              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
+                {cafe.image_url ? (
+                  <Image
+                    src={cafe.image_url}
+                    alt={cafe.name}
+                    fill
+                    sizes="56px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <MapPin className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{cafe.name}</p>
+                <p className="truncate text-xs text-muted-foreground">{cafe.address}</p>
+                {userLocation && distanceKm !== null && (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {formatDistanceKm(distanceKm)} away
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )
+      })}
     </div>
   )
 }

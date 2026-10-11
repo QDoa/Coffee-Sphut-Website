@@ -1,9 +1,9 @@
 "use server"
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseServerClient } from "@/lib/supabase"
 
 export async function addRewardTransaction(formData: FormData, userId: string) {
   try {
-    const supabase = createClient(process.env.SUPABASE_URL as string, process.env.SUPABASE_ANON_KEY as string)
+    const supabase = getSupabaseServerClient()
 
     const {data: cafeIdData, error: cafeIdError} = await supabase
       .from('Cafe')

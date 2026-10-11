@@ -1,86 +1,15 @@
-"use client";
-
-import { useState, useRef, useEffect } from "react";
-import { useFormStatus } from "react-dom";
-import { toast } from "sonner";
-import { track } from '@vercel/analytics';
-import { Button } from "@/components/ui/button";
-import { Marquee } from "@/components/ui/marquee";
-import { Card, CardContent } from "@/components/ui/card";
-import { Accordion, AccordionItem, AccordionContent, AccordionTrigger } from "@/components/ui/accordion";
-import { SiteHeader } from "@/components/site-header";
-import { BookOpen, Database, Newspaper, MapPin, Users, Instagram, Linkedin } from "lucide-react";
 import Image from "next/image";
-import { sendSubcribeRequest } from "@/app/unsubscribe/server";
+import { BookOpen, Database, Newspaper, MapPin, Users, Instagram, Linkedin } from "lucide-react";
+import { HeroCarousel } from "@/components/hero-carousel";
+import { SiteHeader } from "@/components/site-header";
+import { TrackedLink } from "@/components/tracked-link";
+import { Accordion, AccordionItem, AccordionContent, AccordionTrigger } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Marquee } from "@/components/ui/marquee";
 import { currentPatners, jobPostings, vendorBenefits, vendorFAQs } from "./constants";
 
-
-function JoinWaitlistButton() {
-  const { pending } = useFormStatus();
-  
-  return (
-    <Button 
-      type='submit' 
-      className="text-base ml-4"
-      disabled={pending}
-    >
-      {pending ? "Joining..." : "Join waiting list"}
-    </Button>
-  );
-}
-
-
 export default function Home() {
-  const [downloadIosText, setDownloadIosText] = useState("Get on iOS!");
-  const [downloadAndriodText, setDownloadAndriodText] = useState("Get on Android!");
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const formRef = useRef<HTMLFormElement>(null);
-
-  const images = [
-    {
-      src: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/home.png",
-      alt: "Coffee Sphut app home screen showing coffee content",
-    },
-    {
-      src: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/map.png",
-      alt: "Coffee Sphut map showing nearby coffee stores",
-    },
-    {
-      src: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/reward.png",
-      alt: "Coffee Sphut reward program",
-    },
-    {
-      src: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/account.png",
-      alt: "Coffee Sphut account screen",
-    },
-  ]
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length)
-    }, 5000)
-
-    return () => clearInterval(timer)
-  })
-
-  async function handleJoinWaitlist(formData: FormData) {
-    try {
-      const result = await sendSubcribeRequest(formData);
-      
-      // Check if subscription was successful
-      if (!result.error) {
-        // Show success toast
-        toast.success("You've been added to the waiting list!");
-        
-        // Clear the email input
-        formRef.current?.reset();
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      // No error toast (as per requirement)
-    }
-  }
-
   return (
     <div className="min-h-screen">
       <SiteHeader />
@@ -99,37 +28,7 @@ export default function Home() {
               </p>
             </div>
             <div className="relative flex items-center justify-center lg:justify-end">
-              <div className="relative">
-                <div className="absolute inset-0 -m-12 rounded-full bg-primary/5 blur-3xl"></div>
-                <div className="relative h-162.5 w-75 overflow-hidden">
-                  {images.map((image, index) => (
-                    <Image
-                      key={index}
-                      src={image.src}
-                      alt={image.alt}
-                      width={300}
-                      height={650}
-                      className={`absolute left-0 top-0 z-10 rounded-[2.5rem] transition-opacity duration-700 ease-in-out ${
-                        index === currentImageIndex ? "opacity-100" : "opacity-0"
-                      }`}
-                      priority={index === 0}
-                    />
-                  ))}
-                </div>
-                <div className="mt-6 flex justify-center gap-2">
-                  {images.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentImageIndex(index)}
-                      className={`h-2 z-10 rounded-full transition-opacity ease-in-out ${
-                        index === currentImageIndex ? "w-8 bg-primary" : "w-2 bg-primary/30"
-                      }`}
-                      aria-label={`Go to slide ${index + 1}`}
-                      type="button"
-                    />
-                  ))}
-                </div>
-              </div>
+              <HeroCarousel />
             </div>
           </div>
         </div>
@@ -310,13 +209,16 @@ export default function Home() {
           </div>
 
           <div className="mt-12 flex justify-center">
-            <a href="https://docs.google.com/forms/d/e/1FAIpQLSf0NIlA7OQJWSNzjjKGbE1CInV9Ff5MQI65y5IN8yDXBRHITg/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">
-              <Button size="lg" className="text-base"
-               onClick={() => track('Signup')}
-               >
+            <TrackedLink
+              href="https://docs.google.com/forms/d/e/1FAIpQLSf0NIlA7OQJWSNzjjKGbE1CInV9Ff5MQI65y5IN8yDXBRHITg/viewform?usp=publish-editor"
+              target="_blank"
+              rel="noopener noreferrer"
+              eventName="Signup"
+            >
+              <Button size="lg" className="text-base">
                 Join Our Partner Network
               </Button>
-            </a>
+            </TrackedLink>
           </div>
         </div>
       </section>
@@ -384,33 +286,42 @@ export default function Home() {
             Join thousands of coffee enthusiasts discovering new flavors, techniques, and their next favorite café.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <a href="https://apps.apple.com/us/app/coffee-sphut/id6759900667">
-              <Button size="lg" variant="secondary" className="w-48 text-base" >
+            <TrackedLink
+              href="https://apps.apple.com/us/app/coffee-sphut/id6759900667"
+              target="_blank"
+              rel="noopener noreferrer"
+              eventName="Download"
+            >
+              <Button size="lg" variant="secondary" className="w-48 text-base">
                 <Image
-                  src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
+                  src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
                   alt="Apple logo"
                   width={24}
                   height={24}
                 />
-                {downloadIosText}
+                Get on iOS!
               </Button>
-            </a>
-            <a href="https://play.google.com/store/apps/details?id=com.coffeesphut.app" target="_blank" rel="noopener noreferrer">
+            </TrackedLink>
+            <TrackedLink
+              href="https://play.google.com/store/apps/details?id=com.coffeesphut.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              eventName="Download"
+            >
               <Button
                 size="lg"
                 variant="outline"
                 className="w-48 border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 text-base"
-                onClick={() => track('Download')}
               >
                 <Image
-                  src= "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/play_store.png"
+                  src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/play_store.png"
                   alt="Google Play Store logo"
                   width={24}
                   height={24}
                 />
-                {downloadAndriodText}
+                Get on Android!
               </Button>
-            </a>
+            </TrackedLink>
           </div>
         </div>
       </section>

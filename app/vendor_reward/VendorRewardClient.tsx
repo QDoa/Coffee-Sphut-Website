@@ -70,7 +70,7 @@ export default function VendorRewardClient() {
             Coffee Sphut Reward Program
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-            Punch {firstName}'s reward card by entering your cafe code.
+            Punch {firstName}&apos;s reward card by entering your cafe code.
           </p>
         </div>
 
