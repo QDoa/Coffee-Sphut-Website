@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 export default function Privacy() {
   return (
     <div className="items-center mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-4">
-      <h1 className="tex-center text-xxl font-bold tracking-tight text-card-foreground sm:text-xl lg:text-xxl">
+      <h1 className="text-center text-2xl font-bold tracking-tight text-card-foreground sm:text-xl lg:text-2xl">
         Privacy Policy
       </h1>
       <p>
@@ -77,7 +77,7 @@ export default function Privacy() {
           <a href="https://www.mapbox.com/legal/privacy" target="_blank" rel="noopener noreferrer">Mapbox</a>
         </li>
         <li><a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer">Supabase</a></li>
-        <li><a href="" target="_blank" rel="noopener noopenerer">SanityIO</a></li>
+        <li><a href="https://www.sanity.io/legal/privacy" target="_blank" rel="noopener noreferrer">SanityIO</a></li>
       </ul>
       </div>
       <br />

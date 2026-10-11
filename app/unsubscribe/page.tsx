@@ -32,9 +32,12 @@ export default function Unsubscribe() {
       if (!error) {
         toast.success("You have successfully been removed from our waiting list");
         formRef.current?.reset();
+      } else {
+        toast.error("Failed to unsubscribe. Please try again.");
       }
     } catch (error) {
       console.error("Error sending unsubscribe request:", error);
+      toast.error("Failed to unsubscribe. Please try again.");
     }
   }
 

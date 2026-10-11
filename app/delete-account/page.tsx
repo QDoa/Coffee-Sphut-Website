@@ -11,7 +11,7 @@ function DeleteAccountButton() {
   const { pending } = useFormStatus();
   
   return (
-    <Button type='submit' className="my-2">
+    <Button type='submit' className="my-2" disabled={pending}>
       {pending ? "Processing...": "Delete Account"}
     </Button>
   )
@@ -23,17 +23,15 @@ export default function DeleteAccountPage() {
     try {
       const result = await sendDeleteAccountRequest(formData);
       
-      // Check if subscription was successful
       if (!result.error) {
-        // Show success toast
-        toast.success("You've successful requeseted your account to be deleted");
-        
-        // Clear the email input
+        toast.success("You've successfully requested your account to be deleted.");
         formRef.current?.reset();
+      } else {
+        toast.error("Failed to submit account deletion request. Please try again.");
       }
     } catch (error) {
       console.error("Error:", error);
-      // No error toast (as per requirement)
+      toast.error("Failed to submit account deletion request. Please try again.");
     }
   }
 

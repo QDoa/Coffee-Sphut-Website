@@ -7,7 +7,7 @@ import { Accordion, AccordionItem, AccordionContent, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Marquee } from "@/components/ui/marquee";
-import { currentPatners, jobPostings, vendorBenefits, vendorFAQs } from "./constants";
+import { currentPartners, jobPostings, vendorBenefits, vendorFAQs } from "./constants";
 
 export default function Home() {
   return (
@@ -120,7 +120,7 @@ export default function Home() {
                 height={541}
                 className="rounded-[2rem] transition-transform duration-700 ease-in-out hover:scale-110"
               />
-              <h3 className="mt-6 txt-xl font-semibold text-foreground">Discover Content</h3>
+              <h3 className="mt-6 text-xl font-semibold text-foreground">Discover Content</h3>
               <p className="mt-2 text-center text-muted-foreground">
                 Browse expertly curated articles and guides
               </p>
@@ -134,7 +134,7 @@ export default function Home() {
                 height={541}
                 className="rounded-[2rem] transition-transform duration-700 ease-in-out hover:scale-110"
               />
-              <h3 className="mt-6 txt-xl font-semibold text-foreground">Find Stores</h3>
+              <h3 className="mt-6 text-xl font-semibold text-foreground">Find Stores</h3>
               <p className="mt-2 text-center text-muted-foreground">
                 Locate select coffee stores with interactive maps
               </p>
@@ -148,7 +148,7 @@ export default function Home() {
                 height={541}
                 className="rounded-[2rem] transition-transform duration-700 ease-in-out hover:scale-110"
               />
-              <h3 className="mt-6 txt-xl font-semibold text-foreground">Save Favourites</h3>
+              <h3 className="mt-6 text-xl font-semibold text-foreground">Save Favourites</h3>
               <p className="mt-2 text-center text-muted-foreground">
                 Bookmark articles and store for quick access
               </p>
@@ -235,7 +235,7 @@ export default function Home() {
           <div className="relative flex w-full py-8 flex-col items-center justify-center overflow-hidden
                         [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
             <Marquee className="[--duration:15s]">
-              {currentPatners.slice(0, 4).map((partner, index) => (
+              {currentPartners.slice(0, 4).map((partner, index) => (
                 <div className="px-16" key={index}>
                   <Image
                     src={partner.logo}
@@ -340,14 +340,14 @@ export default function Home() {
                      <div className="flex items-center space-x-4">
                        {/* Company Logo Placeholder */}
                        <div>
-                         <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
+                         <h3 className="text-lg font-semibold text-foreground">{job.title}</h3>
                        </div>
                      </div>
                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                        {job.type}
                      </span>
                    </div>
-                   <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-600">
+                   <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
                      <div className="flex items-center text-primary">
                        <MapPin className="h-6 w-6 text-primary" />
                        {job.location}
@@ -375,7 +375,7 @@ export default function Home() {
               <div className="flex h-18 w-18 items-center justify-center">
                 <Image
                   src="/icon.png"
-                  alt="Next.js logo"
+                  alt="Coffee Sphut"
                   width={100}
                   height={20}
                   priority
@@ -388,9 +388,6 @@ export default function Home() {
               <div className="flex gap-6">
                 <a href="/privacy" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
                   Privacy Policy
-                </a>
-                <a href="#terms" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
-                  Terms of Service
                 </a>
                 <a href="#partners" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
                   Contact Us

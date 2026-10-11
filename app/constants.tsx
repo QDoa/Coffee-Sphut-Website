@@ -22,7 +22,7 @@ export const jobPostings: JobPosting[] = [
   },
 ];
 
-export const currentPatners = [
+export const currentPartners = [
   {
     name: "Happy Coffee",
     logo: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/HappyCoffeeLogo.jpg",

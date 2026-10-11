@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import Map, {
   Marker,
   Popup,
@@ -33,21 +33,36 @@ const DEFAULT_VIEW = {
   zoom: 3.2,
 }
 
+function hasValidCoordinates(coords: { latitude: number; longitude: number }): boolean {
+  return (
+    typeof coords.latitude === "number" &&
+    typeof coords.longitude === "number" &&
+    Number.isFinite(coords.latitude) &&
+    Number.isFinite(coords.longitude) &&
+    Math.abs(coords.latitude) <= 90 &&
+    Math.abs(coords.longitude) <= 180
+  )
+}
+
 export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: StoreMapProps) {
-  const [popupCafeId, setPopupCafeId] = useState<Cafe["id"] | null>(null)
   const mapRef = useRef<MapRef>(null)
 
+  const validCafes = useMemo(
+    () => cafes.filter((cafe) => hasValidCoordinates(cafe)),
+    [cafes]
+  )
+
   const initialViewState = useMemo(() => {
-    if (cafes.length > 0) {
-      const first = cafes[0]
+    if (validCafes.length > 0) {
+      const first = validCafes[0]
       return { latitude: first.latitude, longitude: first.longitude, zoom: 11 }
     }
     return DEFAULT_VIEW
-  }, [cafes])
+  }, [validCafes])
 
   // Fly to the user's location once resolved, unless a cafe is already selected.
   useEffect(() => {
-    if (!userLocation || selectedCafeId !== null) return
+    if (!userLocation || !hasValidCoordinates(userLocation) || selectedCafeId !== null) return
     mapRef.current?.flyTo({
       center: [userLocation.longitude, userLocation.latitude],
       zoom: 12,
@@ -57,16 +72,19 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
 
   useEffect(() => {
     if (selectedCafeId === null) return
-    const selected = cafes.find((cafe) => cafe.id === selectedCafeId)
+    const selected = validCafes.find((cafe) => String(cafe.id) === String(selectedCafeId))
     if (!selected) return
     mapRef.current?.flyTo({
       center: [selected.longitude, selected.latitude],
       zoom: 14,
       duration: 800,
     })
-  }, [selectedCafeId, cafes])
+  }, [selectedCafeId, validCafes])
 
-  const popupCafe = cafes.find((cafe) => cafe.id === popupCafeId) ?? null
+  const popupCafe = useMemo(() => {
+    if (selectedCafeId === null) return null
+    return validCafes.find((cafe) => String(cafe.id) === String(selectedCafeId)) ?? null
+  }, [validCafes, selectedCafeId])
 
   const popupCafeDistance = useMemo(() => {
     if (!popupCafe || !userLocation) return null
@@ -85,7 +103,7 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
   const geojson = useMemo(() => {
     return {
       type: "FeatureCollection" as const,
-      features: cafes.map((cafe) => {
+      features: validCafes.map((cafe) => {
         let distanceMeters: number | null = cafe.distance_meters ?? null
         if (distanceMeters === null && userLocation) {
           const km = getDistanceKm(
@@ -114,7 +132,7 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
         }
       }),
     }
-  }, [cafes, userLocation])
+  }, [validCafes, userLocation])
 
   if (!MAPBOX_TOKEN) {
     console.debug("Missing Mapbox token. Set NEXT_PUBLIC_MAPBOX_TOKEN in your environment to enable the map.")
@@ -130,9 +148,8 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
   }
 
   const handleRecenter = () => {
-    if (!userLocation) return
+    if (!userLocation || !hasValidCoordinates(userLocation)) return
     onSelectCafe(null)
-    setPopupCafeId(null)
     mapRef.current?.flyTo({
       center: [userLocation.longitude, userLocation.latitude],
       zoom: 12,
@@ -184,25 +201,17 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
                 properties?: Record<string, unknown> | null
               }
               const props = feature.properties ?? {}
-              const id = props?.id as Cafe["id"]
-              if (id != null) {
-                onSelectCafe(id)
-                setPopupCafeId(id)
-                const lng = props.longitude as number | undefined
-                const lat = props.latitude as number | undefined
-                if (typeof lng === "number" && typeof lat === "number") {
-                  map.easeTo({
-                    center: [lng, lat],
-                    zoom: 14,
-                    duration: 600,
-                  })
-                }
+              const rawId = props?.id as Cafe["id"] | undefined
+              if (rawId != null) {
+                const matchedCafe = validCafes.find(
+                  (cafe) => String(cafe.id) === String(rawId)
+                )
+                onSelectCafe(matchedCafe ? matchedCafe.id : rawId)
               }
               return
             }
 
             onSelectCafe(null)
-            setPopupCafeId(null)
           }}
         >
           <NavigationControl position="top-right" />
@@ -310,7 +319,7 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
               latitude={popupCafe.latitude}
               longitude={popupCafe.longitude}
               anchor="top"
-              onClose={() => setPopupCafeId(null)}
+              onClose={() => onSelectCafe(null)}
               closeOnClick={false}
             >
               <div className="max-w-[200px] space-y-1">

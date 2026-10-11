@@ -34,7 +34,13 @@ const PLAY_STORE_URL =
 function StoreBadges({ fullWidth = false }: { fullWidth?: boolean }) {
   return (
     <>
-      <a href={APPLE_STORE_URL} target="_blank" rel="noopener noreferrer" className={fullWidth ? "w-full" : undefined}>
+      <a
+        href={APPLE_STORE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => track("Download")}
+        className={fullWidth ? "w-full" : undefined}
+      >
         <Button size="lg" variant="secondary" className={cn("text-base", fullWidth ? "w-full h-12" : "h-11")}>
           <Image
             src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
@@ -58,7 +64,6 @@ function StoreBadges({ fullWidth = false }: { fullWidth?: boolean }) {
           size="lg"
           variant="outline"
           className={cn("bg-primary text-primary-foreground hover:bg-primary text-base", fullWidth ? "w-full h-12" : "h-11")}
-          onClick={() => track("Download")}
         >
           <Image
             src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/play_store.png"

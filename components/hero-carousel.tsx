@@ -31,7 +31,7 @@ export function HeroCarousel() {
     }, 5000)
 
     return () => clearInterval(timer)
-  }, [])
+  }, [currentImageIndex])
 
   return (
     <div className="relative">
