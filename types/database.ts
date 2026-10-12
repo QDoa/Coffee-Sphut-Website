@@ -447,7 +447,7 @@ export type Database = {
       Post: {
         Row: {
           author_id: string | null
-          body: Json | null
+          body: string | null
           created_at: string
           id: string
           main_image_url: string | null
@@ -460,7 +460,7 @@ export type Database = {
         }
         Insert: {
           author_id?: string | null
-          body?: Json | null
+          body?: string | null
           created_at?: string
           id?: string
           main_image_url?: string | null
@@ -473,7 +473,7 @@ export type Database = {
         }
         Update: {
           author_id?: string | null
-          body?: Json | null
+          body?: string | null
           created_at?: string
           id?: string
           main_image_url?: string | null
