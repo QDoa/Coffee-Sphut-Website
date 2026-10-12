@@ -103,9 +103,10 @@ export function UserFilters({ totalResults, totalUsers }: UserFiltersProps) {
               onChange={(e) => updateQuery({ onboarding: e.target.value })}
               className="h-9 rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="all">All Onboarding</option>
-              <option value="completed">Completed Only</option>
-              <option value="incomplete">Incomplete Only</option>
+              <option value="all">All Users</option>
+              <option value="completed">Completed Onboarding</option>
+              <option value="incomplete">Incomplete Onboarding</option>
+              <option value="no_profile">No Profile</option>
             </select>
           </div>
 
@@ -120,6 +121,7 @@ export function UserFilters({ totalResults, totalUsers }: UserFiltersProps) {
             >
               <option value="newest">Newest Joined</option>
               <option value="oldest">Oldest Joined</option>
+              <option value="last_active">Recently Signed In</option>
             </select>
           </div>
 
@@ -169,7 +171,12 @@ export function UserFilters({ totalResults, totalUsers }: UserFiltersProps) {
 
           {currentOnboarding !== "all" && (
             <Badge variant="secondary" className="gap-1 text-xs py-0.5 px-2 font-normal">
-              Onboarding: {currentOnboarding === "completed" ? "Completed" : "Incomplete"}
+              Onboarding:{" "}
+              {currentOnboarding === "completed"
+                ? "Completed"
+                : currentOnboarding === "incomplete"
+                ? "Incomplete"
+                : "No Profile"}
               <button
                 type="button"
                 onClick={() => updateQuery({ onboarding: null })}
@@ -182,7 +189,7 @@ export function UserFilters({ totalResults, totalUsers }: UserFiltersProps) {
 
           {currentSort !== "newest" && (
             <Badge variant="secondary" className="gap-1 text-xs py-0.5 px-2 font-normal">
-              Sort: Oldest First
+              Sort: {currentSort === "oldest" ? "Oldest First" : "Recently Signed In"}
               <button
                 type="button"
                 onClick={() => updateQuery({ sort: null })}

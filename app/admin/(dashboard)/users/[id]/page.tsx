@@ -38,23 +38,30 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
     .eq("id", id)
     .maybeSingle();
 
-  if (!profile) {
-    notFound();
-  }
-
-  // Look up user email
+  // Look up auth user details
+  let authUserRecord: any = null;
   let userEmail = "Unknown / Not set";
+
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
     try {
       const adminClient = createAdminClient();
-      const { data: authUser } = await adminClient.auth.admin.getUserById(id);
-      if (authUser?.user?.email) {
-        userEmail = authUser.user.email;
+      const { data: authData } = await adminClient.auth.admin.getUserById(id);
+      if (authData?.user) {
+        authUserRecord = authData.user;
+        userEmail = authData.user.email || "No email (Anonymous)";
       }
     } catch {
       // Ignored
     }
   }
+
+  // If neither a profile nor an auth user exists, return 404
+  if (!profile && !authUserRecord) {
+    notFound();
+  }
+
+  const createdAt = authUserRecord?.created_at || profile?.created_at;
+  const lastSignInAt = authUserRecord?.last_sign_in_at || null;
 
   // Fetch Loyalty data joined with Chains
   const { data: loyaltyRecords } = await supabase
@@ -97,10 +104,10 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
             <User className="h-6 w-6 text-muted-foreground" />
             User: {userEmail}
           </h1>
-          <p className="text-xs text-muted-foreground font-mono mt-1">ID: {profile.id}</p>
+          <p className="text-xs text-muted-foreground font-mono mt-1">ID: {id}</p>
         </div>
         <div className="flex items-center gap-2">
-          <ResetOnboardingButton userId={profile.id} userName={userEmail} />
+          {profile && <ResetOnboardingButton userId={id} userName={userEmail} />}
         </div>
       </div>
 
@@ -114,14 +121,18 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
             <div>
-              <span className="text-xs text-muted-foreground block">Status</span>
-              {profile.onboarding_completed ? (
-                <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white mt-1">
+              <span className="text-xs text-muted-foreground block">Onboarding Status</span>
+              {profile?.onboarding_completed ? (
+                <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white mt-1 text-xs">
                   Completed
                 </Badge>
-              ) : (
-                <Badge variant="secondary" className="mt-1 text-amber-700 dark:text-amber-400">
+              ) : profile ? (
+                <Badge variant="secondary" className="mt-1 text-amber-700 dark:text-amber-400 text-xs">
                   Incomplete
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="mt-1 text-muted-foreground border-dashed text-xs">
+                  No Profile Record
                 </Badge>
               )}
             </div>
@@ -129,9 +140,23 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
             <div>
               <span className="text-xs text-muted-foreground block">Member Since</span>
               <p className="font-medium" suppressHydrationWarning>
-                {new Date(profile.created_at).toLocaleDateString(undefined, {
-                  dateStyle: "medium",
-                })}
+                {createdAt
+                  ? new Date(createdAt).toLocaleDateString(undefined, {
+                      dateStyle: "medium",
+                    })
+                  : "Unknown"}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-xs text-muted-foreground block">Last Signed In</span>
+              <p className="font-medium" suppressHydrationWarning>
+                {lastSignInAt
+                  ? new Date(lastSignInAt).toLocaleString(undefined, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })
+                  : "Never signed in"}
               </p>
             </div>
 
@@ -155,9 +180,11 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
                 Survey Responses JSON:
               </span>
               <pre className="p-2 rounded bg-muted text-[11px] font-mono overflow-x-auto max-h-48">
-                {profile.onboarding_responses
-                  ? JSON.stringify(profile.onboarding_responses, null, 2)
-                  : "null (no survey taken)"}
+                {profile
+                  ? profile.onboarding_responses
+                    ? JSON.stringify(profile.onboarding_responses, null, 2)
+                    : "null (no survey taken)"
+                  : "No profile record created yet"}
               </pre>
             </div>
           </CardContent>
@@ -203,7 +230,7 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
 
                       <div className="pt-2 border-t flex justify-end">
                         <AdjustPunchesButton
-                          userId={profile.id}
+                          userId={id}
                           chainId={l.chain_id}
                           chainName={chain?.name || "Chain"}
                           currentPunches={punchCount}
@@ -232,7 +259,7 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
                     .map((chain) => (
                       <AdjustPunchesButton
                         key={chain.id}
-                        userId={profile.id}
+                        userId={id}
                         chainId={chain.id}
                         chainName={chain.name}
                         currentPunches={0}
@@ -298,7 +325,7 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
                     <TableCell className="text-right">
                       {r.status === "issued" && (
                         <VoidRewardButton
-                          userId={profile.id}
+                          userId={id}
                           rewardId={r.id}
                           chainName={r.Chains?.name || "Chain"}
                         />
@@ -319,7 +346,7 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
       </Card>
 
       {/* History log */}
-      <HistoryPanel tableName="Profile" recordId={profile.id} />
+      <HistoryPanel tableName="Profile" recordId={id} />
     </div>
   );
 }
