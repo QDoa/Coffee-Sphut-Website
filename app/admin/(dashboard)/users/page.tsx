@@ -19,6 +19,7 @@ interface UsersPageProps {
   searchParams: Promise<{
     q?: string;
     onboarding?: string;
+    type?: string;
     sort?: string;
   }>;
 }
@@ -36,7 +37,7 @@ interface UnifiedUser {
 
 export default async function UsersPage({ searchParams }: UsersPageProps) {
   await requireAdmin();
-  const { q, onboarding, sort } = await searchParams;
+  const { q, onboarding, type, sort } = await searchParams;
   const supabase = await createClient();
 
   // 1. Fetch all profiles from public.Profile
@@ -127,12 +128,21 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
   }
 
   // Onboarding status filter
-  if (onboarding === "completed") {
+  if (onboarding === "has_profile") {
+    filteredUsers = filteredUsers.filter((u) => u.has_profile);
+  } else if (onboarding === "completed") {
     filteredUsers = filteredUsers.filter((u) => u.onboarding_completed);
   } else if (onboarding === "incomplete") {
     filteredUsers = filteredUsers.filter((u) => u.has_profile && !u.onboarding_completed);
   } else if (onboarding === "no_profile") {
     filteredUsers = filteredUsers.filter((u) => !u.has_profile);
+  }
+
+  // Account type filter (identified vs anonymous)
+  if (type === "identified") {
+    filteredUsers = filteredUsers.filter((u) => u.email && u.email.trim() !== "");
+  } else if (type === "anonymous") {
+    filteredUsers = filteredUsers.filter((u) => !u.email || u.email.trim() === "");
   }
 
   // Sort order

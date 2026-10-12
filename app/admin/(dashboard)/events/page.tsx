@@ -62,6 +62,10 @@ export default async function EventsPage() {
                 const isScheduled =
                   event.published_at !== null &&
                   new Date(event.published_at).getTime() > Date.now();
+                const eventEndMs = event.end_time
+                  ? new Date(event.end_time).getTime()
+                  : new Date(event.start_time).getTime();
+                const isPast = eventEndMs < Date.now();
 
                 return (
                   <TableRow key={event.id}>
@@ -111,10 +115,23 @@ export default async function EventsPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground" suppressHydrationWarning>
-                      {new Date(event.start_time).toLocaleString(undefined, {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}
+                      <div className="space-y-1">
+                        <div>
+                          {new Date(event.start_time).toLocaleString(undefined, {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </div>
+                        {isPast ? (
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-normal text-muted-foreground bg-muted/40">
+                            Past event
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-normal text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                            Upcoming
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {isPublished ? (

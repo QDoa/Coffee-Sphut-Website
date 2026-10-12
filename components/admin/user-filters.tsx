@@ -20,6 +20,7 @@ export function UserFilters({ totalResults, totalUsers }: UserFiltersProps) {
 
   const currentQ = searchParams.get("q") || "";
   const currentOnboarding = searchParams.get("onboarding") || "all";
+  const currentType = searchParams.get("type") || "all";
   const currentSort = searchParams.get("sort") || "newest";
 
   const [searchValue, setSearchValue] = useState(currentQ);
@@ -57,6 +58,7 @@ export function UserFilters({ totalResults, totalUsers }: UserFiltersProps) {
   const hasActiveFilters =
     Boolean(currentQ) ||
     currentOnboarding !== "all" ||
+    currentType !== "all" ||
     currentSort !== "newest";
 
   return (
@@ -104,9 +106,24 @@ export function UserFilters({ totalResults, totalUsers }: UserFiltersProps) {
               className="h-9 rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="all">All Users</option>
+              <option value="has_profile">Has Profile (Any)</option>
               <option value="completed">Completed Onboarding</option>
               <option value="incomplete">Incomplete Onboarding</option>
               <option value="no_profile">No Profile</option>
+            </select>
+          </div>
+
+          {/* Account type select */}
+          <div className="flex items-center gap-1.5">
+            <select
+              aria-label="Filter by Account Type"
+              value={currentType}
+              onChange={(e) => updateQuery({ type: e.target.value })}
+              className="h-9 rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="all">All Accounts</option>
+              <option value="identified">Identified Only</option>
+              <option value="anonymous">Anonymous Only</option>
             </select>
           </div>
 
@@ -172,7 +189,9 @@ export function UserFilters({ totalResults, totalUsers }: UserFiltersProps) {
           {currentOnboarding !== "all" && (
             <Badge variant="secondary" className="gap-1 text-xs py-0.5 px-2 font-normal">
               Onboarding:{" "}
-              {currentOnboarding === "completed"
+              {currentOnboarding === "has_profile"
+                ? "Has Profile"
+                : currentOnboarding === "completed"
                 ? "Completed"
                 : currentOnboarding === "incomplete"
                 ? "Incomplete"
@@ -180,6 +199,19 @@ export function UserFilters({ totalResults, totalUsers }: UserFiltersProps) {
               <button
                 type="button"
                 onClick={() => updateQuery({ onboarding: null })}
+                className="hover:text-foreground ml-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+
+          {currentType !== "all" && (
+            <Badge variant="secondary" className="gap-1 text-xs py-0.5 px-2 font-normal">
+              Account: {currentType === "identified" ? "Identified Only" : "Anonymous Only"}
+              <button
+                type="button"
+                onClick={() => updateQuery({ type: null })}
                 className="hover:text-foreground ml-0.5"
               >
                 <X className="h-3 w-3" />
