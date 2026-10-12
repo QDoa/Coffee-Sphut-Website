@@ -141,8 +141,8 @@ export function AdjustPunchesButton({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5">
-          <SlidersHorizontal className="h-3.5 w-3.5" /> Adjust Punches
+        <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+          <SlidersHorizontal className="h-3.5 w-3.5" /> Adjust {chainName} Punches
         </Button>
       </DialogTrigger>
       <DialogContent>
