@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { OnboardingSummary } from "@/components/admin/onboarding-summary";
+import { ActiveUsersChart, type ActiveUserRecord } from "@/components/admin/active-users-chart";
 
 export default async function AdminDashboardPage() {
   const staff = await requireStaff("editor");
@@ -66,24 +67,40 @@ export default async function AdminDashboardPage() {
       .order("priority", { ascending: true }),
   ]);
 
-  // Fetch user profile onboarding responses via service role if available
+  // Fetch user profile onboarding responses and auth users via service role if available
   let profilesData: {
     id: string;
     onboarding_completed: boolean;
     onboarding_responses: Record<string, any> | null;
   }[] = [];
+  let activeUserRecords: ActiveUserRecord[] = [];
 
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
     try {
       const adminClient = createAdminClient();
-      const { data } = await adminClient
-        .from("Profile")
-        .select("id, onboarding_completed, onboarding_responses");
-      if (data) profilesData = data as any;
+      const [profilesRes, authUsersRes] = await Promise.all([
+        adminClient
+          .from("Profile")
+          .select("id, onboarding_completed, onboarding_responses"),
+        staff.role === "admin"
+          ? adminClient.auth.admin.listUsers({ perPage: 1000 })
+          : Promise.resolve({ data: { users: [] }, error: null }),
+      ]);
+      if (profilesRes.data) profilesData = profilesRes.data as any;
+      if (authUsersRes.data?.users) {
+        activeUserRecords = authUsersRes.data.users.map((u) => ({
+          id: u.id,
+          last_sign_in_at: u.last_sign_in_at ?? null,
+          created_at: u.created_at,
+        }));
+      }
     } catch {
       // Service role fallback
     }
   }
+
+  const totalRegisteredUsers =
+    activeUserRecords.length > 0 ? activeUserRecords.length : (userCount ?? 0);
 
   return (
     <div className="space-y-8">
@@ -167,8 +184,8 @@ export default async function AdminDashboardPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{userCount ?? 0}</div>
-              <p className="text-xs text-muted-foreground">User profiles with loyalty accounts</p>
+              <div className="text-2xl font-bold">{totalRegisteredUsers}</div>
+              <p className="text-xs text-muted-foreground">Auth accounts registered in system</p>
             </CardContent>
           </Card>
 
@@ -181,10 +198,11 @@ export default async function AdminDashboardPage() {
               <div className="text-2xl font-bold">
                 {profilesData.filter((p) => p.onboarding_completed).length}
                 <span className="text-xs font-normal text-muted-foreground ml-1.5">
-                  / {userCount ?? 0} (
-                  {userCount
+                  / {totalRegisteredUsers} (
+                  {totalRegisteredUsers > 0
                     ? Math.round(
-                        (profilesData.filter((p) => p.onboarding_completed).length / userCount) *
+                        (profilesData.filter((p) => p.onboarding_completed).length /
+                          totalRegisteredUsers) *
                           100
                       )
                     : 0}
@@ -206,6 +224,11 @@ export default async function AdminDashboardPage() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Active Users Analytics (WAU & MAU) */}
+      {staff.role === "admin" && (
+        <ActiveUsersChart users={activeUserRecords} />
       )}
 
       {/* Onboarding Questions & Preferences Summary */}
