@@ -1,0 +1,145 @@
+import Link from "next/link";
+import { PlusCircle, CookingPot, CheckCircle2, Clock, EyeOff } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { requireStaff } from "@/lib/admin/auth";
+import { deleteRecipeAction } from "@/app/admin/actions/content";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { DeleteButton } from "@/components/admin/delete-button";
+
+export default async function RecipesPage() {
+  const staff = await requireStaff("editor");
+  const supabase = await createClient();
+
+  const { data: recipes } = await supabase
+    .from("Recipe")
+    .select("id, title, slug, servings, difficulty, published_at, created_at")
+    .order("created_at", { ascending: false });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Recipes & Brew Guides</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage coffee drink recipes, pour-over parameters, ingredients, and brew instructions.
+          </p>
+        </div>
+        <Button asChild size="sm">
+          <Link href="/admin/recipes/new">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Recipe
+          </Link>
+        </Button>
+      </div>
+
+      <div className="rounded-md border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Recipe Title</TableHead>
+              <TableHead>Difficulty</TableHead>
+              <TableHead>Servings</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Release</TableHead>
+              <TableHead className="w-[120px] text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {recipes && recipes.length > 0 ? (
+              recipes.map((recipe) => {
+                const isPublished =
+                  recipe.published_at !== null &&
+                  new Date(recipe.published_at).getTime() <= Date.now();
+                const isScheduled =
+                  recipe.published_at !== null &&
+                  new Date(recipe.published_at).getTime() > Date.now();
+
+                return (
+                  <TableRow key={recipe.id}>
+                    <TableCell>
+                      <div className="space-y-0.5">
+                        <Link
+                          href={`/admin/recipes/${recipe.id}`}
+                          className="font-medium hover:underline flex items-center gap-2"
+                        >
+                          <CookingPot className="h-4 w-4 text-muted-foreground" />
+                          {recipe.title}
+                        </Link>
+                        <p className="text-xs text-muted-foreground font-mono">
+                          /{recipe.slug}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {recipe.difficulty ? (
+                        <Badge variant="outline" className="capitalize text-xs">
+                          {recipe.difficulty}
+                        </Badge>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {recipe.servings ? `${recipe.servings} cups` : "—"}
+                    </TableCell>
+                    <TableCell>
+                      {isPublished ? (
+                        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1">
+                          <CheckCircle2 className="h-3 w-3" /> Published
+                        </Badge>
+                      ) : isScheduled ? (
+                        <Badge variant="secondary" className="gap-1 border-amber-500/50 text-amber-700 dark:text-amber-400">
+                          <Clock className="h-3 w-3" /> Scheduled
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="gap-1 text-muted-foreground">
+                          <EyeOff className="h-3 w-3" /> Draft
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground" suppressHydrationWarning>
+                      {recipe.published_at
+                        ? new Date(recipe.published_at).toLocaleDateString()
+                        : "Draft"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`/admin/recipes/${recipe.id}`}>Edit</Link>
+                        </Button>
+                        {staff.role === "admin" && (
+                          <DeleteButton
+                            action={async () => {
+                              "use server";
+                              await deleteRecipeAction(recipe.id);
+                            }}
+                            title={`Delete ${recipe.title}?`}
+                          />
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground text-sm">
+                  No recipes found. Click &quot;New Recipe&quot; to add one.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
