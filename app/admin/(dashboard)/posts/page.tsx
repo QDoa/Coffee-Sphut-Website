@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { PlusCircle, FileText, CheckCircle2, Clock, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireStaff } from "@/lib/admin/auth";
@@ -21,7 +22,7 @@ export default async function PostsPage() {
 
   const { data: posts } = await supabase
     .from("Post")
-    .select("id, title, slug, published_at, created_at, Author(name)")
+    .select("id, title, slug, published_at, created_at, main_image_url, Author(name)")
     .order("created_at", { ascending: false });
 
   return (
@@ -65,17 +66,33 @@ export default async function PostsPage() {
                 return (
                   <TableRow key={post.id}>
                     <TableCell>
-                      <div className="space-y-0.5">
-                        <Link
-                          href={`/admin/posts/${post.id}`}
-                          className="font-medium hover:underline flex items-center gap-2"
-                        >
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          {post.title}
-                        </Link>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          /{post.slug}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        {post.main_image_url ? (
+                          <div className="relative h-10 w-10 rounded-md overflow-hidden bg-muted shrink-0 border">
+                            <Image
+                              src={post.main_image_url}
+                              alt={post.title}
+                              fill
+                              unoptimized
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0 text-muted-foreground border">
+                            <FileText className="h-5 w-5" />
+                          </div>
+                        )}
+                        <div className="space-y-0.5 min-w-0">
+                          <Link
+                            href={`/admin/posts/${post.id}`}
+                            className="font-medium hover:underline block truncate"
+                          >
+                            {post.title}
+                          </Link>
+                          <p className="text-xs text-muted-foreground font-mono truncate">
+                            /{post.slug}
+                          </p>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">

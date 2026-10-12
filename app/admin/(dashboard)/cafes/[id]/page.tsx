@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireStaff } from "@/lib/admin/auth";
+import { CafeImageManager } from "@/components/admin/cafe-image-manager";
 import { saveCafeAction, saveMenuItemAction, deleteMenuItemAction } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,13 +91,26 @@ export default async function CafeEditPage({ params }: CafeEditPageProps) {
       </div>
 
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {isNew ? "Create New Cafe" : `Edit Cafe: ${cafe?.name}`}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Configure store location, operating hours, amenities, and menu items.
-          </p>
+        <div className="flex items-center gap-4">
+          {!isNew && cafe?.image_url && (
+            <div className="relative h-14 w-14 rounded-lg overflow-hidden bg-muted border shrink-0 shadow-sm">
+              <Image
+                src={cafe.image_url}
+                alt={cafe.name || "Cafe"}
+                fill
+                unoptimized
+                className="object-cover"
+              />
+            </div>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {isNew ? "Create New Cafe" : `Edit Cafe: ${cafe?.name}`}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Configure store location, operating hours, amenities, and menu items.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -320,25 +335,15 @@ export default async function CafeEditPage({ params }: CafeEditPageProps) {
             <Card>
               <CardHeader>
                 <CardTitle>Store Imagery</CardTitle>
-                <CardDescription>Primary cover image and secondary gallery URLs.</CardDescription>
+                <CardDescription>
+                  Upload cover and gallery images, or preview store photography.
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="image_url">Cover Image URL</Label>
-                  <Input id="image_url" name="image_url" defaultValue={cafe?.image_url || ""} />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="gallery_images">Gallery Image URLs (one per line)</Label>
-                  <Textarea
-                    id="gallery_images"
-                    name="gallery_images"
-                    defaultValue={galleryImages.join("\n")}
-                    rows={4}
-                    placeholder="https://..."
-                    className="font-mono text-xs"
-                  />
-                </div>
+              <CardContent>
+                <CafeImageManager
+                  initialCoverUrl={cafe?.image_url}
+                  initialGalleryUrls={galleryImages}
+                />
               </CardContent>
             </Card>
           </TabsContent>

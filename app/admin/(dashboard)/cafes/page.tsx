@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { PlusCircle, Store, MapPin, Eye } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireStaff } from "@/lib/admin/auth";
@@ -45,7 +46,7 @@ export default async function CafesPage({ searchParams }: CafesPageProps) {
   let query = supabase
     .from("Cafe")
     .select(
-      "id, name, address, rating, is_active, show_details, reward_code, loyalty_threshold_override, chain_id, Chains(name)"
+      "id, name, address, rating, is_active, show_details, reward_code, loyalty_threshold_override, chain_id, image_url, Chains(name)"
     )
     .order("name", { ascending: true });
 
@@ -120,20 +121,36 @@ export default async function CafesPage({ searchParams }: CafesPageProps) {
               cafes.map((cafe) => (
                 <TableRow key={cafe.id}>
                   <TableCell>
-                    <div className="space-y-1">
-                      <Link
-                        href={`/admin/cafes/${cafe.id}`}
-                        className="font-medium hover:underline flex items-center gap-2"
-                      >
-                        <Store className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span>{cafe.name}</span>
-                      </Link>
-                      {cafe.address && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <MapPin className="h-3 w-3 shrink-0" />
-                          <span>{cafe.address}</span>
-                        </p>
+                    <div className="flex items-center gap-3">
+                      {cafe.image_url ? (
+                        <div className="relative h-10 w-10 rounded-md overflow-hidden bg-muted shrink-0 border">
+                          <Image
+                            src={cafe.image_url}
+                            alt={cafe.name}
+                            fill
+                            unoptimized
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0 text-muted-foreground border">
+                          <Store className="h-5 w-5" />
+                        </div>
                       )}
+                      <div className="space-y-0.5 min-w-0">
+                        <Link
+                          href={`/admin/cafes/${cafe.id}`}
+                          className="font-medium hover:underline block truncate"
+                        >
+                          {cafe.name}
+                        </Link>
+                        {cafe.address && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{cafe.address}</span>
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
