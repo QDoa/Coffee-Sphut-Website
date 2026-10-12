@@ -13,31 +13,92 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { UserFilters } from "@/components/admin/user-filters";
 
-export default async function UsersPage() {
+interface UsersPageProps {
+  searchParams: Promise<{
+    q?: string;
+    onboarding?: string;
+    sort?: string;
+  }>;
+}
+
+export default async function UsersPage({ searchParams }: UsersPageProps) {
   await requireAdmin();
+  const { q, onboarding, sort } = await searchParams;
   const supabase = await createClient();
 
-  // Fetch profiles
-  const { data: profiles } = await supabase
+  // Fetch all profiles
+  const { data: rawProfiles } = await supabase
     .from("Profile")
     .select("id, created_at, onboarding_completed, onboarding_responses")
     .order("created_at", { ascending: false });
 
-  // Map user emails if service role key is available
-  const emailMap: Record<string, string> = {};
+  // Map user emails and metadata if service role key is available
+  const userMap: Record<string, { email: string; name?: string }> = {};
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
     try {
       const adminClient = createAdminClient();
-      const { data: authUsers } = await adminClient.auth.admin.listUsers();
+      const { data: authUsers } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
       if (authUsers?.users) {
         for (const u of authUsers.users) {
-          if (u.email) emailMap[u.id] = u.email;
+          const meta = (u.user_metadata || {}) as Record<string, any>;
+          const name =
+            meta.full_name ||
+            meta.name ||
+            (meta["First Name"] && meta["Last Name"]
+              ? `${meta["First Name"]} ${meta["Last Name"]}`.trim()
+              : meta["First Name"] || undefined);
+
+          userMap[u.id] = {
+            email: u.email || "",
+            name: typeof name === "string" ? name.trim() : undefined,
+          };
         }
       }
     } catch {
       // Ignored if service role is unavailable
     }
+  }
+
+  const allProfiles = rawProfiles || [];
+  let filteredProfiles = [...allProfiles];
+
+  // Search filter (email, name, ID, or survey answers)
+  if (q && q.trim()) {
+    const cleanQ = q.trim().toLowerCase();
+    filteredProfiles = filteredProfiles.filter((p) => {
+      const info = userMap[p.id];
+      const emailMatch = info?.email?.toLowerCase().includes(cleanQ);
+      const nameMatch = info?.name?.toLowerCase().includes(cleanQ);
+      const idMatch = p.id.toLowerCase().includes(cleanQ);
+
+      let responseMatch = false;
+      if (p.onboarding_responses) {
+        const respStr = JSON.stringify(p.onboarding_responses).toLowerCase();
+        responseMatch = respStr.includes(cleanQ);
+      }
+
+      return emailMatch || nameMatch || idMatch || responseMatch;
+    });
+  }
+
+  // Onboarding status filter
+  if (onboarding === "completed") {
+    filteredProfiles = filteredProfiles.filter((p) => p.onboarding_completed);
+  } else if (onboarding === "incomplete") {
+    filteredProfiles = filteredProfiles.filter((p) => !p.onboarding_completed);
+  }
+
+  // Sort order
+  if (sort === "oldest") {
+    filteredProfiles.sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+  } else {
+    filteredProfiles.sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
   }
 
   return (
@@ -51,6 +112,12 @@ export default async function UsersPage() {
         </div>
       </div>
 
+      {/* User search & filter controls */}
+      <UserFilters
+        totalResults={filteredProfiles.length}
+        totalUsers={allProfiles.length}
+      />
+
       <div className="rounded-md border bg-card">
         <Table>
           <TableHeader>
@@ -63,21 +130,30 @@ export default async function UsersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {profiles && profiles.length > 0 ? (
-              profiles.map((profile) => {
-                const userEmail = emailMap[profile.id] || "No email / Anonymous";
+            {filteredProfiles.length > 0 ? (
+              filteredProfiles.map((profile) => {
+                const info = userMap[profile.id];
+                const displayName = info?.name || info?.email || "Anonymous User";
+                const subText = info?.name && info?.email ? info.email : null;
 
                 return (
                   <TableRow key={profile.id}>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <Link
-                          href={`/admin/users/${profile.id}`}
-                          className="font-medium hover:underline"
-                        >
-                          {userEmail}
-                        </Link>
+                      <div className="flex items-center gap-2.5">
+                        <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div>
+                          <Link
+                            href={`/admin/users/${profile.id}`}
+                            className="font-medium hover:underline block text-sm"
+                          >
+                            {displayName}
+                          </Link>
+                          {subText && (
+                            <span className="text-xs text-muted-foreground block">
+                              {subText}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">
@@ -110,7 +186,7 @@ export default async function UsersPage() {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8 text-muted-foreground text-sm">
-                  No registered users found in the database.
+                  No users found matching your search or filters. Click &quot;Reset&quot; to clear filters.
                 </TableCell>
               </TableRow>
             )}
