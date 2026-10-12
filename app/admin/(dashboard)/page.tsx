@@ -10,12 +10,16 @@ import {
   TrendingUp,
   AlertCircle,
   PlusCircle,
+  HelpCircle,
+  CheckCircle2,
 } from "lucide-react";
 import { requireStaff } from "@/lib/admin/auth";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { OnboardingSummary } from "@/components/admin/onboarding-summary";
 
 export default async function AdminDashboardPage() {
   const staff = await requireStaff("editor");
@@ -31,6 +35,7 @@ export default async function AdminDashboardPage() {
     { count: waitlistCount },
     { data: scheduledPosts },
     { data: recentActivity },
+    { data: questions },
   ] = await Promise.all([
     supabase.from("Cafe").select("*", { count: "exact", head: true }),
     supabase.from("Post").select("*", { count: "exact", head: true }),
@@ -55,7 +60,30 @@ export default async function AdminDashboardPage() {
           .order("created_at", { ascending: false })
           .limit(6)
       : Promise.resolve({ data: null }),
+    supabase
+      .from("OnboardingQuestion")
+      .select("id, question, options, priority, active, multi_select")
+      .order("priority", { ascending: true }),
   ]);
+
+  // Fetch user profile onboarding responses via service role if available
+  let profilesData: {
+    id: string;
+    onboarding_completed: boolean;
+    onboarding_responses: Record<string, any> | null;
+  }[] = [];
+
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      const adminClient = createAdminClient();
+      const { data } = await adminClient
+        .from("Profile")
+        .select("id, onboarding_completed, onboarding_responses");
+      if (data) profilesData = data as any;
+    } catch {
+      // Service role fallback
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -132,7 +160,7 @@ export default async function AdminDashboardPage() {
 
       {/* Secondary metrics (admin only) */}
       {staff.role === "admin" && (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Registered App Users</CardTitle>
@@ -141,6 +169,29 @@ export default async function AdminDashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold">{userCount ?? 0}</div>
               <p className="text-xs text-muted-foreground">User profiles with loyalty accounts</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Onboarding Completed</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {profilesData.filter((p) => p.onboarding_completed).length}
+                <span className="text-xs font-normal text-muted-foreground ml-1.5">
+                  / {userCount ?? 0} (
+                  {userCount
+                    ? Math.round(
+                        (profilesData.filter((p) => p.onboarding_completed).length / userCount) *
+                          100
+                      )
+                    : 0}
+                  %)
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">Finished personalization survey</p>
             </CardContent>
           </Card>
 
@@ -156,6 +207,12 @@ export default async function AdminDashboardPage() {
           </Card>
         </div>
       )}
+
+      {/* Onboarding Questions & Preferences Summary */}
+      <OnboardingSummary
+        questions={questions || []}
+        profiles={profilesData}
+      />
 
       {/* Content pipeline & Recent activity */}
       <div className="grid gap-6 lg:grid-cols-2">
