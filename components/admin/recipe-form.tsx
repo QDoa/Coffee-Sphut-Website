@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { SingleImageUploader } from "@/components/admin/single-image-uploader";
 
 interface IngredientItem {
   name: string;
@@ -174,15 +175,12 @@ export function RecipeForm({ recipe, action }: RecipeFormProps) {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="image_url">Cover Image URL</Label>
-            <Input
-              id="image_url"
-              name="image_url"
-              defaultValue={recipe?.image_url || ""}
-              placeholder="https://..."
-            />
-          </div>
+          <SingleImageUploader
+            name="image_url"
+            initialUrl={recipe?.image_url}
+            label="Recipe Cover Image"
+            description="Brew cover photo displayed on drink cards and guides."
+          />
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
             <div className="space-y-2">

@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireStaff } from "@/lib/admin/auth";
+import { SingleImageUploader } from "@/components/admin/single-image-uploader";
 import { saveAuthorAction } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,9 +60,24 @@ export default async function AuthorEditPage({ params }: AuthorEditPageProps) {
       </div>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">
-          {isNew ? "Create New Author" : `Edit Author: ${author?.name}`}
-        </h1>
+        <div className="flex items-center gap-4">
+          {!isNew && author?.image_url && (
+            <div className="relative h-14 w-14 rounded-full overflow-hidden bg-muted border shrink-0 shadow-sm">
+              <Image
+                src={author.image_url}
+                alt={author.name || "Author"}
+                fill
+                unoptimized
+                className="object-cover"
+              />
+            </div>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {isNew ? "Create New Author" : `Edit Author: ${author?.name}`}
+            </h1>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -88,15 +105,13 @@ export default async function AuthorEditPage({ params }: AuthorEditPageProps) {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="image_url">Avatar Image URL</Label>
-                  <Input
-                    id="image_url"
-                    name="image_url"
-                    defaultValue={author?.image_url || ""}
-                    placeholder="https://..."
-                  />
-                </div>
+                <SingleImageUploader
+                  name="image_url"
+                  initialUrl={author?.image_url}
+                  label="Avatar Photo"
+                  description="Profile avatar picture displayed alongside written articles."
+                  shape="circle"
+                />
 
                 <div className="space-y-2">
                   <Label htmlFor="bio">Author Bio</Label>

@@ -67,7 +67,7 @@ export default async function AuthorsPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         {author.image_url ? (
-                          <div className="relative h-9 w-9 rounded-full overflow-hidden bg-muted shrink-0">
+                          <div className="relative h-9 w-9 rounded-full overflow-hidden bg-muted shrink-0 border">
                             <Image
                               src={author.image_url}
                               alt={author.name}

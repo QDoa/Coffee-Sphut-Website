@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireStaff } from "@/lib/admin/auth";
@@ -49,9 +50,24 @@ export default async function RecipeEditPage({ params }: RecipeEditPageProps) {
       </div>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">
-          {isNew ? "Create New Recipe" : `Edit Recipe: ${recipe?.title}`}
-        </h1>
+        <div className="flex items-center gap-4">
+          {!isNew && recipe?.image_url && (
+            <div className="relative h-14 w-14 rounded-lg overflow-hidden bg-muted border shrink-0 shadow-sm">
+              <Image
+                src={recipe.image_url}
+                alt={recipe.title || "Recipe"}
+                fill
+                unoptimized
+                className="object-cover"
+              />
+            </div>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {isNew ? "Create New Recipe" : `Edit Recipe: ${recipe?.title}`}
+            </h1>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

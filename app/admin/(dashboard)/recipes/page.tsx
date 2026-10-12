@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { PlusCircle, CookingPot, CheckCircle2, Clock, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireStaff } from "@/lib/admin/auth";
@@ -21,7 +22,7 @@ export default async function RecipesPage() {
 
   const { data: recipes } = await supabase
     .from("Recipe")
-    .select("id, title, slug, servings, difficulty, published_at, created_at")
+    .select("id, title, slug, servings, difficulty, published_at, created_at, image_url")
     .order("created_at", { ascending: false });
 
   return (
@@ -66,17 +67,33 @@ export default async function RecipesPage() {
                 return (
                   <TableRow key={recipe.id}>
                     <TableCell>
-                      <div className="space-y-0.5">
-                        <Link
-                          href={`/admin/recipes/${recipe.id}`}
-                          className="font-medium hover:underline flex items-center gap-2"
-                        >
-                          <CookingPot className="h-4 w-4 text-muted-foreground" />
-                          {recipe.title}
-                        </Link>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          /{recipe.slug}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        {recipe.image_url ? (
+                          <div className="relative h-10 w-10 rounded-md overflow-hidden bg-muted shrink-0 border">
+                            <Image
+                              src={recipe.image_url}
+                              alt={recipe.title}
+                              fill
+                              unoptimized
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0 text-muted-foreground border">
+                            <CookingPot className="h-5 w-5" />
+                          </div>
+                        )}
+                        <div className="space-y-0.5 min-w-0">
+                          <Link
+                            href={`/admin/recipes/${recipe.id}`}
+                            className="font-medium hover:underline block truncate"
+                          >
+                            {recipe.title}
+                          </Link>
+                          <p className="text-xs text-muted-foreground font-mono truncate">
+                            /{recipe.slug}
+                          </p>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>

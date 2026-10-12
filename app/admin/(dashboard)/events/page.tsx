@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { PlusCircle, Calendar, CheckCircle2, Clock, EyeOff, MapPin, Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireStaff } from "@/lib/admin/auth";
@@ -21,7 +22,7 @@ export default async function EventsPage() {
 
   const { data: events } = await supabase
     .from("Event")
-    .select("id, title, slug, start_time, end_time, cafe_id, is_featured, published_at, created_at, Cafe(name)")
+    .select("id, title, slug, start_time, end_time, cafe_id, is_featured, published_at, created_at, image_url, Cafe(name)")
     .order("start_time", { ascending: false });
 
   return (
@@ -65,22 +66,38 @@ export default async function EventsPage() {
                 return (
                   <TableRow key={event.id}>
                     <TableCell>
-                      <div className="space-y-0.5">
-                        <Link
-                          href={`/admin/events/${event.id}`}
-                          className="font-medium hover:underline flex items-center gap-2"
-                        >
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          {event.title}
-                          {event.is_featured && (
-                            <Badge variant="secondary" className="gap-1 text-xs py-0">
-                              <Star className="h-3 w-3 fill-amber-400 text-amber-500" /> Featured
-                            </Badge>
-                          )}
-                        </Link>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          /{event.slug}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        {event.image_url ? (
+                          <div className="relative h-10 w-10 rounded-md overflow-hidden bg-muted shrink-0 border">
+                            <Image
+                              src={event.image_url}
+                              alt={event.title}
+                              fill
+                              unoptimized
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0 text-muted-foreground border">
+                            <Calendar className="h-5 w-5" />
+                          </div>
+                        )}
+                        <div className="space-y-0.5 min-w-0">
+                          <Link
+                            href={`/admin/events/${event.id}`}
+                            className="font-medium hover:underline flex items-center gap-2 truncate"
+                          >
+                            <span className="truncate">{event.title}</span>
+                            {event.is_featured && (
+                              <Badge variant="secondary" className="gap-1 text-xs py-0 shrink-0">
+                                <Star className="h-3 w-3 fill-amber-400 text-amber-500" /> Featured
+                              </Badge>
+                            )}
+                          </Link>
+                          <p className="text-xs text-muted-foreground font-mono truncate">
+                            /{event.slug}
+                          </p>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">

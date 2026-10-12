@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireStaff } from "@/lib/admin/auth";
+import { SingleImageUploader } from "@/components/admin/single-image-uploader";
 import {
   savePostAction,
   setPostPublishStatusAction,
@@ -71,9 +73,24 @@ export default async function PostEditPage({ params }: PostEditPageProps) {
       </div>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">
-          {isNew ? "Write New Post" : `Edit Post: ${post?.title}`}
-        </h1>
+        <div className="flex items-center gap-4">
+          {!isNew && post?.main_image_url && (
+            <div className="relative h-14 w-14 rounded-lg overflow-hidden bg-muted border shrink-0 shadow-sm">
+              <Image
+                src={post.main_image_url}
+                alt={post.title || "Post"}
+                fill
+                unoptimized
+                className="object-cover"
+              />
+            </div>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {isNew ? "Write New Post" : `Edit Post: ${post?.title}`}
+            </h1>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -119,15 +136,12 @@ export default async function PostEditPage({ params }: PostEditPageProps) {
                   </select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="main_image_url">Main Cover Image URL</Label>
-                  <Input
-                    id="main_image_url"
-                    name="main_image_url"
-                    defaultValue={post?.main_image_url || ""}
-                    placeholder="https://..."
-                  />
-                </div>
+                <SingleImageUploader
+                  name="main_image_url"
+                  initialUrl={post?.main_image_url}
+                  label="Main Cover Image"
+                  description="Banner and preview image for article cards."
+                />
 
                 <div className="space-y-2">
                   <Label htmlFor="summary">Summary / Excerpt</Label>

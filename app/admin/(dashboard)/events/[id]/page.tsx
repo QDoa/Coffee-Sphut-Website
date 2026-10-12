@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireStaff } from "@/lib/admin/auth";
+import { SingleImageUploader } from "@/components/admin/single-image-uploader";
 import {
   saveEventAction,
   setEventPublishStatusAction,
@@ -69,9 +71,24 @@ export default async function EventEditPage({ params }: EventEditPageProps) {
       </div>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">
-          {isNew ? "Create New Event" : `Edit Event: ${event?.title}`}
-        </h1>
+        <div className="flex items-center gap-4">
+          {!isNew && event?.image_url && (
+            <div className="relative h-14 w-14 rounded-lg overflow-hidden bg-muted border shrink-0 shadow-sm">
+              <Image
+                src={event.image_url}
+                alt={event.title || "Event"}
+                fill
+                unoptimized
+                className="object-cover"
+              />
+            </div>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {isNew ? "Create New Event" : `Edit Event: ${event?.title}`}
+            </h1>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -160,15 +177,12 @@ export default async function EventEditPage({ params }: EventEditPageProps) {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="image_url">Cover Image URL</Label>
-                  <Input
-                    id="image_url"
-                    name="image_url"
-                    defaultValue={event?.image_url || ""}
-                    placeholder="https://..."
-                  />
-                </div>
+                <SingleImageUploader
+                  name="image_url"
+                  initialUrl={event?.image_url}
+                  label="Event Banner Image"
+                  description="Cover banner displayed on event cards and RSVP pages."
+                />
 
                 <div className="space-y-2">
                   <Label htmlFor="description">Event Description</Label>
