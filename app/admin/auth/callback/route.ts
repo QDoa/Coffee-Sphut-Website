@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getStaff } from "@/lib/admin/auth";
 import { recordStaffLogin, safeAdminPath } from "@/lib/admin/login";
@@ -11,7 +12,13 @@ import { recordStaffLogin, safeAdminPath } from "@/lib/admin/login";
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
-  const next = safeAdminPath(searchParams.get("next"));
+
+  const cookieStore = await cookies();
+  const nextFromCookie = cookieStore.get("admin_auth_next")?.value;
+  if (nextFromCookie) {
+    cookieStore.delete("admin_auth_next");
+  }
+  const next = safeAdminPath(nextFromCookie ?? searchParams.get("next"));
 
   const loginUrl = (error: string): URL => {
     const url = new URL("/admin/login", origin);

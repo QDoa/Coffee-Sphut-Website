@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,8 +15,9 @@ export interface StaffUser {
 /**
  * Returns current staff member details if logged in and on the AdminUser allow-list.
  * Returns null if not authenticated or not on the allow-list.
+ * Memoized per-request with React cache to eliminate redundant network roundtrips.
  */
-export async function getStaff(): Promise<StaffUser | null> {
+export const getStaff = cache(async (): Promise<StaffUser | null> => {
   const supabase = await createClient();
 
   const {
@@ -42,7 +44,7 @@ export async function getStaff(): Promise<StaffUser | null> {
     email: user.email ?? null,
     role: adminRecord.role as StaffRole,
   };
-}
+});
 
 /**
  * Ensures the caller is authenticated and holds at least the required role ('editor' or 'admin').

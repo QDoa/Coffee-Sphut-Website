@@ -17,6 +17,7 @@ import {
   UserX,
   Filter,
 } from "lucide-react";
+import { unstable_cache } from "next/cache";
 import { requireStaff } from "@/lib/admin/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -26,6 +27,59 @@ import { Badge } from "@/components/ui/badge";
 import { OnboardingSummary } from "@/components/admin/onboarding-summary";
 import { ActiveUsersChart, type ActiveUserRecord } from "@/components/admin/active-users-chart";
 import { cn } from "@/lib/utils";
+
+interface CachedUserMetrics {
+  profilesData: {
+    id: string;
+    onboarding_completed: boolean;
+    onboarding_responses: Record<string, any> | null;
+  }[];
+  users: {
+    id: string;
+    last_sign_in_at: string | null;
+    created_at: string;
+    is_anonymous: boolean;
+    email: string | null;
+  }[];
+  waitlistCount: number;
+}
+
+const getCachedUserMetrics = unstable_cache(
+  async (): Promise<CachedUserMetrics> => {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return { profilesData: [], users: [], waitlistCount: 0 };
+    }
+    try {
+      const adminClient = createAdminClient();
+      const [profilesRes, authUsersRes, waitlistRes] = await Promise.all([
+        adminClient
+          .from("Profile")
+          .select("id, onboarding_completed, onboarding_responses"),
+        adminClient.auth.admin.listUsers({ perPage: 1000 }),
+        adminClient.from("Waitlist").select("*", { count: "exact", head: true }),
+      ]);
+
+      const profiles = (profilesRes.data ?? []) as CachedUserMetrics["profilesData"];
+      const users = (authUsersRes.data?.users ?? []).map((u) => ({
+        id: u.id,
+        last_sign_in_at: u.last_sign_in_at ?? null,
+        created_at: u.created_at,
+        is_anonymous: Boolean(u.is_anonymous || !u.email),
+        email: u.email ?? null,
+      }));
+
+      return {
+        profilesData: profiles,
+        users,
+        waitlistCount: waitlistRes.count ?? 0,
+      };
+    } catch {
+      return { profilesData: [], users: [], waitlistCount: 0 };
+    }
+  },
+  ["admin-dashboard-user-metrics"],
+  { revalidate: 60, tags: ["admin-user-metrics"] }
+);
 
 interface AdminDashboardPageProps {
   searchParams?: Promise<{
@@ -51,7 +105,6 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
     { count: recipeCount },
     { data: eventsData },
     { count: userCount },
-    { count: waitlistCount },
     { data: scheduledPosts },
     { data: recentActivity },
     { data: questions },
@@ -60,12 +113,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
     supabase.from("Post").select("*", { count: "exact", head: true }),
     supabase.from("Recipe").select("*", { count: "exact", head: true }),
     supabase.from("Event").select("id, start_time, end_time"),
-    staff.role === "admin"
-      ? supabase.from("Profile").select("*", { count: "exact", head: true })
-      : Promise.resolve({ count: null }),
-    staff.role === "admin"
-      ? supabase.from("Waitlist").select("*", { count: "exact", head: true })
-      : Promise.resolve({ count: null }),
+    supabase.from("Profile").select("*", { count: "exact", head: true }),
     supabase
       .from("Post")
       .select("id, title, published_at")
@@ -85,41 +133,22 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
       .order("priority", { ascending: true }),
   ]);
 
-  // Fetch user profile onboarding responses and auth users via service role if available
-  let profilesData: {
-    id: string;
-    onboarding_completed: boolean;
-    onboarding_responses: Record<string, any> | null;
-  }[] = [];
+  // Fetch user profile onboarding responses and auth users via cached metrics helper
+  let profilesData: CachedUserMetrics["profilesData"] = [];
   let activeUserRecords: ActiveUserRecord[] = [];
+  let waitlistCount = 0;
 
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    try {
-      const adminClient = createAdminClient();
-      const [profilesRes, authUsersRes] = await Promise.all([
-        adminClient
-          .from("Profile")
-          .select("id, onboarding_completed, onboarding_responses"),
-        staff.role === "admin"
-          ? adminClient.auth.admin.listUsers({ perPage: 1000 })
-          : Promise.resolve({ data: { users: [] }, error: null }),
-      ]);
-      if (profilesRes.data) profilesData = profilesRes.data as any;
+    const cachedMetrics = await getCachedUserMetrics();
+    profilesData = cachedMetrics.profilesData;
+    waitlistCount = cachedMetrics.waitlistCount;
+    const profileSet = new Set(profilesData.map((p) => p.id));
 
-      const profileSet = new Set(profilesData.map((p) => p.id));
-
-      if (authUsersRes.data?.users) {
-        activeUserRecords = authUsersRes.data.users.map((u) => ({
-          id: u.id,
-          last_sign_in_at: u.last_sign_in_at ?? null,
-          created_at: u.created_at,
-          is_anonymous: Boolean(u.is_anonymous || !u.email),
-          has_profile: profileSet.has(u.id),
-          email: u.email ?? null,
-        }));
-      }
-    } catch {
-      // Service role fallback
+    if (cachedMetrics.users.length > 0) {
+      activeUserRecords = cachedMetrics.users.map((u) => ({
+        ...u,
+        has_profile: profileSet.has(u.id),
+      }));
     }
   }
 
@@ -248,9 +277,8 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
         </Card>
       </div>
 
-      {/* Secondary metrics (admin only) */}
-      {staff.role === "admin" && (
-        <div className="space-y-4">
+      {/* App Users & Growth metrics */}
+      <div className="space-y-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-0.5">
               <div className="flex flex-wrap items-center gap-2">
@@ -422,16 +450,13 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
             </Card>
           </div>
         </div>
-      )}
 
       {/* Active Users Analytics (WAU & MAU) */}
-      {staff.role === "admin" && (
-        <ActiveUsersChart
-          users={activeUserRecords}
-          initialHideAnonymous={hideAnonymous}
-          initialOnlyProfiles={onlyWithProfile}
-        />
-      )}
+      <ActiveUsersChart
+        users={activeUserRecords}
+        initialHideAnonymous={hideAnonymous}
+        initialOnlyProfiles={onlyWithProfile}
+      />
 
       {/* Onboarding Questions & Preferences Summary */}
       <OnboardingSummary
