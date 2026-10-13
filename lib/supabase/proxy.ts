@@ -43,6 +43,11 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // The OAuth callback arrives without a session and establishes one itself.
+  if (pathname.startsWith("/admin/auth/callback")) {
+    return supabaseResponse;
+  }
+
   // Refresh user session if available
   const {
     data: { user },

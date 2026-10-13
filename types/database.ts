@@ -848,6 +848,7 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
+      log_staff_login: { Args: { p_method: string }; Returns: undefined }
       staff_role: { Args: never; Returns: string }
     }
     Enums: {
