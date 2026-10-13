@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS public."Post" (
   author_id uuid REFERENCES public."Author"(id) ON UPDATE CASCADE ON DELETE SET NULL,
   main_image_url text,
   summary text,
-  body jsonb,
+  body text,
   published_at timestamp with time zone,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
