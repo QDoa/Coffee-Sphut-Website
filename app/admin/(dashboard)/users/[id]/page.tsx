@@ -19,8 +19,10 @@ import {
   ResetOnboardingButton,
   AdjustPunchesButton,
   VoidRewardButton,
+  UserTeamRoleButton,
 } from "@/components/admin/user-actions-dialogs";
 import { HistoryPanel } from "@/components/admin/history-panel";
+import { cn } from "@/lib/utils";
 
 interface UserDetailPageProps {
   params: Promise<{ id: string }>;
@@ -82,10 +84,12 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
     .order("issued_at", { ascending: false });
 
   // Fetch saved cafes & bookmarks counts
-  const [{ count: savedCount }, { count: bookmarkCount }] = await Promise.all([
-    supabase.from("SavedCafe").select("*", { count: "exact", head: true }).eq("user_id", id),
-    supabase.from("Bookmark").select("*", { count: "exact", head: true }).eq("user_id", id),
-  ]);
+  const [{ count: savedCount }, { count: bookmarkCount }, { data: adminRecord }] =
+    await Promise.all([
+      supabase.from("SavedCafe").select("*", { count: "exact", head: true }).eq("user_id", id),
+      supabase.from("Bookmark").select("*", { count: "exact", head: true }).eq("user_id", id),
+      supabase.from("AdminUser").select("role, created_at").eq("user_id", id).maybeSingle(),
+    ]);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -107,6 +111,11 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
           <p className="text-xs text-muted-foreground font-mono mt-1">ID: {id}</p>
         </div>
         <div className="flex items-center gap-2">
+          <UserTeamRoleButton
+            userId={id}
+            userEmail={userEmail}
+            currentRole={adminRecord?.role as any}
+          />
           {profile && <ResetOnboardingButton userId={id} userName={userEmail} />}
         </div>
       </div>
@@ -120,6 +129,29 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
+            <div>
+              <span className="text-xs text-muted-foreground block">Dashboard Team Access</span>
+              {adminRecord ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge
+                    className={cn(
+                      "text-xs capitalize font-medium",
+                      adminRecord.role === "admin"
+                        ? "bg-purple-600 hover:bg-purple-700 text-white"
+                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                    )}
+                  >
+                    <Shield className="h-3 w-3 mr-1" />
+                    {adminRecord.role} (Staff)
+                  </Badge>
+                </div>
+              ) : (
+                <Badge variant="outline" className="mt-1 text-muted-foreground border-dashed text-xs">
+                  Standard User (No Team Access)
+                </Badge>
+              )}
+            </div>
+
             <div>
               <span className="text-xs text-muted-foreground block">Onboarding Status</span>
               {profile?.onboarding_completed ? (

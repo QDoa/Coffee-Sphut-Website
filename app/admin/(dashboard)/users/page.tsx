@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, CheckCircle2, Clock, ChevronRight } from "lucide-react";
+import { Users, CheckCircle2, Clock, ChevronRight, Shield } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { UserFilters } from "@/components/admin/user-filters";
+import { cn } from "@/lib/utils";
 
 interface UsersPageProps {
   searchParams: Promise<{
@@ -33,6 +34,7 @@ interface UnifiedUser {
   has_profile: boolean;
   onboarding_completed: boolean;
   onboarding_responses?: any;
+  staff_role?: "admin" | "editor" | null;
 }
 
 export default async function UsersPage({ searchParams }: UsersPageProps) {
@@ -40,11 +42,20 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
   const { q, onboarding, type, sort } = await searchParams;
   const supabase = await createClient();
 
-  // 1. Fetch all profiles from public.Profile
-  const { data: rawProfiles } = await supabase
-    .from("Profile")
-    .select("id, created_at, onboarding_completed, onboarding_responses")
-    .order("created_at", { ascending: false });
+  // 1. Fetch all profiles from public.Profile and team members from public.AdminUser
+  const [{ data: rawProfiles }, { data: adminUsers }] = await Promise.all([
+    supabase
+      .from("Profile")
+      .select("id, created_at, onboarding_completed, onboarding_responses")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("AdminUser")
+      .select("user_id, role"),
+  ]);
+
+  const staffRoleMap = new Map<string, "admin" | "editor">(
+    (adminUsers || []).map((a) => [a.user_id, a.role as "admin" | "editor"])
+  );
 
   const profileMap = new Map<string, any>();
   if (rawProfiles) {
@@ -81,6 +92,7 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
             has_profile: Boolean(prof),
             onboarding_completed: Boolean(prof?.onboarding_completed),
             onboarding_responses: prof?.onboarding_responses,
+            staff_role: staffRoleMap.get(u.id) || null,
           });
         }
       }
@@ -101,6 +113,7 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
           has_profile: true,
           onboarding_completed: p.onboarding_completed,
           onboarding_responses: p.onboarding_responses,
+          staff_role: staffRoleMap.get(p.id) || null,
         });
       }
     }
@@ -203,12 +216,28 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
                       <div className="flex items-center gap-2.5">
                         <Users className="h-4 w-4 text-muted-foreground shrink-0" />
                         <div>
-                          <Link
-                            href={`/admin/users/${user.id}`}
-                            className="font-medium hover:underline block text-sm"
-                          >
-                            {displayName}
-                          </Link>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/admin/users/${user.id}`}
+                              className="font-medium hover:underline block text-sm"
+                            >
+                              {displayName}
+                            </Link>
+                            {user.staff_role && (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-[10px] py-0 px-1.5 font-medium border-primary/40",
+                                  user.staff_role === "admin"
+                                    ? "text-purple-700 dark:text-purple-400 bg-purple-500/10"
+                                    : "text-blue-700 dark:text-blue-400 bg-blue-500/10"
+                                )}
+                              >
+                                <Shield className="h-2.5 w-2.5 mr-0.5 inline" />
+                                {user.staff_role}
+                              </Badge>
+                            )}
+                          </div>
                           {subText && (
                             <span className="text-xs text-muted-foreground block">
                               {subText}

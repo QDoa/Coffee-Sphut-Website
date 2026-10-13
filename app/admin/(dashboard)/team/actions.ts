@@ -22,6 +22,8 @@ export async function updateStaffRoleAction(targetUserId: string, newRole: "admi
   if (error) return { error: error.message };
 
   revalidatePath("/admin/team");
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${targetUserId}`);
   return { success: true };
 }
 
@@ -41,6 +43,40 @@ export async function removeStaffMemberAction(targetUserId: string) {
   if (error) return { error: error.message };
 
   revalidatePath("/admin/team");
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${targetUserId}`);
+  return { success: true };
+}
+
+export async function addExistingUserToTeamAction(
+  userId: string,
+  role: "admin" | "editor"
+) {
+  const currentStaff = await requireAdmin();
+
+  const cleanUserId = userId.trim();
+  if (!cleanUserId) {
+    return { error: "A valid user ID is required." };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("AdminUser").upsert(
+    {
+      user_id: cleanUserId,
+      role,
+      created_by: currentStaff.userId,
+    },
+    { onConflict: "user_id" }
+  );
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin/team");
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${cleanUserId}`);
   return { success: true };
 }
 
@@ -92,6 +128,8 @@ export async function inviteStaffMemberAction(email: string, role: "admin" | "ed
     if (insertErr) return { error: insertErr.message };
 
     revalidatePath("/admin/team");
+    revalidatePath("/admin/users");
+    revalidatePath(`/admin/users/${targetUserId}`);
     return { success: true };
   } catch (err: any) {
     return { error: err.message || "Failed to invite staff member." };
