@@ -1,6 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getStaff } from "@/lib/admin/auth";
@@ -52,11 +52,21 @@ export async function googleLoginAction(formData: FormData): Promise<void> {
   const next = safeAdminPath(formData.get("redirectTo")?.toString());
   const origin = await getRequestOrigin();
 
+  const cookieStore = await cookies();
+  if (next && next !== "/admin") {
+    cookieStore.set("admin_auth_next", next, {
+      path: "/admin",
+      maxAge: 60 * 10,
+      httpOnly: true,
+      sameSite: "lax",
+    });
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${origin}/admin/auth/callback?next=${encodeURIComponent(next)}`,
+      redirectTo: `${origin}/admin/auth/callback`,
       queryParams: { prompt: "select_account" },
     },
   });

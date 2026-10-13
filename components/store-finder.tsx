@@ -2,10 +2,22 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import dynamic from "next/dynamic"
 import { searchCafes } from "@/app/stores/server"
 import { StoreList } from "@/components/store-list"
-import { StoreMap } from "@/components/store-map"
 import { StoreSearch } from "@/components/store-search"
+
+const StoreMap = dynamic(
+  () => import("@/components/store-map").then((mod) => mod.StoreMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full w-full animate-pulse rounded-xl bg-muted flex items-center justify-center text-xs text-muted-foreground">
+        Loading map...
+      </div>
+    ),
+  }
+)
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUserLocation } from "@/hooks/use-user-location"
 import { getDistanceKm } from "@/lib/geo"

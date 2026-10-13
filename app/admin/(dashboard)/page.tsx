@@ -17,6 +17,7 @@ import {
   UserX,
   Filter,
 } from "lucide-react";
+import { unstable_cache } from "next/cache";
 import { requireStaff } from "@/lib/admin/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -26,6 +27,53 @@ import { Badge } from "@/components/ui/badge";
 import { OnboardingSummary } from "@/components/admin/onboarding-summary";
 import { ActiveUsersChart, type ActiveUserRecord } from "@/components/admin/active-users-chart";
 import { cn } from "@/lib/utils";
+
+interface CachedUserMetrics {
+  profilesData: {
+    id: string;
+    onboarding_completed: boolean;
+    onboarding_responses: Record<string, any> | null;
+  }[];
+  users: {
+    id: string;
+    last_sign_in_at: string | null;
+    created_at: string;
+    is_anonymous: boolean;
+    email: string | null;
+  }[];
+}
+
+const getCachedUserMetrics = unstable_cache(
+  async (): Promise<CachedUserMetrics> => {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return { profilesData: [], users: [] };
+    }
+    try {
+      const adminClient = createAdminClient();
+      const [profilesRes, authUsersRes] = await Promise.all([
+        adminClient
+          .from("Profile")
+          .select("id, onboarding_completed, onboarding_responses"),
+        adminClient.auth.admin.listUsers({ perPage: 1000 }),
+      ]);
+
+      const profiles = (profilesRes.data ?? []) as CachedUserMetrics["profilesData"];
+      const users = (authUsersRes.data?.users ?? []).map((u) => ({
+        id: u.id,
+        last_sign_in_at: u.last_sign_in_at ?? null,
+        created_at: u.created_at,
+        is_anonymous: Boolean(u.is_anonymous || !u.email),
+        email: u.email ?? null,
+      }));
+
+      return { profilesData: profiles, users };
+    } catch {
+      return { profilesData: [], users: [] };
+    }
+  },
+  ["admin-dashboard-user-metrics"],
+  { revalidate: 60, tags: ["admin-user-metrics"] }
+);
 
 interface AdminDashboardPageProps {
   searchParams?: Promise<{
@@ -85,41 +133,20 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
       .order("priority", { ascending: true }),
   ]);
 
-  // Fetch user profile onboarding responses and auth users via service role if available
-  let profilesData: {
-    id: string;
-    onboarding_completed: boolean;
-    onboarding_responses: Record<string, any> | null;
-  }[] = [];
+  // Fetch user profile onboarding responses and auth users via cached metrics helper
+  let profilesData: CachedUserMetrics["profilesData"] = [];
   let activeUserRecords: ActiveUserRecord[] = [];
 
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    try {
-      const adminClient = createAdminClient();
-      const [profilesRes, authUsersRes] = await Promise.all([
-        adminClient
-          .from("Profile")
-          .select("id, onboarding_completed, onboarding_responses"),
-        staff.role === "admin"
-          ? adminClient.auth.admin.listUsers({ perPage: 1000 })
-          : Promise.resolve({ data: { users: [] }, error: null }),
-      ]);
-      if (profilesRes.data) profilesData = profilesRes.data as any;
+    const cachedMetrics = await getCachedUserMetrics();
+    profilesData = cachedMetrics.profilesData;
+    const profileSet = new Set(profilesData.map((p) => p.id));
 
-      const profileSet = new Set(profilesData.map((p) => p.id));
-
-      if (authUsersRes.data?.users) {
-        activeUserRecords = authUsersRes.data.users.map((u) => ({
-          id: u.id,
-          last_sign_in_at: u.last_sign_in_at ?? null,
-          created_at: u.created_at,
-          is_anonymous: Boolean(u.is_anonymous || !u.email),
-          has_profile: profileSet.has(u.id),
-          email: u.email ?? null,
-        }));
-      }
-    } catch {
-      // Service role fallback
+    if (staff.role === "admin" && cachedMetrics.users.length > 0) {
+      activeUserRecords = cachedMetrics.users.map((u) => ({
+        ...u,
+        has_profile: profileSet.has(u.id),
+      }));
     }
   }
 
