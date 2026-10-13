@@ -36,6 +36,7 @@ RETURNS TABLE (
   images_url text[]
 )
 LANGUAGE sql
+SET search_path = public, extensions, postgis
 AS $$
   select
     c.id,
