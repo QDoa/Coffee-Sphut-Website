@@ -1,14 +1,39 @@
 "use client";
 
 import { useActionState, Suspense } from "react";
+import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Coffee, Lock, Mail, Loader2 } from "lucide-react";
-import { loginAction } from "../actions";
+import { googleLoginAction, loginAction } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GoogleIcon } from "@/components/admin/google-icon";
+
+const URL_ERROR_MESSAGES: Record<string, string> = {
+  unauthorized: "Please sign in with an authorized staff account.",
+  forbidden: "You do not have administrative permissions for that page.",
+  not_staff:
+    "This Google account isn't on the Coffee Sphut staff list. Ask an admin to invite you.",
+  oauth_failed: "Google sign-in was cancelled or failed. Please try again.",
+};
+
+function GoogleSubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" variant="outline" className="w-full" disabled={pending}>
+      {pending ? (
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      ) : (
+        <GoogleIcon className="mr-2 h-4 w-4" />
+      )}
+      Continue with Google
+    </Button>
+  );
+}
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -21,12 +46,7 @@ function LoginForm() {
   >(loginAction, null);
 
   const errorMessage =
-    state?.error ||
-    (urlError === "unauthorized"
-      ? "Please sign in with an authorized staff account."
-      : urlError === "forbidden"
-      ? "You do not have administrative permissions for that page."
-      : null);
+    state?.error || (urlError ? URL_ERROR_MESSAGES[urlError] ?? null : null);
 
   return (
     <Card className="shadow-lg border-muted">
@@ -41,16 +61,34 @@ function LoginForm() {
           Sign in with your team credentials to access the management portal.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {errorMessage && (
+          <div
+            role="alert"
+            className="rounded-md bg-destructive/15 p-3 text-sm text-destructive font-medium"
+          >
+            {errorMessage}
+          </div>
+        )}
+
+        <form action={googleLoginAction}>
+          <input type="hidden" name="redirectTo" value={redirectTo} />
+          <GoogleSubmitButton />
+        </form>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">
+              or continue with email
+            </span>
+          </div>
+        </div>
+
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="redirectTo" value={redirectTo} />
-
-          {errorMessage && (
-            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive font-medium">
-              {errorMessage}
-            </div>
-          )}
-
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <div className="relative">

@@ -401,7 +401,8 @@ export function TeamManager({
                     />
                     <p className="text-[11px] text-muted-foreground">
                       If the user already has an account with this email, they will be granted team
-                      access immediately. If not, a Supabase signup invite will be sent.
+                      access immediately. If not, a Supabase signup invite will be sent. They can
+                      also sign in with Google using this same email.
                     </p>
                   </div>
 
