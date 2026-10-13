@@ -43,7 +43,7 @@ export function ActiveUsersChart({
   className,
 }: ActiveUsersChartProps) {
   const [metricCategory, setMetricCategory] = useState<"signups" | "active">("signups");
-  const [viewMode, setViewMode] = useState<"weekly" | "monthly" | "compare">("weekly");
+  const [viewMode, setViewMode] = useState<"weekly" | "monthly">("weekly");
   const [hideAnonymous, setHideAnonymous] = useState(initialHideAnonymous);
   const [onlyProfiles, setOnlyProfiles] = useState(initialOnlyProfiles);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -319,14 +319,6 @@ export function ActiveUsersChart({
     return `${acc} C ${cpX1} ${prev.y}, ${cpX2} ${curr.y}, ${curr.x} ${curr.y}`;
   }, "");
 
-  // Area fill under curve
-  const areaD =
-    points.length > 0
-      ? `${pathD} L ${points[points.length - 1].x} ${paddingTop + usableHeight} L ${points[0].x} ${
-          paddingTop + usableHeight
-        } Z`
-      : "";
-
   return (
     <Card className={cn("overflow-hidden border shadow-sm", className)}>
       <CardHeader className="flex flex-col gap-4 border-b pb-4">
@@ -416,13 +408,9 @@ export function ActiveUsersChart({
             {isSignups
               ? viewMode === "monthly"
                 ? "Monthly Sign-ups Breakdown (Past 8 Months)"
-                : viewMode === "compare"
-                ? "Sign-ups Growth Curve (Weekly Spline)"
                 : "Weekly Sign-ups Breakdown (Past 8 Weeks)"
               : viewMode === "monthly"
               ? "Monthly Active Users (Past 8 Months)"
-              : viewMode === "compare"
-              ? "Active User Trendline (WAU with Spline)"
               : "Weekly Active Users (Past 8 Weeks)"}
           </div>
 
@@ -511,18 +499,6 @@ export function ActiveUsersChart({
                 className="h-7 px-2.5 text-xs font-medium"
               >
                 Monthly
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={viewMode === "compare" ? "secondary" : "ghost"}
-                onClick={() => {
-                  setViewMode("compare");
-                  setHoveredIndex(null);
-                }}
-                className="h-7 px-2.5 text-xs font-medium"
-              >
-                Dual Trend
               </Button>
             </div>
           </div>
@@ -718,13 +694,9 @@ export function ActiveUsersChart({
                 {isSignups
                   ? viewMode === "monthly"
                     ? "Monthly Registrations (Past 8 Months)"
-                    : viewMode === "compare"
-                    ? "Sign-ups Growth Trendline (Weekly)"
                     : "Weekly Registrations (Past 8 Weeks)"
                   : viewMode === "monthly"
                   ? "Monthly Active Users (Past 8 Months)"
-                  : viewMode === "compare"
-                  ? "Active User Trendline (WAU with Spline)"
                   : "Weekly Active Users (Past 8 Weeks)"}
               </span>
               <span className="text-[11px] text-muted-foreground">• Hover bars for details</span>
@@ -789,20 +761,6 @@ export function ActiveUsersChart({
                     stopOpacity="0.75"
                   />
                 </linearGradient>
-
-                {/* Area Gradient */}
-                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="0%"
-                    stopColor={isSignups ? "#10b981" : "var(--color-primary, #6366f1)"}
-                    stopOpacity="0.25"
-                  />
-                  <stop
-                    offset="100%"
-                    stopColor={isSignups ? "#10b981" : "var(--color-primary, #6366f1)"}
-                    stopOpacity="0.0"
-                  />
-                </linearGradient>
               </defs>
 
               {/* Horizontal Gridlines & Y-Axis values */}
@@ -830,11 +788,6 @@ export function ActiveUsersChart({
                   </g>
                 );
               })}
-
-              {/* Shaded Area Under Trend Curve (In compare mode) */}
-              {viewMode === "compare" && areaD && (
-                <path d={areaD} fill="url(#areaGradient)" className="transition-all duration-300" />
-              )}
 
               {/* Bars for Each Time Bucket */}
               {activeDataset.map((d, index) => {

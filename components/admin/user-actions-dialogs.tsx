@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { RotateCcw, Award, SlidersHorizontal, Loader2 } from "lucide-react";
+import { RotateCcw, Award, SlidersHorizontal, Loader2, Shield, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,10 @@ import {
   adjustPunchCountAction,
   voidRewardAction,
 } from "@/app/admin/(dashboard)/users/actions";
+import {
+  addExistingUserToTeamAction,
+  removeStaffMemberAction,
+} from "@/app/admin/(dashboard)/team/actions";
 
 export function ResetOnboardingButton({ userId, userName }: { userId: string; userName?: string }) {
   const router = useRouter();
@@ -273,6 +278,145 @@ export function VoidRewardButton({
             Confirm Void
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function UserTeamRoleButton({
+  userId,
+  userEmail,
+  currentRole,
+}: {
+  userId: string;
+  userEmail: string;
+  currentRole?: "admin" | "editor" | null;
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [role, setRole] = useState<"admin" | "editor">(currentRole || "editor");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isTeamMember = Boolean(currentRole);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const res = await addExistingUserToTeamAction(userId, role);
+    setLoading(false);
+    if (res?.error) {
+      setError(res.error);
+    } else {
+      setOpen(false);
+      router.refresh();
+    }
+  };
+
+  const handleRemove = async () => {
+    if (!confirm(`Are you sure you want to remove team access for ${userEmail}?`)) return;
+    setLoading(true);
+    setError(null);
+    const res = await removeStaffMemberAction(userId);
+    setLoading(false);
+    if (res?.error) {
+      setError(res.error);
+    } else {
+      setOpen(false);
+      router.refresh();
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {isTeamMember ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 border-primary/40 text-primary bg-primary/5 hover:bg-primary/10"
+          >
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            Team: {currentRole === "admin" ? "Admin" : "Editor"}
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" className="gap-1.5 text-primary">
+            <Shield className="h-4 w-4" /> Add to Team
+          </Button>
+        )}
+      </DialogTrigger>
+      <DialogContent>
+        <form onSubmit={handleSave}>
+          <DialogHeader>
+            <DialogTitle>
+              {isTeamMember ? "Manage Team Permissions" : "Add Existing User to Team"}
+            </DialogTitle>
+            <DialogDescription>
+              {isTeamMember
+                ? `Update dashboard role or revoke permissions for ${userEmail}.`
+                : `Grant dashboard access to ${userEmail} by adding them to the staff team.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {error && (
+            <div className="p-3 my-2 text-sm rounded bg-destructive/15 text-destructive border border-destructive/20">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-4 py-4">
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-1">
+              <span className="text-xs text-muted-foreground block">Target User</span>
+              <p className="text-sm font-medium">{userEmail}</p>
+              <p className="text-xs font-mono text-muted-foreground">{userId}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="team-role">Role</Label>
+              <select
+                id="team-role"
+                value={role}
+                onChange={(e) => setRole(e.target.value as "admin" | "editor")}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="editor">Editor (Content, Cafes & Recipes)</option>
+                <option value="admin">Admin (Full access + Deletes & Team)</option>
+              </select>
+            </div>
+          </div>
+
+          <DialogFooter className="flex items-center justify-between sm:justify-between w-full">
+            {isTeamMember ? (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleRemove}
+                disabled={loading}
+              >
+                Revoke Access
+              </Button>
+            ) : (
+              <div />
+            )}
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                {isTeamMember ? "Save Role" : "Add to Team"}
+              </Button>
+            </div>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
