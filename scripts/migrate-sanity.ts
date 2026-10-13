@@ -117,7 +117,8 @@ async function uploadToMediaBucket(sourceUrl: string, storagePath: string): Prom
       console.warn(`⚠️ Failed to download image from ${sourceUrl}: HTTP ${res.status}`);
       return sourceUrl;
     }
-    const contentType = res.headers.get("content-type") || "image/jpeg";
+    const rawContentType = res.headers.get("content-type") || "image/jpeg";
+    const contentType = rawContentType.split(";")[0].trim().toLowerCase();
     const arrayBuffer = await res.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
