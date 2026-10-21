@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import dynamic from "next/dynamic"
+import { List, Map as MapIcon } from "lucide-react"
 import { searchCafes } from "@/app/stores/server"
 import { StoreList } from "@/components/store-list"
 import { StoreSearch } from "@/components/store-search"
@@ -40,6 +41,7 @@ export function StoreFinder({ cafes: initialCafes }: StoreFinderProps) {
   const [query, setQuery] = useState(() => searchParams.get("q") ?? "")
   const [results, setResults] = useState<Cafe[]>(initialCafes)
   const [selectedCafeId, setSelectedCafeId] = useState<Cafe["id"] | null>(null)
+  const [mobileView, setMobileView] = useState<"list" | "map">("list")
   const [isPending, startTransition] = useTransition()
 
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
@@ -130,38 +132,89 @@ export function StoreFinder({ cafes: initialCafes }: StoreFinderProps) {
   }, [cafesWithDistance, selectedCafeId])
 
   return (
-    <div className="flex flex-col gap-4 md:h-[70vh] md:flex-row">
-      <div className="order-2 flex min-h-0 flex-col gap-3 md:order-1 md:h-full md:w-2/5 md:min-w-[320px]">
-        <StoreSearch
-          value={query}
-          onChange={setQuery}
-          onClear={() => setQuery("")}
-          isPending={isPending}
-          resultCount={cafesWithDistance.length}
-        />
-        <div
-          aria-busy={isPending}
+    <div className="flex flex-col gap-4 md:h-[70vh]">
+      {/* Mobile View Toggle Switch */}
+      <div className="flex md:hidden items-center justify-center p-1 bg-muted rounded-xl gap-1">
+        <button
+          type="button"
+          onClick={() => setMobileView("list")}
           className={cn(
-            "flex min-h-0 flex-1 flex-col transition-opacity",
-            isPending && "opacity-60"
+            "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors",
+            mobileView === "list"
+              ? "bg-background text-foreground shadow-xs font-semibold"
+              : "text-muted-foreground hover:text-foreground"
           )}
         >
-          <StoreList
+          <List className="h-4 w-4" />
+          <span>List ({cafesWithDistance.length})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileView("map")}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors",
+            mobileView === "map"
+              ? "bg-background text-foreground shadow-xs font-semibold"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <MapIcon className="h-4 w-4" />
+          <span>Map View</span>
+        </button>
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
+        {/* List & Search View */}
+        <div
+          className={cn(
+            "flex min-h-0 flex-col gap-3 md:h-full md:w-2/5 md:min-w-[320px]",
+            mobileView === "list" ? "flex" : "hidden md:flex"
+          )}
+        >
+          <StoreSearch
+            value={query}
+            onChange={setQuery}
+            onClear={() => setQuery("")}
+            isPending={isPending}
+            resultCount={cafesWithDistance.length}
+          />
+          <div
+            aria-busy={isPending}
+            className={cn(
+              "flex min-h-0 flex-1 flex-col transition-opacity",
+              isPending && "opacity-60"
+            )}
+          >
+            <StoreList
+              cafes={cafesWithDistance}
+              selectedCafeId={activeSelectedCafeId}
+              onSelectCafe={(id) => {
+                setSelectedCafeId(id)
+                // If on mobile and user clicks a cafe, switch to map view to show where it is!
+                if (window.innerWidth < 768 && id !== null) {
+                  setMobileView("map")
+                }
+              }}
+              userLocation={userLocation}
+              query={query}
+            />
+          </div>
+        </div>
+
+        {/* Map View */}
+        <div
+          className={cn(
+            "h-[65vh] min-h-[400px] md:h-full md:flex-1 rounded-xl overflow-hidden border border-border",
+            mobileView === "map" ? "block" : "hidden md:block"
+          )}
+        >
+          <StoreMap
             cafes={cafesWithDistance}
             selectedCafeId={activeSelectedCafeId}
             onSelectCafe={setSelectedCafeId}
             userLocation={userLocation}
-            query={query}
           />
         </div>
-      </div>
-      <div className="order-1 h-[400px] md:order-2 md:h-full md:flex-1">
-        <StoreMap
-          cafes={cafesWithDistance}
-          selectedCafeId={activeSelectedCafeId}
-          onSelectCafe={setSelectedCafeId}
-          userLocation={userLocation}
-        />
       </div>
     </div>
   )

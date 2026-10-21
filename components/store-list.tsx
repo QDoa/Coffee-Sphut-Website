@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import Image from "next/image"
-import { MapPin } from "lucide-react"
+import { MapPin, Navigation } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { getDistanceKm, formatDistanceKm } from "@/lib/geo"
@@ -86,15 +86,26 @@ export function StoreList({
                   </div>
                 )}
               </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">{cafe.name}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-foreground">{cafe.name}</p>
                 <p className="truncate text-xs text-muted-foreground">{cafe.address}</p>
                 {userLocation && distanceKm !== null && (
-                  <p className="mt-0.5 text-xs text-muted-foreground">
+                  <p className="mt-0.5 text-xs font-medium text-primary">
                     {formatDistanceKm(distanceKm)} away
                   </p>
                 )}
               </div>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${cafe.latitude},${cafe.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="shrink-0 p-2 text-muted-foreground hover:text-primary transition-colors rounded-lg hover:bg-primary/10"
+                aria-label={`Get directions to ${cafe.name}`}
+                title="Get directions in Google Maps"
+              >
+                <Navigation className="h-4 w-4" />
+              </a>
             </CardContent>
           </Card>
         )

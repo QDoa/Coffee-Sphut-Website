@@ -11,6 +11,7 @@ export interface EventItem {
   isVirtual?: boolean;
   registrationLink: string;
   instagramPostLink?: string;
+  googleCalendarUrl?: string;
   image: string;
   badge?: string;
   targetAudience?: string[];
@@ -42,6 +43,8 @@ export const upcomingEvents: EventItem[] = [
     isVirtual: true,
     registrationLink: "https://forms.gle/uUaBxa5t6x7AaCdw8",
     instagramPostLink: "https://www.instagram.com/p/DehgGfmsVkZ/",
+    googleCalendarUrl:
+      "https://calendar.google.com/calendar/render?action=TEMPLATE&text=The+Coffee+Table+to+discuss+Coffee+Sphut&dates=20261111T150000Z/20261111T163000Z&details=Exclusive+Coffee+Sphut+app+showcase+and+community+walkthrough.+Register+here:+https://forms.gle/uUaBxa5t6x7AaCdw8&location=Virtual+(Google+Meet)",
     image: "/images/event-the-coffee-table.jpg",
     badge: "Upcoming Showcase",
     targetAudience: [
@@ -141,4 +144,23 @@ export const vendorFAQs = [
       question: "Can I track performance of the loyalty program?",
       answer: "Yes!  You’ll have access to basic stats, like stamps redeemed, current stamped number and repeat customers. This helps you see what’s working and adjust rewards if needed.",
   },
-]
+];
+
+export const userFAQs = [
+  {
+    question: "Is Coffee Sphut free to use?",
+    answer: "Yes, Coffee Sphut is 100% free for coffee enthusiasts to discover cafés, explore curated stories, save their favorite spots, and collect digital loyalty stamps.",
+  },
+  {
+    question: "How does the digital loyalty program work?",
+    answer: "Whenever you order at a partner café, open your Coffee Sphut app and show your personal loyalty QR code to the barista or cashier. They will stamp your digital card, and once complete, you unlock a reward or discount at that café.",
+  },
+  {
+    question: "Can I suggest my favorite coffee shop?",
+    answer: "Absolutely! We love uncovering local gems. You can submit café recommendations through our community form or message us on Instagram @coffeesphut, and our curation team will review it.",
+  },
+  {
+    question: "What cities does Coffee Sphut currently cover?",
+    answer: "We are actively curating cafés across Nigeria (with deep coverage in Lagos and Abuja) and continuously expanding to more coffee communities across Africa.",
+  },
+];

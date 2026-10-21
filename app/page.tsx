@@ -1,8 +1,10 @@
 import Image from "next/image";
+import Link from "next/link";
 import {
   ArrowRight,
   BookOpen,
   Calendar,
+  CalendarPlus,
   Clock,
   Database,
   Instagram,
@@ -20,7 +22,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Marquee } from "@/components/ui/marquee";
-import { currentPartners, jobPostings, upcomingEvents, vendorBenefits, vendorFAQs } from "./constants";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  currentPartners,
+  jobPostings,
+  upcomingEvents,
+  userFAQs,
+  vendorBenefits,
+  vendorFAQs,
+} from "./constants";
 
 export default function Home() {
   return (
@@ -32,6 +42,10 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
             <div className="flex flex-col justify-center">
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-primary mb-6">
+                <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Discover 50+ specialty cafés & local roasters
+              </div>
               <h1 className="text-balance text-5xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
                 Discover coffee like never before
               </h1>
@@ -39,6 +53,56 @@ export default function Home() {
                 Coffee Sphut brings you curated coffee content and helps you find the best select coffee stores around
                 you. Your perfect cup is just a tap away.
               </p>
+
+              {/* Hero Dual CTAs */}
+              <div className="mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
+                <TrackedLink
+                  href="https://apps.apple.com/us/app/coffee-sphut/id6759900667"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  eventName="Hero Download iOS"
+                >
+                  <Button size="lg" className="h-12 px-5 text-base gap-2 shadow-sm">
+                    <Image
+                      src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
+                      alt="Apple logo"
+                      width={22}
+                      height={22}
+                    />
+                    <span>Get on iOS</span>
+                  </Button>
+                </TrackedLink>
+
+                <TrackedLink
+                  href="https://play.google.com/store/apps/details?id=com.coffeesphut.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  eventName="Hero Download Android"
+                >
+                  <Button size="lg" variant="outline" className="h-12 px-5 text-base gap-2 border-border shadow-sm">
+                    <Image
+                      src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/play_store.png"
+                      alt="Google Play Store logo"
+                      width={22}
+                      height={22}
+                    />
+                    <span>Get on Android</span>
+                  </Button>
+                </TrackedLink>
+
+                <Button
+                  asChild
+                  size="lg"
+                  variant="ghost"
+                  className="h-12 px-4 text-base gap-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Link href="/stores">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <span>Find Cafés</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
             </div>
             <div className="relative flex items-center justify-center lg:justify-end">
               <HeroCarousel />
@@ -314,6 +378,25 @@ export default function Home() {
                             </Button>
                           </TrackedLink>
 
+                          {event.googleCalendarUrl && (
+                            <TrackedLink
+                              href={event.googleCalendarUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              eventName="Event Add to Calendar"
+                              className="flex-1 sm:flex-initial"
+                            >
+                              <Button
+                                size="lg"
+                                variant="outline"
+                                className="w-full sm:w-auto text-base gap-2 border-border"
+                              >
+                                <CalendarPlus className="h-4 w-4" />
+                                <span>Add to Calendar</span>
+                              </Button>
+                            </TrackedLink>
+                          )}
+
                           {event.instagramPostLink && (
                             <TrackedLink
                               href={event.instagramPostLink}
@@ -395,7 +478,7 @@ export default function Home() {
 
           <div className="mt-12 flex justify-center">
             <TrackedLink
-              href="https://docs.google.com/forms/d/e/1FAIpQLSf0NIlA7OQJWSNzjjKGbE1CInV9Ff5MQI65y5IN8yDXBRHITg/viewform?usp=publish-editor"
+              href="https://docs.google.com/forms/d/e/1FAIpQLSf0NIlA7OQJWSNzjjKGbE1CInV9Ff5MQI65y5IN8yDXBRHITg/viewform"
               target="_blank"
               rel="noopener noreferrer"
               eventName="Signup"
@@ -442,22 +525,57 @@ export default function Home() {
       {/* FAQs Section */}
       <section id="FAQs" className="border-b border-border bg-card py-16 sm:py-24">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-center text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-            FAQs
-          </h2>
-          <h3 className="text-balance text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
-            For Partners
-          </h3>
-          <Accordion type="single" collapsible className="w-full mt-6">
-          {vendorFAQs.map((faq, index) => (
-            <AccordionItem value={'item'+index.toString()} key={index}>
-              <AccordionTrigger>{faq.question}</AccordionTrigger>
-              <AccordionContent>
-                {faq.answer}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-          </Accordion>
+          <div className="text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-card-foreground sm:text-4xl lg:text-5xl">
+              Frequently Asked Questions
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
+              Everything you need to know about using Coffee Sphut and joining our partner network.
+            </p>
+          </div>
+
+          <Tabs defaultValue="consumers" className="w-full mt-10">
+            <div className="flex justify-center">
+              <TabsList className="h-11 p-1 bg-muted rounded-full">
+                <TabsTrigger value="consumers" className="rounded-full px-5 text-sm font-medium">
+                  For Coffee Lovers
+                </TabsTrigger>
+                <TabsTrigger value="partners" className="rounded-full px-5 text-sm font-medium">
+                  For Café Partners
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="consumers" className="mt-8">
+              <Accordion type="single" collapsible className="w-full">
+                {userFAQs.map((faq, index) => (
+                  <AccordionItem value={`user-${index}`} key={index}>
+                    <AccordionTrigger className="text-left font-medium text-foreground">
+                      {faq.question}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground leading-relaxed">
+                      {faq.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </TabsContent>
+
+            <TabsContent value="partners" className="mt-8">
+              <Accordion type="single" collapsible className="w-full">
+                {vendorFAQs.map((faq, index) => (
+                  <AccordionItem value={`vendor-${index}`} key={index}>
+                    <AccordionTrigger className="text-left font-medium text-foreground">
+                      {faq.question}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground leading-relaxed">
+                      {faq.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </TabsContent>
+          </Tabs>
         </div>
       </section>
 
@@ -569,16 +687,22 @@ export default function Home() {
               <span className="text-lg font-bold text-card-foreground">Coffee Sphut</span>
             </div>
             <p className="text-sm text-muted-foreground">© 2026 Coffee Sphut. All rights reserved.</p>
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-              <div className="flex gap-6">
-                <a href="/privacy" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center">
+              <div className="flex flex-wrap gap-4 sm:gap-6 justify-center">
+                <Link href="/stores" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
+                  Find Cafés
+                </Link>
+                <Link href="/#events" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
+                  Events
+                </Link>
+                <Link href="/#partners" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
+                  Partners
+                </Link>
+                <Link href="/privacy" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
                   Privacy Policy
-                </a>
-                <a href="#partners" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
-                  Contact Us
-                </a>
+                </Link>
               </div>
-              <div className="flex gap-5">
+              <div className="flex gap-4">
                 <a href="https://www.instagram.com/coffeesphut/" className="text-muted-foreground transition-colors hover:text-card-foreground" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
                   <Instagram className="h-5 w-5" />
                 </a>

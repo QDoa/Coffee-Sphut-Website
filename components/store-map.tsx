@@ -12,7 +12,7 @@ import Map, {
 import type { MapMouseEvent } from "react-map-gl/mapbox"
 import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
-import { MapPin, LocateFixed } from "lucide-react"
+import { MapPin, LocateFixed, Navigation } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getDistanceKm, formatDistanceKm } from "@/lib/geo"
 import type { UserLocation } from "@/hooks/use-user-location"
@@ -322,12 +322,23 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
               onClose={() => onSelectCafe(null)}
               closeOnClick={false}
             >
-              <div className="max-w-[200px] space-y-1">
-                <p className="text-sm font-semibold">{popupCafe.name}</p>
+              <div className="max-w-[220px] space-y-1.5 p-1">
+                <p className="text-sm font-semibold text-foreground">{popupCafe.name}</p>
                 <p className="text-xs text-muted-foreground">{popupCafe.address}</p>
                 {popupCafeDistance && (
-                  <p className="text-xs text-muted-foreground">{popupCafeDistance}</p>
+                  <p className="text-xs font-medium text-primary">{popupCafeDistance} away</p>
                 )}
+                <div className="pt-1 border-t border-border/60">
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${popupCafe.latitude},${popupCafe.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                  >
+                    <Navigation className="h-3 w-3" />
+                    <span>Get Directions</span>
+                  </a>
+                </div>
               </div>
             </Popup>
           )}

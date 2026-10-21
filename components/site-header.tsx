@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Menu } from "lucide-react";
@@ -16,6 +16,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useScrolled } from "@/hooks/use-scrolled";
 import { cn } from "@/lib/utils";
 
@@ -84,6 +85,32 @@ function StoreBadges({ fullWidth = false }: { fullWidth?: boolean }) {
 export function SiteHeader() {
   const scrolled = useScrolled(8);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>("");
+
+  useEffect(() => {
+    const sectionIds = ["features", "app", "events", "partners", "download"];
+    const handleScroll = () => {
+      const scrollY = window.scrollY + 200;
+      for (const id of sectionIds) {
+        const el = document.getElementById(id);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollY >= top && scrollY < top + height) {
+            setActiveSection(id);
+            return;
+          }
+        }
+      }
+      if (window.scrollY < 200) {
+        setActiveSection("");
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <header
@@ -108,19 +135,30 @@ export function SiteHeader() {
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-6 md:flex">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {link.label}
-              </Link>
-            ))}
+          <nav className="hidden items-center gap-1 lg:gap-2 md:flex">
+            {NAV_LINKS.map((link) => {
+              const targetId = link.href.replace("/#", "");
+              const isActive = activeSection === targetId;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "text-sm font-medium transition-colors px-3 py-1.5 rounded-full",
+                    isActive
+                      ? "bg-primary/10 text-primary font-semibold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle className="size-10" />
+
             <Button
               asChild
               size="default"
@@ -146,28 +184,33 @@ export function SiteHeader() {
                 </Button>
               </SheetTrigger>
 
-              <SheetContent side="right" className="w-[85vw] sm:max-w-sm">
-                <SheetHeader>
-                  <SheetTitle>Menu</SheetTitle>
-                  <SheetDescription className="sr-only">
-                    Browse Coffee Sphut pages and download the app.
-                  </SheetDescription>
-                </SheetHeader>
+              <SheetContent side="right" className="w-[85vw] sm:max-w-sm flex flex-col justify-between">
+                <div>
+                  <SheetHeader>
+                    <div className="flex items-center justify-between pr-6">
+                      <SheetTitle>Menu</SheetTitle>
+                      <ThemeToggle />
+                    </div>
+                    <SheetDescription className="sr-only">
+                      Browse Coffee Sphut pages and download the app.
+                    </SheetDescription>
+                  </SheetHeader>
 
-                <nav className="flex flex-col gap-1">
-                  {NAV_LINKS.map((link) => (
-                    <SheetClose asChild key={link.href}>
-                      <Link
-                        href={link.href}
-                        className="flex min-h-14 items-center rounded-lg px-3 text-base font-medium text-foreground transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                      >
-                        {link.label}
-                      </Link>
-                    </SheetClose>
-                  ))}
-                </nav>
+                  <nav className="flex flex-col gap-1 mt-6">
+                    {NAV_LINKS.map((link) => (
+                      <SheetClose asChild key={link.href}>
+                        <Link
+                          href={link.href}
+                          className="flex min-h-14 items-center rounded-lg px-3 text-base font-medium text-foreground transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        >
+                          {link.label}
+                        </Link>
+                      </SheetClose>
+                    ))}
+                  </nav>
+                </div>
 
-                <SheetFooter>
+                <SheetFooter className="mt-auto pt-6 flex flex-col gap-3">
                   <Button asChild className="h-12 w-full text-base" onClick={() => track("Find Coffee")}>
                     <Link href="/stores">Find Coffee</Link>
                   </Button>
