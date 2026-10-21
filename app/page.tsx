@@ -196,23 +196,25 @@ export default function Home() {
                   <CardContent className="p-0">
                     <div className="grid gap-0 lg:grid-cols-12">
                       {/* Event Poster / Image */}
-                      <div className="relative aspect-square lg:aspect-auto lg:col-span-5 bg-muted/40 overflow-hidden flex items-center justify-center">
-                        <Image
-                          src={event.image}
-                          alt={event.title}
-                          width={640}
-                          height={640}
-                          className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
-                          priority
-                        />
-                        {event.badge && (
-                          <div className="absolute top-4 left-4">
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-background/90 backdrop-blur-md px-3 py-1 text-xs font-semibold text-primary shadow-sm border border-border/50">
-                              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                              {event.badge}
-                            </span>
-                          </div>
-                        )}
+                      <div className="relative aspect-square lg:aspect-auto lg:col-span-5 bg-muted/30 overflow-hidden flex items-center justify-center p-4 sm:p-6 lg:p-6">
+                        <div className="relative w-full max-w-[420px] aspect-square overflow-hidden rounded-2xl border border-border/50 shadow-sm">
+                          <Image
+                            src={event.image}
+                            alt={event.title}
+                            fill
+                            sizes="(max-width: 1024px) 100vw, 420px"
+                            className="object-cover transition-transform duration-500 hover:scale-105"
+                            priority
+                          />
+                          {event.badge && (
+                            <div className="absolute top-3.5 left-3.5 z-10">
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-background/90 backdrop-blur-md px-3 py-1 text-xs font-semibold text-primary shadow-sm border border-border/50">
+                                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                {event.badge}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Event Details */}
@@ -240,34 +242,34 @@ export default function Home() {
                           )}
 
                           {/* Quick details pills */}
-                          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                            <div className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-card/50 p-3">
+                          <div className="mt-6 flex flex-wrap gap-3">
+                            <div className="flex flex-1 min-w-[210px] items-center gap-2.5 rounded-lg border border-border/60 bg-card/50 p-3">
                               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
                                 <Calendar className="h-4 w-4" />
                               </div>
-                              <div className="min-w-0">
+                              <div>
                                 <p className="text-xs text-muted-foreground">Date</p>
-                                <p className="text-sm font-semibold text-foreground truncate">{event.date}</p>
+                                <p className="text-sm font-semibold text-foreground">{event.date}</p>
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-card/50 p-3">
+                            <div className="flex flex-1 min-w-[170px] items-center gap-2.5 rounded-lg border border-border/60 bg-card/50 p-3">
                               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
                                 <Clock className="h-4 w-4" />
                               </div>
-                              <div className="min-w-0">
+                              <div>
                                 <p className="text-xs text-muted-foreground">Time</p>
-                                <p className="text-sm font-semibold text-foreground truncate">{event.time}</p>
+                                <p className="text-sm font-semibold text-foreground">{event.time}</p>
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-card/50 p-3">
+                            <div className="flex flex-1 min-w-[210px] items-center gap-2.5 rounded-lg border border-border/60 bg-card/50 p-3">
                               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
                                 <MapPin className="h-4 w-4" />
                               </div>
-                              <div className="min-w-0">
+                              <div>
                                 <p className="text-xs text-muted-foreground">Location</p>
-                                <p className="text-sm font-semibold text-foreground truncate">{event.location}</p>
+                                <p className="text-sm font-semibold text-foreground">{event.location}</p>
                               </div>
                             </div>
                           </div>
