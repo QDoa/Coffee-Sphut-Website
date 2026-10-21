@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 const NAV_LINKS = [
   { label: "Features", href: "/#features" },
   { label: "App", href: "/#app" },
+  { label: "Events", href: "/#events" },
   { label: "Partners", href: "/#partners" },
   { label: "Download", href: "/#download" },
 ];

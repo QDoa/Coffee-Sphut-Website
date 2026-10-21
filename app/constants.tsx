@@ -1,5 +1,21 @@
 import { Eye, Users, TrendingUp, Trophy, Headphones } from "lucide-react";
 
+export interface EventItem {
+  id: string;
+  title: string;
+  tagline?: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  isVirtual?: boolean;
+  registrationLink: string;
+  instagramPostLink?: string;
+  image: string;
+  badge?: string;
+  targetAudience?: string[];
+}
+
 interface JobPosting {
   title: string;
   location: string;
@@ -12,6 +28,31 @@ interface VendorBenefit {
   description: string;
   icon: React.ComponentType<{ className?: string }>;
 }
+
+export const upcomingEvents: EventItem[] = [
+  {
+    id: "the-coffee-table-showcase-nov-2026",
+    title: "The Coffee Table to discuss Coffee Sphut",
+    tagline: "Exclusive App Showcase & Community Walkthrough",
+    description:
+      "We've been building towards a future where discovering cafés, connecting with the coffee community, and enjoying coffee experiences can be easier and more rewarding. Join us for an exclusive app showcase where we'll walk you through the product, the features we've been building, and the problems we're solving.",
+    date: "Wednesday, November 11, 2026",
+    time: "4:00 PM (GMT+1)",
+    location: "Virtual (Google Meet)",
+    isVirtual: true,
+    registrationLink: "https://forms.gle/uUaBxa5t6x7AaCdw8",
+    instagramPostLink: "https://www.instagram.com/p/DehgGfmsVkZ/",
+    image: "/images/event-the-coffee-table.jpg",
+    badge: "Upcoming Showcase",
+    targetAudience: [
+      "Café Owners",
+      "Baristas",
+      "Coffee Lovers",
+      "Partners & Investors",
+      "Media",
+    ],
+  },
+];
 
 export const jobPostings: JobPosting[] = [
 ];
