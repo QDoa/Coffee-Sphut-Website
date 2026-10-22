@@ -46,6 +46,8 @@ Full-repository lint has pre-existing findings in account/privacy pages, admin c
 ### Package Manager
 Use **`pnpm`**. The repo has both `npm` and `pnpm` lock files; `pnpm-lock.yaml` is the authoritative one and is what encodes the `overrides` above. Running `npm install` will not honour `pnpm-workspace.yaml` and can reintroduce conflicts.
 
+`package.json` pins pnpm to **10.28.2**. Use that version when changing the lockfile. After dependency changes, verify a clean `pnpm install --frozen-lockfile`; an existing `node_modules` directory and a successful build alone do not validate the lockfile. The public app-store links use local components, so do not reintroduce the unused `react-mobile-app-button` package and its Babel/Vite dependency tree.
+
 ### Environment Variables
 - Required at runtime: `SUPABASE_URL`, `SUPABASE_ANON_KEY` (stored in `.env.local`)
 - Development server respects `.env.local` automatically
