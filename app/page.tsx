@@ -15,6 +15,7 @@ import {
   Video,
 } from "lucide-react";
 import { HeroCarousel } from "@/components/hero-carousel";
+import { SectionReveal } from "@/components/section-reveal";
 import { SiteHeader } from "@/components/site-header";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TrackedLink } from "@/components/tracked-link";
@@ -37,80 +38,50 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       <SiteHeader />
-      
-      {/* Hero Section */}
-      <section id="hero" className="relative overflow-hidden border-b border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
-          <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
-            <div className="flex flex-col justify-center">
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-primary mb-6">
-                <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                Discover 50+ specialty cafés & local roasters
-              </div>
-              <h1 className="text-balance text-5xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
-                Discover coffee like never before
-              </h1>
-              <p className="mt-6 text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">
-                Coffee Sphut brings you curated coffee content and helps you find the best select coffee stores around
-                you. Your perfect cup is just a tap away.
+      <main id="main-content">
+        <section id="hero" className="border-b border-border">
+          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-12 lg:grid-cols-[1.1fr_1fr] lg:gap-16 lg:px-8">
+            <SectionReveal>
+              <p className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                <Coffee className="size-4" aria-hidden="true" /> Coffee,
+                community & a little curiosity
               </p>
-
-              {/* Hero Dual CTAs */}
-              <div className="mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
-                <TrackedLink
-                  href="https://apps.apple.com/us/app/coffee-sphut/id6759900667"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  eventName="Hero Download iOS"
-                >
-                  <Button size="lg" className="h-12 px-5 text-base gap-2 shadow-sm">
-                    <Image
-                      src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
-                      alt="Apple logo"
-                      width={22}
-                      height={22}
-                    />
-                    <span>Get on iOS</span>
-                  </Button>
-                </TrackedLink>
-
-                <TrackedLink
-                  href="https://play.google.com/store/apps/details?id=com.coffeesphut.app"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  eventName="Hero Download Android"
-                >
-                  <Button size="lg" variant="outline" className="h-12 px-5 text-base gap-2 border-border shadow-sm">
-                    <Image
-                      src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/play_store.png"
-                      alt="Google Play Store logo"
-                      width={22}
-                      height={22}
-                    />
-                    <span>Get on Android</span>
-                  </Button>
-                </TrackedLink>
-
-                <Button
-                  asChild
-                  size="lg"
-                  variant="ghost"
-                  className="h-12 px-4 text-base gap-2 text-muted-foreground hover:text-foreground"
-                >
+              <h1 className="max-w-2xl text-balance font-serif text-6xl leading-[1.02] tracking-[-0.045em] sm:text-7xl lg:text-[5.5rem]">
+                Find your next{" "}
+                <span className="italic text-primary">coffee spot.</span>
+              </h1>
+              <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
+                A café you haven’t tried. A story worth a read. A reason to come
+                back. Discover the coffee community around you with Coffee
+                Sphut.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-5">
+                <Button asChild size="lg" className="group h-12 px-6">
                   <Link href="/stores">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    <span>Find Cafés</span>
-                    <ArrowRight className="h-4 w-4" />
+                    Find a café{" "}
+                    <ArrowRight className="motion-safe:transition-transform motion-safe:group-hover:translate-x-1" />
                   </Link>
                 </Button>
+                <Link
+                  href="#download"
+                  className="inline-flex min-h-11 items-center gap-2 text-sm font-medium underline-offset-4 hover:underline"
+                >
+                  Get the free app <ArrowUpRight className="size-4" />
+                </Link>
               </div>
-            </div>
-            <div className="relative flex items-center justify-center lg:justify-end">
+              <div className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-5 text-xs text-muted-foreground">
+                <span>Rooted in Africa’s coffee community</span>
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="size-3.5" /> Lagos · Abuja · More to
+                  discover
+                </span>
+              </div>
+            </SectionReveal>
+            <div id="app" tabIndex={-1} className="min-w-0">
               <HeroCarousel />
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
       {/* Features Section */}
       <section id="features" className="border-b border-border bg-card py-16 sm:py-24">
