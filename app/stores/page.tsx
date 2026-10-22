@@ -1,13 +1,14 @@
-import { Suspense } from "react"
-import type { Metadata } from "next"
-import { getCafes } from "./server"
-import { StoreFinder } from "@/components/store-finder"
-import { SiteHeader } from "@/components/site-header"
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import { getCafes } from "./server";
+import { StoreFinder } from "@/components/store-finder";
+import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
   title: "Find Coffee Stores | Coffee Sphut",
-  description: "Discover coffee shops near you with Coffee Sphut's interactive store locator.",
-}
+  description:
+    "Discover coffee shops near you with Coffee Sphut's interactive store locator.",
+};
 
 function StoreFinderSkeleton() {
   return (
@@ -17,26 +18,38 @@ function StoreFinderSkeleton() {
         <div className="h-3 w-20 animate-pulse rounded bg-muted" />
         <div className="flex min-h-0 flex-1 flex-col gap-3">
           {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="h-[74px] w-full shrink-0 animate-pulse rounded-xl bg-muted" />
+            <div
+              key={index}
+              className="h-[74px] w-full shrink-0 animate-pulse rounded-xl bg-muted"
+            />
           ))}
         </div>
       </div>
       <div className="order-1 h-[400px] animate-pulse rounded-xl bg-muted md:order-2 md:h-full md:flex-1" />
     </div>
-  )
+  );
 }
 
 export default async function StoresPage() {
-  const cafes = await getCafes()
+  const cafes = await getCafes();
 
   return (
     <div className="min-h-screen">
       <SiteHeader />
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mb-6 space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Find Coffee Stores</h1>
+      <main
+        id="main-content"
+        className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8"
+      >
+        <div className="mb-8 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+            A good cup is closer than you think
+          </p>
+          <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">
+            Find your next coffee spot.
+          </h1>
           <p className="text-muted-foreground">
-            Browse the list or explore the map to find a coffee shop near you.
+            Search for a café or neighbourhood. Pick a spot, then make your way
+            there.
           </p>
         </div>
         <Suspense fallback={<StoreFinderSkeleton />}>
@@ -44,5 +57,5 @@ export default async function StoresPage() {
         </Suspense>
       </main>
     </div>
-  )
+  );
 }

@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react";
 import Map, {
   Marker,
   Popup,
@@ -8,32 +8,41 @@ import Map, {
   Source,
   Layer,
   type MapRef,
-} from "react-map-gl/mapbox"
-import type { MapMouseEvent } from "react-map-gl/mapbox"
-import type mapboxgl from "mapbox-gl"
-import "mapbox-gl/dist/mapbox-gl.css"
-import { MapPin, LocateFixed, Navigation } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { getDistanceKm, formatDistanceKm } from "@/lib/geo"
-import type { UserLocation } from "@/hooks/use-user-location"
-import type { Cafe } from "@/types/cafe"
+} from "react-map-gl/mapbox";
+import type { MapMouseEvent } from "react-map-gl/mapbox";
+import type mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+import { MapPin, LocateFixed, Navigation } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { getDistanceKm, formatDistanceKm } from "@/lib/geo";
+import type { UserLocation } from "@/hooks/use-user-location";
+import type { Cafe } from "@/types/cafe";
 
 interface StoreMapProps {
-  cafes: Cafe[]
-  selectedCafeId: Cafe["id"] | null
-  onSelectCafe: (id: Cafe["id"] | null) => void
-  userLocation: UserLocation | null
+  cafes: Cafe[];
+  selectedCafeId: Cafe["id"] | null;
+  onSelectCafe: (id: Cafe["id"] | null) => void;
+  userLocation: UserLocation | null;
 }
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 const DEFAULT_VIEW = {
-  latitude: 39.8283,
-  longitude: -98.5795,
-  zoom: 3.2,
+  latitude: 6.5244,
+  longitude: 3.3792,
+  zoom: 10,
+};
+
+function motionDuration(duration: number): number {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ? 0
+    : duration;
 }
 
-function hasValidCoordinates(coords: { latitude: number; longitude: number }): boolean {
+function hasValidCoordinates(coords: {
+  latitude: number;
+  longitude: number;
+}): boolean {
   return (
     typeof coords.latitude === "number" &&
     typeof coords.longitude === "number" &&
@@ -41,53 +50,68 @@ function hasValidCoordinates(coords: { latitude: number; longitude: number }): b
     Number.isFinite(coords.longitude) &&
     Math.abs(coords.latitude) <= 90 &&
     Math.abs(coords.longitude) <= 180
-  )
+  );
 }
 
-export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: StoreMapProps) {
-  const mapRef = useRef<MapRef>(null)
+export function StoreMap({
+  cafes,
+  selectedCafeId,
+  onSelectCafe,
+  userLocation,
+}: StoreMapProps) {
+  const mapRef = useRef<MapRef>(null);
 
   const validCafes = useMemo(
     () => cafes.filter((cafe) => hasValidCoordinates(cafe)),
-    [cafes]
-  )
+    [cafes],
+  );
 
   const initialViewState = useMemo(() => {
     if (validCafes.length > 0) {
-      const first = validCafes[0]
-      return { latitude: first.latitude, longitude: first.longitude, zoom: 11 }
+      const first = validCafes[0];
+      return { latitude: first.latitude, longitude: first.longitude, zoom: 11 };
     }
-    return DEFAULT_VIEW
-  }, [validCafes])
+    return DEFAULT_VIEW;
+  }, [validCafes]);
 
   // Fly to the user's location once resolved, unless a cafe is already selected.
   useEffect(() => {
-    if (!userLocation || !hasValidCoordinates(userLocation) || selectedCafeId !== null) return
+    if (
+      !userLocation ||
+      !hasValidCoordinates(userLocation) ||
+      selectedCafeId !== null
+    )
+      return;
     mapRef.current?.flyTo({
       center: [userLocation.longitude, userLocation.latitude],
       zoom: 12,
-      duration: 800,
-    })
-  }, [userLocation, selectedCafeId])
+      duration: motionDuration(800),
+    });
+  }, [userLocation, selectedCafeId]);
 
   useEffect(() => {
-    if (selectedCafeId === null) return
-    const selected = validCafes.find((cafe) => String(cafe.id) === String(selectedCafeId))
-    if (!selected) return
+    if (selectedCafeId === null) return;
+    const selected = validCafes.find(
+      (cafe) => String(cafe.id) === String(selectedCafeId),
+    );
+    if (!selected) return;
     mapRef.current?.flyTo({
       center: [selected.longitude, selected.latitude],
       zoom: 14,
-      duration: 800,
-    })
-  }, [selectedCafeId, validCafes])
+      duration: motionDuration(800),
+    });
+  }, [selectedCafeId, validCafes]);
 
   const popupCafe = useMemo(() => {
-    if (selectedCafeId === null) return null
-    return validCafes.find((cafe) => String(cafe.id) === String(selectedCafeId)) ?? null
-  }, [validCafes, selectedCafeId])
+    if (selectedCafeId === null) return null;
+    return (
+      validCafes.find((cafe) => String(cafe.id) === String(selectedCafeId)) ??
+      null
+    );
+  }, [validCafes, selectedCafeId]);
 
   const popupCafeDistance = useMemo(() => {
-    if (!popupCafe || !userLocation) return null
+    if (!popupCafe || !userLocation) return null;
     const distanceKm =
       popupCafe.distance_meters != null
         ? popupCafe.distance_meters / 1000
@@ -95,24 +119,24 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
             popupCafe.latitude,
             popupCafe.longitude,
             userLocation.latitude,
-            userLocation.longitude
-          )
-    return formatDistanceKm(distanceKm)
-  }, [popupCafe, userLocation])
+            userLocation.longitude,
+          );
+    return formatDistanceKm(distanceKm);
+  }, [popupCafe, userLocation]);
 
   const geojson = useMemo(() => {
     return {
       type: "FeatureCollection" as const,
       features: validCafes.map((cafe) => {
-        let distanceMeters: number | null = cafe.distance_meters ?? null
+        let distanceMeters: number | null = cafe.distance_meters ?? null;
         if (distanceMeters === null && userLocation) {
           const km = getDistanceKm(
             cafe.latitude,
             cafe.longitude,
             userLocation.latitude,
-            userLocation.longitude
-          )
-          distanceMeters = Math.round(km * 1000)
+            userLocation.longitude,
+          );
+          distanceMeters = Math.round(km * 1000);
         }
 
         return {
@@ -129,33 +153,36 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
             longitude: cafe.longitude,
             distance_meters: distanceMeters,
           },
-        }
+        };
       }),
-    }
-  }, [validCafes, userLocation])
+    };
+  }, [validCafes, userLocation]);
 
   if (!MAPBOX_TOKEN) {
-    console.debug("Missing Mapbox token. Set NEXT_PUBLIC_MAPBOX_TOKEN in your environment to enable the map.")
+    console.debug(
+      "Missing Mapbox token. Set NEXT_PUBLIC_MAPBOX_TOKEN in your environment to enable the map.",
+    );
     return (
       <div className="flex h-full min-h-[400px] w-full flex-col items-center justify-center gap-2 rounded-xl border bg-muted/30 p-6 text-center">
         <MapPin className="h-8 w-8 text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">Map unavailable</p>
         <p className="text-sm text-muted-foreground">
-          Missing Mapbox token. Set NEXT_PUBLIC_MAPBOX_TOKEN in your environment to enable the map.
+          You can still browse cafés in the list and open directions to plan
+          your visit.
         </p>
       </div>
-    )
+    );
   }
 
   const handleRecenter = () => {
-    if (!userLocation || !hasValidCoordinates(userLocation)) return
-    onSelectCafe(null)
+    if (!userLocation || !hasValidCoordinates(userLocation)) return;
+    onSelectCafe(null);
     mapRef.current?.flyTo({
       center: [userLocation.longitude, userLocation.latitude],
       zoom: 12,
-      duration: 800,
-    })
-  }
+      duration: motionDuration(800),
+    });
+  };
 
   return (
     <div className="h-full min-h-[400px] w-full overflow-hidden rounded-xl border">
@@ -168,50 +195,54 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
           mapStyle="mapbox://styles/mapbox/streets-v12"
           interactiveLayerIds={["clusters", "unclustered-point"]}
           onClick={(e: MapMouseEvent) => {
-            const map = mapRef.current
-            if (!map) return
+            const map = mapRef.current;
+            if (!map) return;
 
             const clusterFeatures = map.queryRenderedFeatures(e.point, {
               layers: ["clusters"],
-            })
+            });
             if (clusterFeatures.length > 0) {
               const feature = clusterFeatures[0] as unknown as {
-                properties?: Record<string, unknown> | null
-              }
-              const clusterId = feature.properties?.cluster_id as number | undefined
+                properties?: Record<string, unknown> | null;
+              };
+              const clusterId = feature.properties?.cluster_id as
+                | number
+                | undefined;
               if (clusterId !== undefined) {
-                const source = map.getSource("cafes") as mapboxgl.GeoJSONSource | undefined
+                const source = map.getSource("cafes") as
+                  | mapboxgl.GeoJSONSource
+                  | undefined;
                 source?.getClusterExpansionZoom(clusterId, (err, zoom) => {
-                  if (err) return
+                  if (err) return;
                   map.easeTo({
                     center: e.lngLat.toArray() as [number, number],
                     zoom: Math.min(zoom ?? map.getZoom() + 1, 16),
-                    duration: 600,
-                  })
-                })
+                    duration: motionDuration(600),
+                  });
+                });
               }
-              return
+              return;
             }
 
             const pointFeatures = map.queryRenderedFeatures(e.point, {
               layers: ["unclustered-point"],
-            })
+            });
             if (pointFeatures.length > 0) {
               const feature = pointFeatures[0] as unknown as {
-                properties?: Record<string, unknown> | null
-              }
-              const props = feature.properties ?? {}
-              const rawId = props?.id as Cafe["id"] | undefined
+                properties?: Record<string, unknown> | null;
+              };
+              const props = feature.properties ?? {};
+              const rawId = props?.id as Cafe["id"] | undefined;
               if (rawId != null) {
                 const matchedCafe = validCafes.find(
-                  (cafe) => String(cafe.id) === String(rawId)
-                )
-                onSelectCafe(matchedCafe ? matchedCafe.id : rawId)
+                  (cafe) => String(cafe.id) === String(rawId),
+                );
+                onSelectCafe(matchedCafe ? matchedCafe.id : rawId);
               }
-              return
+              return;
             }
 
-            onSelectCafe(null)
+            onSelectCafe(null);
           }}
         >
           <NavigationControl position="top-right" />
@@ -323,10 +354,16 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
               closeOnClick={false}
             >
               <div className="max-w-[220px] space-y-1.5 p-1">
-                <p className="text-sm font-semibold text-foreground">{popupCafe.name}</p>
-                <p className="text-xs text-muted-foreground">{popupCafe.address}</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {popupCafe.name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {popupCafe.address}
+                </p>
                 {popupCafeDistance && (
-                  <p className="text-xs font-medium text-primary">{popupCafeDistance} away</p>
+                  <p className="text-xs font-medium text-primary">
+                    {popupCafeDistance} away
+                  </p>
                 )}
                 <div className="pt-1 border-t border-border/60">
                   <a
@@ -358,5 +395,5 @@ export function StoreMap({ cafes, selectedCafeId, onSelectCafe, userLocation }: 
         )}
       </div>
     </div>
-  )
+  );
 }

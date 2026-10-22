@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { Search, X } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Spinner } from "@/components/ui/spinner"
+import { Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 
 interface StoreSearchProps {
   value: string;
@@ -12,7 +12,13 @@ interface StoreSearchProps {
   resultCount: number;
 }
 
-export function StoreSearch({ value, onChange, onClear, isPending, resultCount }: StoreSearchProps) {
+export function StoreSearch({
+  value,
+  onChange,
+  onClear,
+  isPending,
+  resultCount,
+}: StoreSearchProps) {
   return (
     <div className="flex flex-col gap-1.5">
       <div className="relative">
@@ -27,7 +33,7 @@ export function StoreSearch({ value, onChange, onClear, isPending, resultCount }
           onChange={(event) => onChange(event.target.value)}
           placeholder="Search by name or address"
           aria-label="Search coffee stores by name or address"
-          className="pl-9 pr-9"
+          className="h-12 rounded-xl bg-card pl-10 pr-12 text-base"
         />
         {isPending ? (
           <Spinner className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -36,15 +42,21 @@ export function StoreSearch({ value, onChange, onClear, isPending, resultCount }
             type="button"
             onClick={onClear}
             aria-label="Clear search"
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="absolute right-1 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             <X className="h-4 w-4" />
           </button>
         ) : null}
       </div>
-      <p className="text-xs text-muted-foreground">
-        {isPending ? "Searching…" : `${resultCount} ${resultCount === 1 ? "store" : "stores"}`}
+      <p
+        role="status"
+        aria-atomic="true"
+        className="text-xs text-muted-foreground"
+      >
+        {isPending
+          ? "Searching…"
+          : `${resultCount} ${resultCount === 1 ? "store" : "stores"}`}
       </p>
     </div>
-  )
+  );
 }
