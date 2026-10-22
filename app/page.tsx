@@ -2,38 +2,64 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  BookOpen,
+  ArrowUpRight,
+  Bookmark,
   Calendar,
   CalendarPlus,
-  Clock,
-  Database,
+  Coffee,
   Instagram,
   Linkedin,
   MapPin,
-  Newspaper,
-  Users,
-  Video,
+  BookOpen,
 } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { DownloadLinks } from "@/components/download-links";
+import { FaqSection } from "@/components/faq-section";
 import { HeroCarousel } from "@/components/hero-carousel";
+import { LoyaltyDemo } from "@/components/loyalty-demo";
 import { SectionReveal } from "@/components/section-reveal";
 import { SiteHeader } from "@/components/site-header";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TrackedLink } from "@/components/tracked-link";
-import { Accordion, AccordionItem, AccordionContent, AccordionTrigger } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Marquee } from "@/components/ui/marquee";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   currentPartners,
   jobPostings,
   upcomingEvents,
   userFAQs,
-  vendorBenefits,
   vendorFAQs,
 } from "./constants";
+
+const RITUALS = [
+  {
+    number: "01",
+    icon: MapPin,
+    title: "Find somewhere worth stopping.",
+    description:
+      "Explore cafés across Nigeria, from Lagos to Abuja. See where they are and get directions when you find your spot.",
+    href: "/stores",
+    link: "Explore the café map",
+  },
+  {
+    number: "02",
+    icon: BookOpen,
+    title: "Get a little closer to your coffee.",
+    description:
+      "Coffee stories and brewing guides for the curious. Find something new to try with your next cup.",
+    href: "#app",
+    link: "Take a look inside",
+  },
+  {
+    number: "03",
+    icon: Bookmark,
+    title: "Make a new find your usual.",
+    description:
+      "Save your favourite cafés and stories in the app. Collect digital stamps at participating cafés when you visit.",
+    href: "#rewards",
+    link: "See how stamps work",
+  },
+];
 
 export default function Home() {
   return (
@@ -116,17 +142,53 @@ export default function Home() {
           </div>
         </section>
 
-      {/* App Preview Section */}
-      <section id="app" className="border-b border-border bg-background py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-              Explore the App
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-              A seamless experience designed for coffee lovers.
+        <section
+          id="features"
+          className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8"
+        >
+          <SectionReveal className="grid gap-6 border-b border-border pb-10 md:grid-cols-2 md:items-end">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                For the love of the daily cup
+              </p>
+              <h2 className="mt-4 max-w-lg font-serif text-4xl tracking-tight sm:text-5xl">
+                There’s more to coffee
+                <br className="hidden sm:block" /> than the first sip.
+              </h2>
+            </div>
+            <p className="max-w-md text-base leading-relaxed text-muted-foreground md:justify-self-end">
+              We bring the places, people, and stories together, so you can
+              spend less time searching and more time enjoying your coffee.
             </p>
+          </SectionReveal>
+          <div className="grid gap-10 pt-10 md:grid-cols-3 md:gap-8">
+            {RITUALS.map(
+              ({ number, icon: Icon, title, description, href, link }) => (
+                <SectionReveal key={number}>
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {number} /
+                    </span>
+                    <Icon className="size-5 text-primary" aria-hidden="true" />
+                  </div>
+                  <h3 className="mt-6 max-w-xs font-serif text-3xl leading-tight tracking-tight">
+                    {title}
+                  </h3>
+                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                    {description}
+                  </p>
+                  <Link
+                    href={href}
+                    className="group mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {link}
+                    <ArrowRight className="size-4 motion-safe:transition-transform motion-safe:group-hover:translate-x-1" />
+                  </Link>
+                </SectionReveal>
+              ),
+            )}
           </div>
+        </section>
 
         <section
           id="rewards"
@@ -158,196 +220,184 @@ export default function Home() {
           </div>
         </section>
 
-      {/* Events Section */}
-      {upcomingEvents.length > 0 && (
-        <section id="events" className="border-b border-border bg-muted/30 py-16 sm:py-24">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <Badge variant="secondary" className="mb-3 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
-                Community & Gatherings
-              </Badge>
-              <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-                Upcoming Events
+        {upcomingEvents.length > 0 && (
+          <section
+            id="events"
+            tabIndex={-1}
+            className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8"
+          >
+            <SectionReveal className="mb-10 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                  Around the coffee table
+                </p>
+                <h2 className="mt-4 font-serif text-4xl tracking-tight sm:text-5xl">
+                  Coffee brings us together.
+                </h2>
+              </div>
+              <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+                Meet the people behind the cups. Join our next community
+                conversation.
+              </p>
+            </SectionReveal>
+            {upcomingEvents.map((event) => (
+              <SectionReveal
+                key={event.id}
+                className="grid overflow-hidden rounded-2xl border border-border bg-card lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]"
+              >
+                <div className="relative aspect-square w-full min-w-0 self-start bg-secondary">
+                  <Image
+                    src={event.image}
+                    alt={event.title}
+                    fill
+                    sizes="(max-width: 1023px) 100vw, 500px"
+                    className="object-contain p-5 sm:p-8"
+                  />
+                </div>
+                <div className="flex min-w-0 flex-col justify-center p-6 sm:p-10">
+                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
+                    <Calendar className="size-4" />
+                    {event.badge ?? "Community event"}
+                  </p>
+                  <h3 className="mt-5 font-serif text-3xl tracking-tight sm:text-4xl">
+                    {event.title}
+                  </h3>
+                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                    {event.description}
+                  </p>
+                  <dl className="mt-6 space-y-3 border-y border-border py-5 text-sm">
+                    <div className="flex gap-4">
+                      <dt className="w-12 shrink-0 text-muted-foreground">
+                        When
+                      </dt>
+                      <dd>
+                        {event.date}
+                        <br />
+                        <span className="text-muted-foreground">
+                          {event.time}
+                        </span>
+                      </dd>
+                    </div>
+                    <div className="flex gap-4">
+                      <dt className="w-12 shrink-0 text-muted-foreground">
+                        Where
+                      </dt>
+                      <dd>{event.location}</dd>
+                    </div>
+                  </dl>
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <TrackedLink
+                      href={event.registrationLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      eventName="Event Registration"
+                      className={cn(buttonVariants(), "h-11 w-full sm:w-auto")}
+                    >
+                      Register for free <ArrowUpRight />
+                    </TrackedLink>
+                    {event.googleCalendarUrl && (
+                      <TrackedLink
+                        href={event.googleCalendarUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        eventName="Event Add to Calendar"
+                        className={cn(
+                          buttonVariants({ variant: "outline" }),
+                          "h-11",
+                        )}
+                      >
+                        <CalendarPlus /> Add to calendar
+                      </TrackedLink>
+                    )}
+                    {event.instagramPostLink && (
+                      <TrackedLink
+                        href={event.instagramPostLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        eventName="Event Instagram Post"
+                        className={cn(
+                          buttonVariants({ variant: "ghost" }),
+                          "h-11",
+                        )}
+                      >
+                        <Instagram /> Instagram
+                      </TrackedLink>
+                    )}
+                  </div>
+                </div>
+              </SectionReveal>
+            ))}
+          </section>
+        )}
+
+        <section
+          id="partners"
+          tabIndex={-1}
+          className="border-y border-border bg-foreground text-background"
+        >
+          <SectionReveal className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2 lg:gap-20 lg:px-8">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-70">
+                For the people behind the counter
+              </p>
+              <h2 className="mt-5 font-serif text-4xl tracking-tight sm:text-5xl">
+                You make the coffee.
+                <br />
+                <span className="italic">We’ll help them find you.</span>
               </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-                Connect with the coffee community, discover what we&apos;re building, and join conversations shaping the future of coffee culture.
+              <p className="mt-6 max-w-md text-base leading-relaxed opacity-75">
+                Give your café a home on Coffee Sphut. Reach curious coffee
+                drinkers and give your regulars another reason to return.
+              </p>
+              <TrackedLink
+                href="https://docs.google.com/forms/d/e/1FAIpQLSf0NIlA7OQJWSNzjjKGbE1CInV9Ff5MQI65y5IN8yDXBRHITg/viewform"
+                target="_blank"
+                rel="noopener noreferrer"
+                eventName="Signup"
+                className={cn(
+                  buttonVariants({ variant: "secondary", size: "lg" }),
+                  "mt-8 h-12",
+                )}
+              >
+                Join our café community <ArrowUpRight />
+              </TrackedLink>
+            </div>
+            <div className="divide-y divide-background/20">
+              {[
+                [
+                  "01",
+                  "Put your café on the map",
+                  "Help people discover your space, find your address, and plan their visit.",
+                ],
+                [
+                  "02",
+                  "Give regulars a reason to return",
+                  "Build a digital loyalty programme around the rewards that work for your café.",
+                ],
+                [
+                  "03",
+                  "Get to know your community",
+                  "Understand how coffee lovers discover and engage with your café.",
+                ],
+              ].map(([number, title, description]) => (
+                <div key={number} className="flex gap-5 py-6 first:pt-0">
+                  <span className="pt-1 font-mono text-xs opacity-60">
+                    {number}
+                  </span>
+                  <div>
+                    <h3 className="font-serif text-lg font-medium">{title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed opacity-70">
+                      {description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              <p className="pt-5 text-sm opacity-70">
+                Free to list your café. Optional premium features available.
               </p>
             </div>
-
-            <div className="mt-12 space-y-8">
-              {upcomingEvents.map((event) => (
-                <Card
-                  key={event.id}
-                  className="overflow-hidden border-border bg-background shadow-sm transition-all hover:shadow-md"
-                >
-                  <CardContent className="p-0">
-                    <div className="grid gap-0 lg:grid-cols-12">
-                      {/* Event Poster / Image */}
-                      <div className="relative aspect-square lg:aspect-auto lg:col-span-5 bg-muted/30 overflow-hidden flex items-center justify-center p-4 sm:p-6 lg:p-6">
-                        <div className="relative w-full max-w-[420px] aspect-square overflow-hidden rounded-2xl border border-border/50 shadow-sm">
-                          <Image
-                            src={event.image}
-                            alt={event.title}
-                            fill
-                            sizes="(max-width: 1024px) 100vw, 420px"
-                            className="object-cover transition-transform duration-500 hover:scale-105"
-                            priority
-                          />
-                          {event.badge && (
-                            <div className="absolute top-3.5 left-3.5 z-10">
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-background/90 backdrop-blur-md px-3 py-1 text-xs font-semibold text-primary shadow-sm border border-border/50">
-                                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                                {event.badge}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Event Details */}
-                      <div className="flex flex-col justify-between p-6 sm:p-8 lg:col-span-7">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2 mb-3">
-                            {event.isVirtual && (
-                              <Badge variant="outline" className="text-xs font-medium border-primary/20 text-primary bg-primary/5">
-                                <Video className="mr-1 h-3.5 w-3.5" />
-                                Virtual Event
-                              </Badge>
-                            )}
-                            <Badge variant="secondary" className="text-xs font-medium">
-                              Free Registration
-                            </Badge>
-                          </div>
-
-                          <h3 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                            {event.title}
-                          </h3>
-                          {event.tagline && (
-                            <p className="mt-1 text-base font-medium text-primary">
-                              {event.tagline}
-                            </p>
-                          )}
-
-                          {/* Quick details pills */}
-                          <div className="mt-6 flex flex-wrap gap-3">
-                            <div className="flex flex-1 min-w-[210px] items-center gap-2.5 rounded-lg border border-border/60 bg-card/50 p-3">
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                                <Calendar className="h-4 w-4" />
-                              </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground">Date</p>
-                                <p className="text-sm font-semibold text-foreground">{event.date}</p>
-                              </div>
-                            </div>
-
-                            <div className="flex flex-1 min-w-[170px] items-center gap-2.5 rounded-lg border border-border/60 bg-card/50 p-3">
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                                <Clock className="h-4 w-4" />
-                              </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground">Time</p>
-                                <p className="text-sm font-semibold text-foreground">{event.time}</p>
-                              </div>
-                            </div>
-
-                            <div className="flex flex-1 min-w-[210px] items-center gap-2.5 rounded-lg border border-border/60 bg-card/50 p-3">
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                                <MapPin className="h-4 w-4" />
-                              </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground">Location</p>
-                                <p className="text-sm font-semibold text-foreground">{event.location}</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Description */}
-                          <p className="mt-6 text-sm sm:text-base leading-relaxed text-muted-foreground">
-                            {event.description}
-                          </p>
-
-                          {/* Target Audience */}
-                          {event.targetAudience && event.targetAudience.length > 0 && (
-                            <div className="mt-6">
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                Who Should Attend
-                              </p>
-                              <div className="mt-2 flex flex-wrap gap-1.5">
-                                {event.targetAudience.map((audience, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="rounded-md bg-muted px-2.5 py-1 text-xs text-foreground/80"
-                                  >
-                                    {audience}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* CTA Buttons */}
-                        <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t border-border">
-                          <TrackedLink
-                            href={event.registrationLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            eventName="Event Registration"
-                            className="flex-1 sm:flex-initial"
-                          >
-                            <Button size="lg" className="w-full sm:w-auto text-base gap-2">
-                              <span>Register Now</span>
-                              <ArrowRight className="h-4 w-4" />
-                            </Button>
-                          </TrackedLink>
-
-                          {event.googleCalendarUrl && (
-                            <TrackedLink
-                              href={event.googleCalendarUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              eventName="Event Add to Calendar"
-                              className="flex-1 sm:flex-initial"
-                            >
-                              <Button
-                                size="lg"
-                                variant="outline"
-                                className="w-full sm:w-auto text-base gap-2 border-border"
-                              >
-                                <CalendarPlus className="h-4 w-4" />
-                                <span>Add to Calendar</span>
-                              </Button>
-                            </TrackedLink>
-                          )}
-
-                          {event.instagramPostLink && (
-                            <TrackedLink
-                              href={event.instagramPostLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              eventName="Event Instagram Post"
-                              className="flex-1 sm:flex-initial"
-                            >
-                              <Button
-                                size="lg"
-                                variant="outline"
-                                className="w-full sm:w-auto text-base gap-2 border-border"
-                              >
-                                <Instagram className="h-4 w-4" />
-                                <span>View on Instagram</span>
-                              </Button>
-                            </TrackedLink>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
+          </SectionReveal>
         </section>
-      )}
 
         <section
           id="FAQs"
@@ -391,262 +441,87 @@ export default function Home() {
           </SectionReveal>
         </section>
 
-          <div className="mt-12 grid gap-8 sm:grid-cols-1 lg:grid-cols-2">
-            {vendorBenefits.slice(3).map((benefit, index) => {
-              const IconComponent = benefit.icon;
-              return (
-                <Card key={index + 3} className="border-border bg-background">
-                  <CardContent className="p-6">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                      <IconComponent className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="mt-4 text-xl font-semibold text-foreground">{benefit.title}</h3>
-                    <p className="mt-2 text-muted-foreground leading-relaxed">
-                      {benefit.description}
+        {jobPostings.length > 0 && (
+          <section
+            id="jobs"
+            className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"
+          >
+            <h2 className="font-serif text-4xl">
+              Help us build the coffee community.
+            </h2>
+            <div className="mt-8 divide-y divide-border">
+              {jobPostings.map((job) => (
+                <div
+                  key={job.title}
+                  className="flex flex-wrap items-center justify-between gap-4 py-6"
+                >
+                  <div>
+                    <h3 className="font-serif text-lg font-medium">{job.title}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {job.location} · {job.type}
                     </p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          <div className="mt-12 flex justify-center">
-            <TrackedLink
-              href="https://docs.google.com/forms/d/e/1FAIpQLSf0NIlA7OQJWSNzjjKGbE1CInV9Ff5MQI65y5IN8yDXBRHITg/viewform"
-              target="_blank"
-              rel="noopener noreferrer"
-              eventName="Signup"
-            >
-              <Button size="lg" className="text-base">
-                Join Our Partner Network
-              </Button>
-            </TrackedLink>
-          </div>
-        </div>
-      </section>
-      
-      {/* Current Cafes on the App Section */}
-      <section id="cafes" className="border-b border-border bg-background py-16 sm:py-24">
-        <div className="text-center">
-          <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-            Current Partners on Coffee Sphut
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-            A selection of the amazing cafés already on Coffee Sphut.
-          </p>
-          <div className="relative flex w-full py-8 flex-col items-center justify-center overflow-hidden
-                        [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
-            <Marquee className="[--duration:15s]">
-              {currentPartners.slice(0, 4).map((partner, index) => (
-                <div className="px-16" key={index}>
-                  <Image
-                    src={partner.logo}
-                    alt={`${partner.name} logo`}
-                    width={192}
-                    height={192}
-                  />
+                  </div>
+                  <a
+                    href={job.jobDescriptionLink}
+                    download
+                    className={buttonVariants({ variant: "outline" })}
+                  >
+                    Download job details (PDF) <ArrowUpRight />
+                  </a>
                 </div>
               ))}
-            </Marquee>
-          </div>
-          <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-            More cafés are joining every week, so stay tuned for updates and new additions to our growing community of coffee shops.
-          </p>
-        </div>
-      </section>
-
-
-      {/* FAQs Section */}
-      <section id="FAQs" className="border-b border-border bg-card py-16 sm:py-24">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-card-foreground sm:text-4xl lg:text-5xl">
-              Frequently Asked Questions
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-              Everything you need to know about using Coffee Sphut and joining our partner network.
-            </p>
-          </div>
-
-          <Tabs defaultValue="consumers" className="w-full mt-10">
-            <div className="flex justify-center">
-              <TabsList className="h-11 p-1 bg-muted rounded-full">
-                <TabsTrigger value="consumers" className="rounded-full px-5 text-sm font-medium">
-                  For Coffee Lovers
-                </TabsTrigger>
-                <TabsTrigger value="partners" className="rounded-full px-5 text-sm font-medium">
-                  For Café Partners
-                </TabsTrigger>
-              </TabsList>
             </div>
-
-            <TabsContent value="consumers" className="mt-8">
-              <Accordion type="single" collapsible className="w-full">
-                {userFAQs.map((faq, index) => (
-                  <AccordionItem value={`user-${index}`} key={index}>
-                    <AccordionTrigger className="text-left font-medium text-foreground">
-                      {faq.question}
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground leading-relaxed">
-                      {faq.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </TabsContent>
-
-            <TabsContent value="partners" className="mt-8">
-              <Accordion type="single" collapsible className="w-full">
-                {vendorFAQs.map((faq, index) => (
-                  <AccordionItem value={`vendor-${index}`} key={index}>
-                    <AccordionTrigger className="text-left font-medium text-foreground">
-                      {faq.question}
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground leading-relaxed">
-                      {faq.answer}
-                    </AccordionContent>
+          </section>
+        )}
+      </main>
+      <footer className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <Link href="/" className="flex items-center gap-3">
+            <BrandLogo />
+            <span className="text-xs text-muted-foreground">
+              Find your spot. Enjoy your cup.
+            </span>
+          </Link>
+          <nav
+            aria-label="Footer navigation"
+            className="flex flex-wrap items-center gap-5 text-sm"
+          >
+            <Link href="/stores" className="hover:underline">
+              Find cafés
+            </Link>
+            <Link href="/#partners" className="hover:underline">
+              For café owners
+            </Link>
+            <Link href="/privacy" className="hover:underline">
+              Privacy
+            </Link>
+          </nav>
+          <div className="flex items-center gap-2">
             <ThemeToggle className="border-transparent bg-transparent shadow-none" />
-                ))}
-              </Accordion>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section id="download" className="bg-primary py-16 text-primary-foreground sm:py-24">
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-            Ready to elevate your coffee experience?
-          </h2>
-          <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg opacity-90">
-            Join thousands of coffee enthusiasts discovering new flavors, techniques, and their next favorite café.
-          </p>
-          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <TrackedLink
-              href="https://apps.apple.com/us/app/coffee-sphut/id6759900667"
+            <a
+              href="https://www.instagram.com/coffeesphut/"
+              aria-label="Coffee Sphut on Instagram"
               target="_blank"
               rel="noopener noreferrer"
-              eventName="Download"
+              className="flex size-11 items-center justify-center rounded-full transition-colors hover:bg-secondary"
             >
-              <Button size="lg" variant="secondary" className="w-48 text-base">
-                <Image
-                  src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
-                  alt="Apple logo"
-                  width={24}
-                  height={24}
-                />
-                Get on iOS!
-              </Button>
-            </TrackedLink>
-            <TrackedLink
-              href="https://play.google.com/store/apps/details?id=com.coffeesphut.app"
+              <Instagram className="size-5" />
+            </a>
+            <a
+              href="https://www.linkedin.com/company/coffeesphut/"
+              aria-label="Coffee Sphut on LinkedIn"
               target="_blank"
               rel="noopener noreferrer"
-              eventName="Download"
+              className="flex size-11 items-center justify-center rounded-full transition-colors hover:bg-secondary"
             >
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-48 border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 text-base"
-              >
-                <Image
-                  src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/play_store.png"
-                  alt="Google Play Store logo"
-                  width={24}
-                  height={24}
-                />
-                Get on Android!
-              </Button>
-            </TrackedLink>
+              <Linkedin className="size-5" />
+            </a>
           </div>
         </div>
-      </section>
-
-      {/* Job Posting Section */}
-      {jobPostings.length > 0 &&
-      <section id="jobs" className="border-b border-border bg-card py-16 sm:py-24">
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <h3 className="font-bold text-3xl sm:text-4xl lg:text-5xl">We&apos;re Hiring!</h3>
-          <h4 className="mt-6 font-semibold">Current Positions</h4>
-           <div className="mt-6 max-w-7xl items-center justify-center grid grid-cols-1">
-             {jobPostings.map((job, index) => (
-               <Card key={index} className="border-border bg-background my-2">
-                 <CardContent className="">
-                   <div className="flex items-start justify-between">
-                     <div className="flex items-center space-x-4">
-                       {/* Company Logo Placeholder */}
-                       <div>
-                         <h3 className="text-lg font-semibold text-foreground">{job.title}</h3>
-                       </div>
-                     </div>
-                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                       {job.type}
-                     </span>
-                   </div>
-                   <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
-                     <div className="flex items-center text-primary">
-                       <MapPin className="h-6 w-6 text-primary" />
-                       {job.location}
-                     </div>
-                   </div>
-                   <div className="mt-6">
-                     <a href={job.jobDescriptionLink} download={`Job_Description_${job.title.replace(/\s+/g, "_")}.pdf`}>
-                       <Button size="lg" variant="outline" className="w-64 text-secondary bg-primary">
-                         Download Job Details (PDF)
-                       </Button>
-                     </a>
-                   </div>
-                 </CardContent>
-               </Card>
-             ))}
-           </div>
-        </div>
-      </section>
-      }
-
-      <footer className="border-t border-border bg-card py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
-            <div className="flex items-center gap-2">
-              <div className="flex h-18 w-18 items-center justify-center">
-                <Image
-                  src="/icon.png"
-                  alt="Coffee Sphut"
-                  width={100}
-                  height={20}
-                  priority
-                />
-              </div>
-              <span className="text-lg font-bold text-card-foreground">Coffee Sphut</span>
-            </div>
-            <p className="text-sm text-muted-foreground">© 2026 Coffee Sphut. All rights reserved.</p>
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center">
-              <div className="flex flex-wrap gap-4 sm:gap-6 justify-center">
-                <Link href="/stores" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
-                  Find Cafés
-                </Link>
-                <Link href="/#events" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
-                  Events
-                </Link>
-                <Link href="/#partners" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
-                  Partners
-                </Link>
-                <Link href="/privacy" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
-                  Privacy Policy
-                </Link>
-              </div>
-              <div className="flex gap-4">
-                <a href="https://www.instagram.com/coffeesphut/" className="text-muted-foreground transition-colors hover:text-card-foreground" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
-                  <Instagram className="h-5 w-5" />
-                </a>
-                <a href="https://www.linkedin.com/company/coffeesphut/" className="text-muted-foreground transition-colors hover:text-card-foreground" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer">
-                  <Linkedin className="h-5 w-5" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
+        <p className="mt-8 border-t border-border pt-5 text-xs text-muted-foreground">
+          © 2026 Coffee Sphut. All rights reserved.{" "}
+          <span className="ml-2">Sphut, pronounced “spot”.</span>
+        </p>
       </footer>
     </div>
   );
