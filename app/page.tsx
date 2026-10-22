@@ -14,6 +14,7 @@ import {
   Users,
   Video,
 } from "lucide-react";
+import { DownloadLinks } from "@/components/download-links";
 import { HeroCarousel } from "@/components/hero-carousel";
 import { SectionReveal } from "@/components/section-reveal";
 import { SiteHeader } from "@/components/site-header";
@@ -369,24 +370,26 @@ export default function Home() {
           <FaqSection userFAQs={userFAQs} vendorFAQs={vendorFAQs} />
         </section>
 
-          <div className="mt-16 grid gap-8 sm:grid-cols-1 lg:grid-cols-3">
-            {vendorBenefits.slice(0, 3).map((benefit, index) => {
-              const IconComponent = benefit.icon;
-              return (
-                <Card key={index} className="border-border bg-background">
-                  <CardContent className="p-6">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                      <IconComponent className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="mt-4 text-xl font-semibold text-foreground">{benefit.title}</h3>
-                    <p className="mt-2 text-muted-foreground leading-relaxed">
-                      {benefit.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+        <section
+          id="download"
+          tabIndex={-1}
+          className="border-y border-border bg-secondary/50"
+        >
+          <SectionReveal className="mx-auto flex max-w-7xl flex-col justify-between gap-8 px-4 py-14 sm:px-6 md:flex-row md:items-center lg:px-8">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Take your coffee curiosity with you
+              </p>
+              <h2 className="mt-4 font-serif text-4xl tracking-tight sm:text-5xl">
+                Your next cup is out there.
+              </h2>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Free on iOS and Android. Find your spot, make it your usual.
+              </p>
+            </div>
+            <DownloadLinks className="shrink-0" />
+          </SectionReveal>
+        </section>
 
           <div className="mt-12 grid gap-8 sm:grid-cols-1 lg:grid-cols-2">
             {vendorBenefits.slice(3).map((benefit, index) => {
