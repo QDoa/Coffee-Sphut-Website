@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { HeroCarousel } from "@/components/hero-carousel";
 import { SiteHeader } from "@/components/site-header";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { TrackedLink } from "@/components/tracked-link";
 import { Accordion, AccordionItem, AccordionContent, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
@@ -571,7 +572,7 @@ export default function Home() {
                     <AccordionContent className="text-muted-foreground leading-relaxed">
                       {faq.answer}
                     </AccordionContent>
-                  </AccordionItem>
+            <ThemeToggle className="border-transparent bg-transparent shadow-none" />
                 ))}
               </Accordion>
             </TabsContent>
