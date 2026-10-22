@@ -1,108 +1,95 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
+import { BookOpen, MapPin, Bookmark } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const HERO_IMAGES = [
+const PREVIEWS = [
   {
-    src: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/home.png",
-    alt: "Coffee Sphut app home screen showing curated articles and coffee feeds",
-    caption: "Curated Feed & Stories",
-  },
-  {
+    id: "discover",
+    label: "Find a café",
+    icon: MapPin,
     src: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/map.png",
-    alt: "Coffee Sphut map showing nearby specialty coffee stores",
-    caption: "Interactive Store Locator",
+    alt: "Coffee Sphut map of cafés",
+    title: "A new spot, just around the corner.",
+    description: "Explore cafés on the map and find your way to your next cup.",
   },
   {
-    src: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/reward.png",
-    alt: "Coffee Sphut digital loyalty rewards program",
-    caption: "Digital Stamp Card",
+    id: "read",
+    label: "Coffee stories",
+    icon: BookOpen,
+    src: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/home.png",
+    alt: "Coffee Sphut feed of coffee stories and brewing guides",
+    title: "Something good to read with your coffee.",
+    description:
+      "Discover coffee stories, brewing ideas, and a little inspiration for your daily ritual.",
   },
   {
+    id: "save",
+    label: "Your favourites",
+    icon: Bookmark,
     src: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/account.png",
-    alt: "Coffee Sphut user account and bookmarks screen",
-    caption: "Saved Spots & Rewards",
+    alt: "Coffee Sphut account and saved favourites",
+    title: "Keep the good finds close.",
+    description:
+      "Save the spots and stories you want to come back to in the app.",
   },
 ];
 
 export function HeroCarousel() {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-
-  useEffect(() => {
-    // Respect user's motion preference (WCAG 2.2.2 & 2.3.3)
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-    if (prefersReducedMotion || isPaused) return;
-
-    const timer = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % HERO_IMAGES.length);
-    }, 4500);
-
-    return () => clearInterval(timer);
-  }, [isPaused]);
-
   return (
-    <div
-      className="relative flex flex-col items-center"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onFocus={() => setIsPaused(true)}
-      onBlur={() => setIsPaused(false)}
-      aria-roledescription="carousel"
-      aria-label="App preview carousel"
+    <Tabs
+      defaultValue="discover"
+      className="w-full gap-0 overflow-hidden rounded-2xl border border-border bg-secondary/45"
     >
-      {/* Ambient background glow */}
-      <div className="absolute inset-0 -m-8 rounded-full bg-primary/15 blur-3xl -z-10 pointer-events-none" />
-
-      {/* Realistic Smartphone Frame */}
-      <div className="relative rounded-[3rem] p-3 bg-neutral-950/90 shadow-2xl ring-1 ring-neutral-800/80 backdrop-blur-sm transition-transform duration-500 hover:scale-[1.02]">
-        {/* Dynamic Island / Speaker Pill */}
-        <div className="absolute top-5 left-1/2 -translate-x-1/2 h-4 w-20 bg-black rounded-full z-20 flex items-center justify-end pr-2 pointer-events-none">
-          <div className="size-2 rounded-full bg-neutral-900 border border-neutral-800" />
-        </div>
-
-        {/* Inner Screen Display */}
-        <div className="relative h-[530px] w-[255px] sm:h-[580px] sm:w-[280px] overflow-hidden rounded-[2.3rem] bg-neutral-900">
-          {HERO_IMAGES.map((image, index) => (
+      <div className="flex items-center justify-between border-b border-border px-5 py-4">
+        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          A look inside the app
+        </span>
+      </div>
+      <TabsList
+        aria-label="Explore app features"
+        className="mx-3 mt-4 grid w-auto grid-cols-3 gap-1 rounded-none bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-auto sm:mx-5"
+      >
+        {PREVIEWS.map(({ id, label, icon: Icon }) => (
+          <TabsTrigger
+            key={id}
+            value={id}
+            className="h-auto min-h-11 rounded-full px-2 text-[11px] data-[state=active]:bg-foreground data-[state=active]:text-background [&_svg]:hidden sm:text-sm sm:[&_svg]:block"
+          >
+            <Icon />
+            {label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      {PREVIEWS.map((preview) => (
+        <TabsContent
+          key={preview.id}
+          value={preview.id}
+          className="px-5 pt-6 pb-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300 sm:px-7"
+        >
+          <div className="min-h-32 max-w-sm">
+            <h2 className="font-serif text-2xl leading-tight tracking-tight sm:text-3xl">
+              {preview.title}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {preview.description}
+            </p>
+          </div>
+          <figure className="mx-auto mt-6 w-full max-w-[232px] sm:max-w-[248px]">
+            {/* Hosted previews already include the iPhone frame. */}
             <Image
-              key={image.src}
-              src={image.src}
-              alt={image.alt}
-              fill
-              sizes="(max-width: 640px) 255px, 280px"
-              className={`absolute inset-0 object-cover transition-opacity duration-700 ease-in-out ${
-                index === currentImageIndex ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-              }`}
-              priority={index === 0}
+              src={preview.src}
+              alt={preview.alt}
+              width={1170}
+              height={2532}
+              sizes="(min-width: 640px) 248px, 232px"
+              priority={preview.id === "discover"}
+              className="block h-auto w-full drop-shadow-xl"
             />
-          ))}
-        </div>
-      </div>
-
-      {/* Navigation Dots and Slide Status */}
-      <div className="mt-5 flex items-center gap-2">
-        {HERO_IMAGES.map((image, index) => {
-          const isActive = index === currentImageIndex;
-          return (
-            <button
-              key={image.src}
-              onClick={() => setCurrentImageIndex(index)}
-              className={`h-2.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                isActive ? "w-8 bg-primary" : "w-2.5 bg-primary/30 hover:bg-primary/50"
-              }`}
-              aria-label={`Go to slide ${index + 1}: ${image.caption}`}
-              aria-current={isActive ? "true" : undefined}
-              type="button"
-            />
-          );
-        })}
-      </div>
-      <p className="mt-2 text-xs text-muted-foreground font-medium">
-        {HERO_IMAGES[currentImageIndex].caption}
-      </p>
-    </div>
+          </figure>
+        </TabsContent>
+      ))}
+    </Tabs>
   );
 }
