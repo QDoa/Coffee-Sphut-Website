@@ -1,11 +1,11 @@
-import { Suspense } from "react"
+import { Suspense } from "react";
+import { RewardLoading } from "@/components/reward-loading";
 import VendorRewardClient from "./VendorRewardClient";
 
 export default function VendorRewardPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen"><span>Loading...</span></div>}>
+    <Suspense fallback={<RewardLoading />}>
       <VendorRewardClient />
     </Suspense>
-  )
+  );
 }
-

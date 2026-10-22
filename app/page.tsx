@@ -1,409 +1,527 @@
 import Image from "next/image";
-import { BookOpen, Database, Newspaper, MapPin, Users, Instagram, Linkedin } from "lucide-react";
+import Link from "next/link";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Bookmark,
+  Calendar,
+  CalendarPlus,
+  Coffee,
+  Instagram,
+  Linkedin,
+  MapPin,
+  BookOpen,
+} from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
+import { DownloadLinks } from "@/components/download-links";
+import { FaqSection } from "@/components/faq-section";
 import { HeroCarousel } from "@/components/hero-carousel";
+import { LoyaltyDemo } from "@/components/loyalty-demo";
+import { SectionReveal } from "@/components/section-reveal";
 import { SiteHeader } from "@/components/site-header";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { TrackedLink } from "@/components/tracked-link";
-import { Accordion, AccordionItem, AccordionContent, AccordionTrigger } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Marquee } from "@/components/ui/marquee";
-import { currentPartners, jobPostings, vendorBenefits, vendorFAQs } from "./constants";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {
+  currentPartners,
+  jobPostings,
+  upcomingEvents,
+  userFAQs,
+  vendorFAQs,
+} from "./constants";
+
+const RITUALS = [
+  {
+    number: "01",
+    icon: MapPin,
+    title: "Find somewhere worth stopping.",
+    description:
+      "Explore cafés across Nigeria, from Lagos to Abuja. See where they are and get directions when you find your spot.",
+    href: "/stores",
+    link: "Explore the café map",
+  },
+  {
+    number: "02",
+    icon: BookOpen,
+    title: "Get a little closer to your coffee.",
+    description:
+      "Coffee stories and brewing guides for the curious. Find something new to try with your next cup.",
+    href: "#app",
+    link: "Take a look inside",
+  },
+  {
+    number: "03",
+    icon: Bookmark,
+    title: "Make a new find your usual.",
+    description:
+      "Save your favourite cafés and stories in the app. Collect digital stamps at participating cafés when you visit.",
+    href: "#rewards",
+    link: "See how stamps work",
+  },
+];
 
 export default function Home() {
   return (
     <div className="min-h-screen">
       <SiteHeader />
-      
-      {/* Hero Section */}
-      <section id="hero" className="relative overflow-hidden border-b border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
-          <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
-            <div className="flex flex-col justify-center">
-              <h1 className="text-balance text-5xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
-                Discover coffee like never before
-              </h1>
-              <p className="mt-6 text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">
-                Coffee Sphut brings you curated coffee content and helps you find the best select coffee stores around
-                you. Your perfect cup is just a tap away.
+      <main id="main-content">
+        <section id="hero" className="border-b border-border">
+          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-12 lg:grid-cols-[1.1fr_1fr] lg:gap-16 lg:px-8">
+            <SectionReveal>
+              <p className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                <Coffee className="size-4" aria-hidden="true" /> Coffee,
+                community & a little curiosity
               </p>
-            </div>
-            <div className="relative flex items-center justify-center lg:justify-end">
+              <h1 className="max-w-2xl text-balance font-serif text-6xl leading-[1.02] tracking-[-0.045em] sm:text-7xl lg:text-[5.5rem]">
+                Find your next{" "}
+                <span className="italic text-primary">coffee spot.</span>
+              </h1>
+              <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
+                A café you haven’t tried. A story worth a read. A reason to come
+                back. Discover the coffee community around you with Coffee
+                Sphut.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-5">
+                <Button asChild size="lg" className="group h-12 px-6">
+                  <Link href="/stores">
+                    Find a café{" "}
+                    <ArrowRight className="motion-safe:transition-transform motion-safe:group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+                <Link
+                  href="#download"
+                  className="inline-flex min-h-11 items-center gap-2 text-sm font-medium underline-offset-4 hover:underline"
+                >
+                  Get the free app <ArrowUpRight className="size-4" />
+                </Link>
+              </div>
+              <div className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-5 text-xs text-muted-foreground">
+                <span>Rooted in Africa’s coffee community</span>
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="size-3.5" /> Lagos · Abuja · More to
+                  discover
+                </span>
+              </div>
+            </SectionReveal>
+            <div id="app" tabIndex={-1} className="min-w-0">
               <HeroCarousel />
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Features Section */}
-      <section id="features" className="border-b border-border bg-card py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-balance text-3xl font-bold tracking-tight text-card-foreground sm:text-4xl lg:text-5xl">
-              Everything you need for coffee
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-              From discovering brewing techniques to finding your next favorite café, Coffee Sphut has you covered.
+        <section
+          aria-label="Cafés in the Coffee Sphut community"
+          className="border-b border-border bg-card"
+        >
+          <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:items-center lg:gap-12 lg:px-8">
+            <p className="shrink-0 text-sm leading-relaxed text-muted-foreground">
+              Good coffee.
+              <br />
+              <span className="font-medium text-foreground">Good company.</span>
             </p>
-          </div>
-
-          <div className="mt-16 grid gap-8 sm:grid-cols-1 lg:grid-cols-4">
-            <Card className="border-border bg-background">
-              <CardContent className="p-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <BookOpen className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mt-4 text-xl font-semibold text-foreground">Simplify Café Discovery</h3>
-                <p className="mt-2 text-muted-foreground leading-relaxed">
-                  Make it easy for users to find, explore, and choose cafés and coffee shops around them.
-                </p>
-              </CardContent>
-            </Card>
-
-
-            <Card className="border-border bg-background">
-              <CardContent className="p-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Newspaper className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mt-4 text-xl font-semibold text-foreground">Deliver Curated Coffee Content</h3>
-                <p className="mt-2 text-muted-foreground leading-relaxed">
-                  Provide relevant, curated content that educates and inspires both new and seasoned coffee drinkers.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border bg-background">
-              <CardContent className="p-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mt-4 text-xl font-semibold text-foreground">Strengthen Customer Retention</h3>
-                <p className="mt-2 text-muted-foreground leading-relaxed">
-                  Offer digital loyalty tools that help cafés turn occasional visitors into repeat customers.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border bg-background">
-              <CardContent className="p-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Database className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mt-4 text-xl font-semibold text-foreground">Build a Reliable Data Foundation</h3>
-                <p className="mt-2 text-muted-foreground leading-relaxed">
-                  Create reliable data that supports cafés, brands, and investors.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* App Preview Section */}
-      <section id="app" className="border-b border-border bg-background py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-              Explore the App
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-              A seamless experience designed for coffee lovers.
-            </p>
-          </div>
-
-          <div className="mt-16 grid gap-12 md:grid-cols-3 md:gap-8">
-            <div className="flex flex-col items-center">
-              <Image
-                src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/home.png"
-                alt="Coffee Sphut home feed with articles"
-                width={250}
-                height={541}
-                className="rounded-[2rem] transition-transform duration-700 ease-in-out hover:scale-110"
-              />
-              <h3 className="mt-6 text-xl font-semibold text-foreground">Discover Content</h3>
-              <p className="mt-2 text-center text-muted-foreground">
-                Browse expertly curated articles and guides
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <Image
-                src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/map.png"
-                alt="Coffee Sphut map showing nearby coffee stores"
-                width={250}
-                height={541}
-                className="rounded-[2rem] transition-transform duration-700 ease-in-out hover:scale-110"
-              />
-              <h3 className="mt-6 text-xl font-semibold text-foreground">Find Stores</h3>
-              <p className="mt-2 text-center text-muted-foreground">
-                Locate select coffee stores with interactive maps
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <Image
-                src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/account.png"
-                alt="Coffee Sphut account screen"
-                width={250}
-                height={541}
-                className="rounded-[2rem] transition-transform duration-700 ease-in-out hover:scale-110"
-              />
-              <h3 className="mt-6 text-xl font-semibold text-foreground">Save Favourites</h3>
-              <p className="mt-2 text-center text-muted-foreground">
-                Bookmark articles and store for quick access
-              </p>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* Partner with Us Section */}
-      <section id="partners" className="border-b border-border bg-card py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-balance text-3xl font-bold tracking-tight text-card-foreground sm:text-4xl lg:text-5xl">
-              Partner with Us
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-              Grow your coffee business and reach thousands of dedicated coffee enthusiasts.
-            </p>
-          </div>
-
-          <div className="mt-16 grid gap-8 sm:grid-cols-1 lg:grid-cols-3">
-            {vendorBenefits.slice(0, 3).map((benefit, index) => {
-              const IconComponent = benefit.icon;
-              return (
-                <Card key={index} className="border-border bg-background">
-                  <CardContent className="p-6">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                      <IconComponent className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="mt-4 text-xl font-semibold text-foreground">{benefit.title}</h3>
-                    <p className="mt-2 text-muted-foreground leading-relaxed">
-                      {benefit.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          <div className="mt-12 grid gap-8 sm:grid-cols-1 lg:grid-cols-2">
-            {vendorBenefits.slice(3).map((benefit, index) => {
-              const IconComponent = benefit.icon;
-              return (
-                <Card key={index + 3} className="border-border bg-background">
-                  <CardContent className="p-6">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                      <IconComponent className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="mt-4 text-xl font-semibold text-foreground">{benefit.title}</h3>
-                    <p className="mt-2 text-muted-foreground leading-relaxed">
-                      {benefit.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          <div className="mt-12 flex justify-center">
-            <TrackedLink
-              href="https://docs.google.com/forms/d/e/1FAIpQLSf0NIlA7OQJWSNzjjKGbE1CInV9Ff5MQI65y5IN8yDXBRHITg/viewform?usp=publish-editor"
-              target="_blank"
-              rel="noopener noreferrer"
-              eventName="Signup"
-            >
-              <Button size="lg" className="text-base">
-                Join Our Partner Network
-              </Button>
-            </TrackedLink>
-          </div>
-        </div>
-      </section>
-      
-      {/* Current Cafes on the App Section */}
-      <section id="cafes" className="border-b border-border bg-background py-16 sm:py-24">
-        <div className="text-center">
-          <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-            Current Partners on Coffee Sphut
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-            A selection of the amazing cafés already on Coffee Sphut.
-          </p>
-          <div className="relative flex w-full py-8 flex-col items-center justify-center overflow-hidden
-                        [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
-            <Marquee className="[--duration:15s]">
-              {currentPartners.slice(0, 4).map((partner, index) => (
-                <div className="px-16" key={index}>
+            <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
+              {currentPartners.map((partner) => (
+                <div
+                  key={partner.name}
+                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-background px-3 py-3"
+                >
                   <Image
                     src={partner.logo}
-                    alt={`${partner.name} logo`}
-                    width={192}
-                    height={192}
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="size-10 shrink-0 rounded-full object-contain"
                   />
+                  <span className="text-xs font-medium sm:text-sm">
+                    {partner.name}
+                  </span>
                 </div>
               ))}
-            </Marquee>
+            </div>
           </div>
-          <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-            More cafés are joining every week, so stay tuned for updates and new additions to our growing community of coffee shops.
-          </p>
-        </div>
-      </section>
+        </section>
 
+        <section
+          id="features"
+          className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8"
+        >
+          <SectionReveal className="grid gap-6 border-b border-border pb-10 md:grid-cols-2 md:items-end">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                For the love of the daily cup
+              </p>
+              <h2 className="mt-4 max-w-lg font-serif text-4xl tracking-tight sm:text-5xl">
+                There’s more to coffee
+                <br className="hidden sm:block" /> than the first sip.
+              </h2>
+            </div>
+            <p className="max-w-md text-base leading-relaxed text-muted-foreground md:justify-self-end">
+              We bring the places, people, and stories together, so you can
+              spend less time searching and more time enjoying your coffee.
+            </p>
+          </SectionReveal>
+          <div className="grid gap-10 pt-10 md:grid-cols-3 md:gap-8">
+            {RITUALS.map(
+              ({ number, icon: Icon, title, description, href, link }) => (
+                <SectionReveal key={number}>
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {number} /
+                    </span>
+                    <Icon className="size-5 text-primary" aria-hidden="true" />
+                  </div>
+                  <h3 className="mt-6 max-w-xs font-serif text-3xl leading-tight tracking-tight">
+                    {title}
+                  </h3>
+                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                    {description}
+                  </p>
+                  <Link
+                    href={href}
+                    className="group mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {link}
+                    <ArrowRight className="size-4 motion-safe:transition-transform motion-safe:group-hover:translate-x-1" />
+                  </Link>
+                </SectionReveal>
+              ),
+            )}
+          </div>
+        </section>
 
-      {/* FAQs Section */}
-      <section id="FAQs" className="border-b border-border bg-card py-16 sm:py-24">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-center text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-            FAQs
-          </h2>
-          <h3 className="text-balance text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
-            For Partners
-          </h3>
-          <Accordion type="single" collapsible className="w-full mt-6">
-          {vendorFAQs.map((faq, index) => (
-            <AccordionItem value={'item'+index.toString()} key={index}>
-              <AccordionTrigger>{faq.question}</AccordionTrigger>
-              <AccordionContent>
-                {faq.answer}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-          </Accordion>
-        </div>
-      </section>
+        <section
+          id="rewards"
+          className="border-y border-border bg-secondary/40"
+        >
+          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2 lg:gap-20 lg:px-8">
+            <SectionReveal>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Make a habit of good coffee
+              </p>
+              <h2 className="mt-4 font-serif text-4xl leading-tight tracking-tight sm:text-5xl">
+                A familiar face.
+                <br />A favourite cup.
+                <br />
+                <span className="italic text-primary">A little thank you.</span>
+              </h2>
+              <p className="mt-6 max-w-md text-base leading-relaxed text-muted-foreground">
+                At participating cafés, each visit brings you closer to a
+                reward. Show your personal QR code in the app and let your
+                barista take care of the stamp.
+              </p>
+              <p className="mt-4 text-sm text-muted-foreground">
+                Every café sets its own rewards. Your digital card keeps track.
+              </p>
+            </SectionReveal>
+            <SectionReveal>
+              <LoyaltyDemo />
+            </SectionReveal>
+          </div>
+        </section>
 
-      {/* CTA Section */}
-      <section id="download" className="bg-primary py-16 text-primary-foreground sm:py-24">
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-            Ready to elevate your coffee experience?
-          </h2>
-          <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg opacity-90">
-            Join thousands of coffee enthusiasts discovering new flavors, techniques, and their next favorite café.
-          </p>
-          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <TrackedLink
-              href="https://apps.apple.com/us/app/coffee-sphut/id6759900667"
-              target="_blank"
-              rel="noopener noreferrer"
-              eventName="Download"
-            >
-              <Button size="lg" variant="secondary" className="w-48 text-base">
-                <Image
-                  src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
-                  alt="Apple logo"
-                  width={24}
-                  height={24}
-                />
-                Get on iOS!
-              </Button>
-            </TrackedLink>
-            <TrackedLink
-              href="https://play.google.com/store/apps/details?id=com.coffeesphut.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              eventName="Download"
-            >
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-48 border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 text-base"
+        {upcomingEvents.length > 0 && (
+          <section
+            id="events"
+            tabIndex={-1}
+            className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8"
+          >
+            <SectionReveal className="mb-10 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                  Around the coffee table
+                </p>
+                <h2 className="mt-4 font-serif text-4xl tracking-tight sm:text-5xl">
+                  Coffee brings us together.
+                </h2>
+              </div>
+              <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+                Meet the people behind the cups. Join our next community
+                conversation.
+              </p>
+            </SectionReveal>
+            {upcomingEvents.map((event) => (
+              <SectionReveal
+                key={event.id}
+                className="grid overflow-hidden rounded-2xl border border-border bg-card lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]"
               >
-                <Image
-                  src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/play_store.png"
-                  alt="Google Play Store logo"
-                  width={24}
-                  height={24}
-                />
-                Get on Android!
-              </Button>
-            </TrackedLink>
+                <div className="relative aspect-square w-full min-w-0 self-start bg-secondary">
+                  <Image
+                    src={event.image}
+                    alt={event.title}
+                    fill
+                    sizes="(max-width: 1023px) 100vw, 500px"
+                    className="object-contain p-5 sm:p-8"
+                  />
+                </div>
+                <div className="flex min-w-0 flex-col justify-center p-6 sm:p-10">
+                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
+                    <Calendar className="size-4" />
+                    {event.badge ?? "Community event"}
+                  </p>
+                  <h3 className="mt-5 font-serif text-3xl tracking-tight sm:text-4xl">
+                    {event.title}
+                  </h3>
+                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                    {event.description}
+                  </p>
+                  <dl className="mt-6 space-y-3 border-y border-border py-5 text-sm">
+                    <div className="flex gap-4">
+                      <dt className="w-12 shrink-0 text-muted-foreground">
+                        When
+                      </dt>
+                      <dd>
+                        {event.date}
+                        <br />
+                        <span className="text-muted-foreground">
+                          {event.time}
+                        </span>
+                      </dd>
+                    </div>
+                    <div className="flex gap-4">
+                      <dt className="w-12 shrink-0 text-muted-foreground">
+                        Where
+                      </dt>
+                      <dd>{event.location}</dd>
+                    </div>
+                  </dl>
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <TrackedLink
+                      href={event.registrationLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      eventName="Event Registration"
+                      className={cn(buttonVariants(), "h-11 w-full sm:w-auto")}
+                    >
+                      Register for free <ArrowUpRight />
+                    </TrackedLink>
+                    {event.googleCalendarUrl && (
+                      <TrackedLink
+                        href={event.googleCalendarUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        eventName="Event Add to Calendar"
+                        className={cn(
+                          buttonVariants({ variant: "outline" }),
+                          "h-11",
+                        )}
+                      >
+                        <CalendarPlus /> Add to calendar
+                      </TrackedLink>
+                    )}
+                    {event.instagramPostLink && (
+                      <TrackedLink
+                        href={event.instagramPostLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        eventName="Event Instagram Post"
+                        className={cn(
+                          buttonVariants({ variant: "ghost" }),
+                          "h-11",
+                        )}
+                      >
+                        <Instagram /> Instagram
+                      </TrackedLink>
+                    )}
+                  </div>
+                </div>
+              </SectionReveal>
+            ))}
+          </section>
+        )}
+
+        <section
+          id="partners"
+          tabIndex={-1}
+          className="border-y border-border bg-foreground text-background"
+        >
+          <SectionReveal className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2 lg:gap-20 lg:px-8">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-70">
+                For the people behind the counter
+              </p>
+              <h2 className="mt-5 font-serif text-4xl tracking-tight sm:text-5xl">
+                You make the coffee.
+                <br />
+                <span className="italic">We’ll help them find you.</span>
+              </h2>
+              <p className="mt-6 max-w-md text-base leading-relaxed opacity-75">
+                Give your café a home on Coffee Sphut. Reach curious coffee
+                drinkers and give your regulars another reason to return.
+              </p>
+              <TrackedLink
+                href="https://docs.google.com/forms/d/e/1FAIpQLSf0NIlA7OQJWSNzjjKGbE1CInV9Ff5MQI65y5IN8yDXBRHITg/viewform"
+                target="_blank"
+                rel="noopener noreferrer"
+                eventName="Signup"
+                className={cn(
+                  buttonVariants({ variant: "secondary", size: "lg" }),
+                  "mt-8 h-12",
+                )}
+              >
+                Join our café community <ArrowUpRight />
+              </TrackedLink>
+            </div>
+            <div className="divide-y divide-background/20">
+              {[
+                [
+                  "01",
+                  "Put your café on the map",
+                  "Help people discover your space, find your address, and plan their visit.",
+                ],
+                [
+                  "02",
+                  "Give regulars a reason to return",
+                  "Build a digital loyalty programme around the rewards that work for your café.",
+                ],
+                [
+                  "03",
+                  "Get to know your community",
+                  "Understand how coffee lovers discover and engage with your café.",
+                ],
+              ].map(([number, title, description]) => (
+                <div key={number} className="flex gap-5 py-6 first:pt-0">
+                  <span className="pt-1 font-mono text-xs opacity-60">
+                    {number}
+                  </span>
+                  <div>
+                    <h3 className="font-serif text-lg font-medium">{title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed opacity-70">
+                      {description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              <p className="pt-5 text-sm opacity-70">
+                Free to list your café. Optional premium features available.
+              </p>
+            </div>
+          </SectionReveal>
+        </section>
+
+        <section
+          id="FAQs"
+          className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20 lg:px-8"
+        >
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              A few things you might be wondering
+            </p>
+            <h2 className="mt-4 font-serif text-4xl tracking-tight sm:text-5xl">
+              Good questions.
+              <br />
+              Fresh answers.
+            </h2>
+            <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">
+              Getting started, finding cafés, and making the most of your daily
+              coffee.
+            </p>
+          </div>
+          <FaqSection userFAQs={userFAQs} vendorFAQs={vendorFAQs} />
+        </section>
+
+        <section
+          id="download"
+          tabIndex={-1}
+          className="border-y border-border bg-secondary/50"
+        >
+          <SectionReveal className="mx-auto flex max-w-7xl flex-col justify-between gap-8 px-4 py-14 sm:px-6 md:flex-row md:items-center lg:px-8">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Take your coffee curiosity with you
+              </p>
+              <h2 className="mt-4 font-serif text-4xl tracking-tight sm:text-5xl">
+                Your next cup is out there.
+              </h2>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Free on iOS and Android. Find your spot, make it your usual.
+              </p>
+            </div>
+            <DownloadLinks className="shrink-0" />
+          </SectionReveal>
+        </section>
+
+        {jobPostings.length > 0 && (
+          <section
+            id="jobs"
+            className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"
+          >
+            <h2 className="font-serif text-4xl">
+              Help us build the coffee community.
+            </h2>
+            <div className="mt-8 divide-y divide-border">
+              {jobPostings.map((job) => (
+                <div
+                  key={job.title}
+                  className="flex flex-wrap items-center justify-between gap-4 py-6"
+                >
+                  <div>
+                    <h3 className="font-serif text-lg font-medium">{job.title}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {job.location} · {job.type}
+                    </p>
+                  </div>
+                  <a
+                    href={job.jobDescriptionLink}
+                    download
+                    className={buttonVariants({ variant: "outline" })}
+                  >
+                    Download job details (PDF) <ArrowUpRight />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </main>
+      <footer className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <Link href="/" className="flex items-center gap-3">
+            <BrandLogo />
+            <span className="text-xs text-muted-foreground">
+              Find your spot. Enjoy your cup.
+            </span>
+          </Link>
+          <nav
+            aria-label="Footer navigation"
+            className="flex flex-wrap items-center gap-5 text-sm"
+          >
+            <Link href="/stores" className="hover:underline">
+              Find cafés
+            </Link>
+            <Link href="/#partners" className="hover:underline">
+              For café owners
+            </Link>
+            <Link href="/privacy" className="hover:underline">
+              Privacy
+            </Link>
+          </nav>
+          <div className="flex items-center gap-2">
+            <ThemeToggle className="border-transparent bg-transparent shadow-none" />
+            <a
+              href="https://www.instagram.com/coffeesphut/"
+              aria-label="Coffee Sphut on Instagram"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex size-11 items-center justify-center rounded-full transition-colors hover:bg-secondary"
+            >
+              <Instagram className="size-5" />
+            </a>
+            <a
+              href="https://www.linkedin.com/company/coffeesphut/"
+              aria-label="Coffee Sphut on LinkedIn"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex size-11 items-center justify-center rounded-full transition-colors hover:bg-secondary"
+            >
+              <Linkedin className="size-5" />
+            </a>
           </div>
         </div>
-      </section>
-
-      {/* Job Posting Section */}
-      {jobPostings.length > 0 &&
-      <section id="jobs" className="border-b border-border bg-card py-16 sm:py-24">
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <h3 className="font-bold text-3xl sm:text-4xl lg:text-5xl">We&apos;re Hiring!</h3>
-          <h4 className="mt-6 font-semibold">Current Positions</h4>
-           <div className="mt-6 max-w-7xl items-center justify-center grid grid-cols-1">
-             {jobPostings.map((job, index) => (
-               <Card key={index} className="border-border bg-background my-2">
-                 <CardContent className="">
-                   <div className="flex items-start justify-between">
-                     <div className="flex items-center space-x-4">
-                       {/* Company Logo Placeholder */}
-                       <div>
-                         <h3 className="text-lg font-semibold text-foreground">{job.title}</h3>
-                       </div>
-                     </div>
-                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                       {job.type}
-                     </span>
-                   </div>
-                   <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
-                     <div className="flex items-center text-primary">
-                       <MapPin className="h-6 w-6 text-primary" />
-                       {job.location}
-                     </div>
-                   </div>
-                   <div className="mt-6">
-                     <a href={job.jobDescriptionLink} download={`Job_Description_${job.title.replace(/\s+/g, "_")}.pdf`}>
-                       <Button size="lg" variant="outline" className="w-64 text-secondary bg-primary">
-                         Download Job Details (PDF)
-                       </Button>
-                     </a>
-                   </div>
-                 </CardContent>
-               </Card>
-             ))}
-           </div>
-        </div>
-      </section>
-      }
-
-      <footer className="border-t border-border bg-card py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
-            <div className="flex items-center gap-2">
-              <div className="flex h-18 w-18 items-center justify-center">
-                <Image
-                  src="/icon.png"
-                  alt="Coffee Sphut"
-                  width={100}
-                  height={20}
-                  priority
-                />
-              </div>
-              <span className="text-lg font-bold text-card-foreground">Coffee Sphut</span>
-            </div>
-            <p className="text-sm text-muted-foreground">© 2026 Coffee Sphut. All rights reserved.</p>
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-              <div className="flex gap-6">
-                <a href="/privacy" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
-                  Privacy Policy
-                </a>
-                <a href="#partners" className="text-sm text-muted-foreground transition-colors hover:text-card-foreground">
-                  Contact Us
-                </a>
-              </div>
-              <div className="flex gap-5">
-                <a href="https://www.instagram.com/coffeesphut/" className="text-muted-foreground transition-colors hover:text-card-foreground" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
-                  <Instagram className="h-5 w-5" />
-                </a>
-                <a href="https://www.linkedin.com/company/coffeesphut/" className="text-muted-foreground transition-colors hover:text-card-foreground" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer">
-                  <Linkedin className="h-5 w-5" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
+        <p className="mt-8 border-t border-border pt-5 text-xs text-muted-foreground">
+          © 2026 Coffee Sphut. All rights reserved.{" "}
+          <span className="ml-2">Sphut, pronounced “spot”.</span>
+        </p>
       </footer>
     </div>
   );

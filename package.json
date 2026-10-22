@@ -2,6 +2,7 @@
   "name": "coffee-sphut",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.28.2",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -25,10 +26,9 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-map-gl": "^8.1.2",
+    "server-only": "^0.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
-    "react-mobile-app-button": "^1.2.19",
-    "server-only": "^0.0.1",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^4.6.6"
   },

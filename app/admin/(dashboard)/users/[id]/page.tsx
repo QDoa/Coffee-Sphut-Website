@@ -102,7 +102,7 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
         </Button>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <User className="h-6 w-6 text-muted-foreground" />
@@ -246,7 +246,7 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
                       className="p-4 rounded-lg border bg-card/60 flex flex-col justify-between space-y-3"
                     >
                       <div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap items-start justify-between gap-4">
                           <span className="font-semibold text-sm">{chain?.name || "Chain"}</span>
                           <Badge variant="outline" className="text-xs">
                             {l.reward_count || 0} rewards

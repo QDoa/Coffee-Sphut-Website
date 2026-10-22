@@ -1,54 +1,101 @@
 "use client";
+
+import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { useRef } from "react";
-import { useFormStatus } from "react-dom";
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { sendDeleteAccountRequest } from "@/app/delete-account/server";
-
-
-function DeleteAccountButton() {
-  const { pending } = useFormStatus();
-  
-  return (
-    <Button type='submit' className="my-2" disabled={pending}>
-      {pending ? "Processing...": "Delete Account"}
-    </Button>
-  )
-}
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { PublicPage } from "@/components/public-page";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function DeleteAccountPage() {
   const formRef = useRef<HTMLFormElement>(null);
-  async function handleDeleteAccount(formData: FormData) {
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  async function handleDeleteAccount(formData: FormData): Promise<void> {
+    setFeedback(null);
     try {
       const result = await sendDeleteAccountRequest(formData);
-      
-      if (!result.error) {
-        toast.success("You've successfully requested your account to be deleted.");
-        formRef.current?.reset();
-      } else {
-        toast.error("Failed to submit account deletion request. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error("Failed to submit account deletion request. Please try again.");
+      if (result.error) throw result.error;
+      const text = "Your account deletion request has been submitted.";
+      setFeedback({ type: "success", text });
+      toast.success(text);
+      formRef.current?.reset();
+    } catch {
+      const text = "We couldn’t submit your request. Please try again.";
+      setFeedback({ type: "error", text });
+      toast.error(text);
     }
   }
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <div className='gap-6'>
-          <h1 className="text-2xl font-bold">Delete Account</h1>
-          <p className="text-sm text-muted-foreground">Are you sure you want to delete your account? This action cannot be undone.</p>
-          <form ref={formRef} action={handleDeleteAccount} className="w-full py-2 items-center">
-            <Input required className="my-1" type='email' placeholder="Email" name='email'/>
-            <Input required className="my-1" type='text' placeholder="First Name" name='first_name'/>
-            <Input required className="my-1" type='text' placeholder="Last Name" name='last_name'/>
-            <DeleteAccountButton />
-          </form>
+    <PublicPage
+      eyebrow="Your account"
+      title="Request account deletion."
+      description="Use the email address associated with your Coffee Sphut account to submit a deletion request."
+    >
+      <p className="mb-6 border-l-2 border-destructive pl-4 text-sm leading-relaxed text-muted-foreground">
+        Deleting your account is permanent and cannot be undone.
+      </p>
+      <form ref={formRef} action={handleDeleteAccount} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="delete-email">Account email</Label>
+          <Input
+            id="delete-email"
+            required
+            type="email"
+            autoComplete="email"
+            name="email"
+            placeholder="you@example.com"
+            className="h-12 rounded-xl"
+          />
         </div>
-      </div>
-    </div>
-  )
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="first-name">First name</Label>
+            <Input
+              id="first-name"
+              required
+              type="text"
+              autoComplete="given-name"
+              name="first_name"
+              className="h-12 rounded-xl"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="last-name">Last name</Label>
+            <Input
+              id="last-name"
+              required
+              type="text"
+              autoComplete="family-name"
+              name="last_name"
+              className="h-12 rounded-xl"
+            />
+          </div>
+        </div>
+        {feedback && (
+          <p
+            role={feedback.type === "error" ? "alert" : "status"}
+            className={
+              feedback.type === "error"
+                ? "text-sm text-destructive"
+                : "text-sm text-foreground"
+            }
+          >
+            {feedback.text}
+          </p>
+        )}
+        <FormSubmitButton
+          variant="destructive"
+          pendingLabel="Submitting request…"
+        >
+          Request account deletion
+        </FormSubmitButton>
+      </form>
+    </PublicPage>
+  );
 }

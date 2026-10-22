@@ -90,7 +90,7 @@ export default async function CafeEditPage({ params }: CafeEditPageProps) {
         </Button>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           {!isNew && cafe?.image_url && (
             <div className="relative h-14 w-14 rounded-lg overflow-hidden bg-muted border shrink-0 shadow-sm">
@@ -116,12 +116,12 @@ export default async function CafeEditPage({ params }: CafeEditPageProps) {
 
       <form action={formAction}>
         <Tabs defaultValue="details" className="space-y-6">
-          <TabsList className="grid grid-cols-5 w-full">
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="location">Location & Hours</TabsTrigger>
-            <TabsTrigger value="contact">Contact & Social</TabsTrigger>
-            <TabsTrigger value="images">Images</TabsTrigger>
-            <TabsTrigger value="menu" disabled={isNew}>
+          <TabsList className="grid w-full grid-cols-2 gap-1 group-data-[orientation=horizontal]/tabs:h-auto sm:grid-cols-3 xl:grid-cols-5">
+            <TabsTrigger className="h-auto min-h-11 whitespace-normal px-3 py-2 text-center" value="details">Details</TabsTrigger>
+            <TabsTrigger className="h-auto min-h-11 whitespace-normal px-3 py-2 text-center" value="location">Location & Hours</TabsTrigger>
+            <TabsTrigger className="h-auto min-h-11 whitespace-normal px-3 py-2 text-center" value="contact">Contact & Social</TabsTrigger>
+            <TabsTrigger className="h-auto min-h-11 whitespace-normal px-3 py-2 text-center" value="images">Images</TabsTrigger>
+            <TabsTrigger className="h-auto min-h-11 whitespace-normal px-3 py-2 text-center" value="menu" disabled={isNew}>
               Menu {menuItems.length > 0 ? `(${menuItems.length})` : ""}
             </TabsTrigger>
           </TabsList>

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { ArrowUpRight, Menu, MapPin } from "lucide-react";
 import { track } from "@vercel/analytics";
+import { BrandLogo } from "@/components/brand-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -20,161 +22,149 @@ import { useScrolled } from "@/hooks/use-scrolled";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
-  { label: "Features", href: "/#features" },
-  { label: "App", href: "/#app" },
-  { label: "Partners", href: "/#partners" },
-  { label: "Download", href: "/#download" },
+  { label: "The app", href: "/#app" },
+  { label: "Community", href: "/#events" },
+  { label: "For café owners", href: "/#partners" },
 ];
-
-const APPLE_STORE_URL =
-  "https://apps.apple.com/us/app/coffee-sphut/id6759900667";
-const PLAY_STORE_URL =
-  "https://play.google.com/store/apps/details?id=com.coffeesphut.app";
-
-function StoreBadges({ fullWidth = false }: { fullWidth?: boolean }) {
-  return (
-    <>
-      <a
-        href={APPLE_STORE_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => track("Download")}
-        className={fullWidth ? "w-full" : undefined}
-      >
-        <Button size="lg" variant="secondary" className={cn("text-base", fullWidth ? "w-full h-12" : "h-11")}>
-          <Image
-            src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/apple_logo.png"
-            alt="Apple logo"
-            width={24}
-            height={24}
-          />
-          <span className={fullWidth ? undefined : "hidden md:inline"}>
-            Get on iOS!
-          </span>
-        </Button>
-      </a>
-      <a
-        href={PLAY_STORE_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => track("Download")}
-        className={fullWidth ? "w-full" : undefined}
-      >
-        <Button
-          size="lg"
-          variant="outline"
-          className={cn("bg-primary text-primary-foreground hover:bg-primary text-base", fullWidth ? "w-full h-12" : "h-11")}
-        >
-          <Image
-            src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/play_store.png"
-            alt="Google Play Store logo"
-            width={24}
-            height={24}
-          />
-          <span className={fullWidth ? undefined : "hidden md:inline"}>
-            Get on Android!
-          </span>
-        </Button>
-      </a>
-    </>
-  );
-}
 
 export function SiteHeader() {
   const scrolled = useScrolled(8);
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigationTargetRef = useRef<string | null>(null);
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 w-full border-b transition-colors duration-300",
-        scrolled
-          ? "border-border bg-background/70 backdrop-blur-md supports-[not([backdrop-filter]:blur(0))]:bg-background"
-          : "border-transparent bg-transparent"
+        "sticky top-0 z-40 w-full border-b bg-background/95 transition-colors duration-200",
+        scrolled ? "border-border backdrop-blur-md" : "border-transparent",
       )}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-18 items-center justify-between gap-3">
-          <Link href="/" className="flex items-center" aria-label="Coffee Sphut home">
-            <div className="flex h-10 w-24 items-center justify-center sm:w-30">
-              <Image
-                src="/icon.png"
-                alt="Coffee Sphut"
-                width={100}
-                height={20}
-                priority
-              />
-            </div>
-          </Link>
-
-          <nav className="hidden items-center gap-6 md:flex">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <Button
-              asChild
-              size="default"
-              className="h-11 px-5 text-sm md:h-10 md:px-4"
-              onClick={() => track("Find Coffee")}
+      <a
+        href="#main-content"
+        className="sr-only rounded-md bg-background p-3 text-foreground focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:ring-2 focus:ring-ring"
+      >
+        Skip to content
+      </a>
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        <Link
+          href="/"
+          aria-label="Coffee Sphut home"
+          className="shrink-0 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+        >
+          <BrandLogo priority />
+        </Link>
+        <nav
+          aria-label="Main navigation"
+          className="hidden items-center gap-7 md:flex"
+        >
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="py-3 text-sm text-muted-foreground underline-offset-8 transition-colors hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
             >
-              <Link href="/stores">Find Coffee</Link>
-            </Button>
-
-            <div className="hidden items-center gap-4 md:flex">
-              <StoreBadges />
-            </div>
-
-            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-lg"
-                  className="size-11 md:hidden"
-                  aria-label="Open menu"
-                >
-                  <Menu className="size-5" />
-                </Button>
-              </SheetTrigger>
-
-              <SheetContent side="right" className="w-[85vw] sm:max-w-sm">
-                <SheetHeader>
-                  <SheetTitle>Menu</SheetTitle>
-                  <SheetDescription className="sr-only">
-                    Browse Coffee Sphut pages and download the app.
-                  </SheetDescription>
-                </SheetHeader>
-
-                <nav className="flex flex-col gap-1">
-                  {NAV_LINKS.map((link) => (
-                    <SheetClose asChild key={link.href}>
-                      <Link
-                        href={link.href}
-                        className="flex min-h-14 items-center rounded-lg px-3 text-base font-medium text-foreground transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                      >
-                        {link.label}
-                      </Link>
-                    </SheetClose>
-                  ))}
-                </nav>
-
-                <SheetFooter>
-                  <Button asChild className="h-12 w-full text-base" onClick={() => track("Find Coffee")}>
-                    <Link href="/stores">Find Coffee</Link>
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <ThemeToggle className="hidden size-10 border-transparent bg-transparent shadow-none sm:inline-flex" />
+          <Button
+            asChild
+            className="h-11 px-4"
+            onClick={() => track("Find Coffee")}
+          >
+            <Link
+              href="/stores"
+              aria-current={pathname === "/stores" ? "page" : undefined}
+            >
+              <MapPin />
+              Find coffee
+            </Link>
+          </Button>
+          <Link
+            href="/#download"
+            className="hidden items-center gap-1 py-3 text-sm font-medium underline-offset-4 hover:underline lg:inline-flex"
+          >
+            Get the app <ArrowUpRight className="size-4" />
+          </Link>
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-11 md:hidden"
+                aria-label="Open menu"
+              >
+                <Menu />
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side="right"
+              className="flex w-[88vw] flex-col sm:max-w-sm"
+              onCloseAutoFocus={(event) => {
+                const targetId = navigationTargetRef.current;
+                navigationTargetRef.current = null;
+                if (!targetId) return;
+                // Restoring focus to the menu trigger would undo same-page anchor scrolling.
+                event.preventDefault();
+                const target = document.getElementById(targetId);
+                target?.focus({ preventScroll: true });
+                target?.scrollIntoView({
+                  block: "start",
+                  behavior: window.matchMedia(
+                    "(prefers-reduced-motion: reduce)",
+                  ).matches
+                    ? "instant"
+                    : "smooth",
+                });
+              }}
+            >
+              <SheetHeader>
+                <SheetTitle>Your next coffee starts here.</SheetTitle>
+                <SheetDescription>
+                  Explore Coffee Sphut and the cafés behind your daily cup.
+                </SheetDescription>
+              </SheetHeader>
+              <nav
+                aria-label="Mobile navigation"
+                className="mt-6 flex flex-col px-4"
+              >
+                {NAV_LINKS.map((link) => (
+                  <SheetClose asChild key={link.href}>
+                    <Link
+                      href={link.href}
+                      onClick={() => {
+                        navigationTargetRef.current = link.href.split("#")[1];
+                      }}
+                      className="border-b border-border py-5 text-lg transition-colors hover:text-primary"
+                    >
+                      {link.label}
+                    </Link>
+                  </SheetClose>
+                ))}
+              </nav>
+              <SheetFooter className="mt-auto">
+                <div className="mb-3 flex items-center justify-between text-sm text-muted-foreground">
+                  Appearance <ThemeToggle />
+                </div>
+                <SheetClose asChild>
+                  <Button asChild className="h-12">
+                    <Link
+                      href="/#download"
+                      onClick={() => {
+                        navigationTargetRef.current = "download";
+                      }}
+                    >
+                      Get the app <ArrowUpRight />
+                    </Link>
                   </Button>
-                  <StoreBadges fullWidth />
-                </SheetFooter>
-              </SheetContent>
-            </Sheet>
-          </div>
+                </SheetClose>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
