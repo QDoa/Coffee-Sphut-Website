@@ -27,7 +27,7 @@ export default async function RecipesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Recipes & Brew Guides</h1>
           <p className="text-sm text-muted-foreground">
@@ -42,7 +42,7 @@ export default async function RecipesPage() {
         </Button>
       </div>
 
-      <div className="rounded-md border bg-card">
+      <div className="min-w-0 rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>

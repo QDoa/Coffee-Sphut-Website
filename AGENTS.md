@@ -82,6 +82,7 @@ Use **`pnpm`**. The repo has both `npm` and `pnpm` lock files; `pnpm-lock.yaml` 
 - Fonts are configured in `app/layout.tsx` with `next/font/google`; Tailwind font tokens live in `app/globals.css`. The body explicitly applies `font-sans`.
 - Fraunces includes normal and italic styles and the optical-size (`opsz`) axis. Preserve real italics for short heading accents.
 - Keep font choices centralized in these tokens. Avoid per-component font imports and global heading overrides that unintentionally restyle the admin interface.
+- Reuse `PublicPage` for public account, preference, reward, and policy pages. Use `FormSubmitButton` for forms driven by React form actions so pending feedback stays consistent. Preserve visible labels and inline status/error messages.
 
 ### UI Direction & Interactions
 - Keep the public website coffee-focused: concrete café discovery, coffee stories, loyalty, and community benefits. Separate café-owner messaging from consumer benefits.
@@ -90,6 +91,13 @@ Use **`pnpm`**. The repo has both `npm` and `pnpm` lock files; `pnpm-lock.yaml` 
 - Use `Button asChild` or `buttonVariants` to style links; avoid nesting buttons inside anchors.
 - Keep the loyalty stamp interaction clearly labeled as a demo. It must not imply that real stamps or rewards were issued.
 - Preserve event registration, calendar, app download, and partner signup links when changing layouts.
+
+### Admin Workspace
+- Reuse `AdminShell` for authenticated admin pages. Its scoped styles apply Fraunces to page-level `h1` headings and keep dense tables, form labels, section titles, and navigation in Geist.
+- Use the shared warm theme tokens, quiet rounded cards, and readable table spacing. Keep data tables horizontally scrollable inside the content area; do not clip columns or let them widen the whole page.
+- Keep desktop and mobile navigation equivalent, with active links and breadcrumbs. Preserve role-based visibility and all server-side `requireStaff` / `requireAdmin` checks; navigation visibility is not authorization.
+- Admin sign-in and recovery use the branded auth layout, visible labels, inline feedback, and 48px controls. Preserve Google sign-in, redirect targets, and existing server actions.
+- Use restrained hover, selected, and pending states in admin screens. Avoid entrance animations that delay access to forms or data.
 
 ### Motion & Accessibility
 - Respect `prefers-reduced-motion` in both CSS and JavaScript, including map camera movement.
@@ -115,6 +123,7 @@ Use **`pnpm`**. The repo has both `npm` and `pnpm` lock files; `pnpm-lock.yaml` 
 - Always use Next.js `Image` component with explicit `width` and `height`
 - Add `priority` for above-the-fold images
 - Remote images must match patterns in `next.config.ts` (Vercel Blob storage configured)
+- Hero app previews use the hosted `home.png`, `map.png`, and `account.png` files at `https://1iustwinxvwsck3s.public.blob.vercel-storage.com/`. These assets already include their iPhone frames: render the complete image at its natural aspect ratio without cropping, vertical offsets, or an additional CSS phone bezel.
 
 ---
 

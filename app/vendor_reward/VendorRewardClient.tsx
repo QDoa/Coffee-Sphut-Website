@@ -1,86 +1,98 @@
 "use client";
 
-import { useRef } from "react";
-import { useFormStatus } from "react-dom";
+import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"
 import { addRewardTransaction } from "@/app/vendor_reward/server";
-
-import { useSearchParams } from 'next/navigation'
-
-function PunchRewardCardButton() {
-  const { pending } = useFormStatus();
-  
-  return (
-    <Button 
-      type='submit' 
-      size="lg" 
-      className="mt-4 text-base"
-      disabled={pending}
-    >
-      {pending ? "Punching card..." : "Punch reward card"}
-    </Button>
-  );
-}
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { PublicPage } from "@/components/public-page";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function VendorRewardClient() {
   const searchParams = useSearchParams();
   const formRef = useRef<HTMLFormElement>(null);
-  const firstName = searchParams.get('firstName');
-  const userId = searchParams.get('userId') ?? '';
+  const firstName = searchParams.get("firstName");
+  const userId = searchParams.get("userId") ?? "";
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const validLink = Boolean(firstName && userId);
 
-  async function punchRewardCard(formData: FormData) {
+  async function punchRewardCard(formData: FormData): Promise<void> {
+    setFeedback(null);
     try {
-      const { data, error } = await addRewardTransaction(formData, userId)
-      console.log("Punch reward card response:", data, error)
-      if (!error) {
-        toast.success(`You have successfully punched ${firstName} reward card`);
-        formRef.current?.reset();
-      }
-      else {
-        toast.error("Failed to punch reward card.");
-      }
-    } catch (error) {
-      console.error("Error:", error);
+      const { error } = await addRewardTransaction(formData, userId);
+      if (error) throw error;
+      const text = `A stamp has been added to ${firstName}’s reward card.`;
+      setFeedback({ type: "success", text });
+      toast.success(text);
+      formRef.current?.reset();
+    } catch {
+      const text =
+        "We couldn’t add a stamp. Check your café code and try again.";
+      setFeedback({ type: "error", text });
+      toast.error(text);
     }
   }
 
-  if (!firstName || !userId) {
-    return (
-      <div className="py-16 sm:py-24">
-        <div className="items-center mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-balance text-xl font-bold tracking-tight text-card-foreground sm:text-xl lg:text-xl">
-              Coffee Sphut Reward Program
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-              Invalid reward link. Please check the link and try again.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
   return (
-    <div className="py-16 sm:py-24">
-      <div className="items-center mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h2 className="text-balance text-xl font-bold tracking-tight text-card-foreground sm:text-xl lg:text-xl">
-            Coffee Sphut Reward Program
+    <PublicPage
+      eyebrow="For café teams"
+      title="Another cup. Another stamp."
+      description={
+        validLink
+          ? `Add a visit to ${firstName}’s digital reward card using your café code.`
+          : "Open a customer’s reward link to add a stamp to their card."
+      }
+    >
+      {validLink ? (
+        <form ref={formRef} action={punchRewardCard} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="stamp-cafe-code">Café code</Label>
+            <Input
+              id="stamp-cafe-code"
+              required
+              type="text"
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder="Enter your café code"
+              name="cafeCode"
+              className="h-12 rounded-xl"
+            />
+          </div>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Use the code for the café where this customer is visiting.
+          </p>
+          {feedback && (
+            <p
+              role={feedback.type === "error" ? "alert" : "status"}
+              className={
+                feedback.type === "error"
+                  ? "text-sm text-destructive"
+                  : "text-sm text-foreground"
+              }
+            >
+              {feedback.text}
+            </p>
+          )}
+          <FormSubmitButton pendingLabel="Adding stamp…">
+            Add a coffee stamp
+          </FormSubmitButton>
+        </form>
+      ) : (
+        <div role="alert">
+          <h2 className="font-serif text-2xl tracking-tight">
+            This link is incomplete.
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-            Punch {firstName}&apos;s reward card by entering your cafe code.
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Please ask the customer to open their reward card in the app and
+            share the link again.
           </p>
         </div>
-
-        <div className="mt-4 flex justify-center">
-          <form ref={formRef} action={punchRewardCard} className="grid grid-cols-1 w-full max-w-md items-center sm:flex-row">
-            <Input required type='text' placeholder="Enter cafe code" name='cafeCode'/>
-            <PunchRewardCardButton />
-          </form>
-        </div>
-      </div>
-    </div>
+      )}
+    </PublicPage>
   );
 }

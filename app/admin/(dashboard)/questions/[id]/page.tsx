@@ -44,7 +44,7 @@ export default async function QuestionEditPage({ params }: QuestionEditPageProps
         </Button>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <h1 className="text-2xl font-bold tracking-tight">
           {isNew ? "Create Survey Question" : "Edit Survey Question"}
         </h1>

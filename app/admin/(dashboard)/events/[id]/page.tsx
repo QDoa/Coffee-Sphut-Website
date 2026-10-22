@@ -70,7 +70,7 @@ export default async function EventEditPage({ params }: EventEditPageProps) {
         </Button>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           {!isNew && event?.image_url && (
             <div className="relative h-14 w-14 rounded-lg overflow-hidden bg-muted border shrink-0 shadow-sm">

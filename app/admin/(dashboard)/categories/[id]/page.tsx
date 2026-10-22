@@ -50,7 +50,7 @@ export default async function CategoryEditPage({ params }: CategoryEditPageProps
         </Button>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <h1 className="text-2xl font-bold tracking-tight">
           {isNew ? "Create New Category" : `Edit Category: ${category?.title}`}
         </h1>
