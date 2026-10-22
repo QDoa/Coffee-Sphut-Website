@@ -77,6 +77,14 @@ export const currentPartners = [
     name: "Kastanos Cafe",
     logo: "https://1iustwinxvwsck3s.public.blob.vercel-storage.com/KastanosCafeLogo.jpg",
   },
+  {
+    name: "Zen Cafe",
+    logo: "https://tcxenxliwzykhxzhlien.supabase.co/storage/v1/object/public/CafeImage/ZenCafe/ZenCafeLogo.jpeg",
+  },
+  {
+    name: "Cone Cafe",
+    logo: "https://tcxenxliwzykhxzhlien.supabase.co/storage/v1/object/public/CafeImage/ConeCafe/ConeCafeLogo.jpeg",
+  },
 ]
 
 export const vendorBenefits: VendorBenefit[] = [

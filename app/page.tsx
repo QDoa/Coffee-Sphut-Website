@@ -83,70 +83,37 @@ export default function Home() {
           </div>
         </section>
 
-      {/* Features Section */}
-      <section id="features" className="border-b border-border bg-card py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-balance text-3xl font-bold tracking-tight text-card-foreground sm:text-4xl lg:text-5xl">
-              Everything you need for coffee
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
-              From discovering brewing techniques to finding your next favorite café, Coffee Sphut has you covered.
+        <section
+          aria-label="Cafés in the Coffee Sphut community"
+          className="border-b border-border bg-card"
+        >
+          <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:items-center lg:gap-12 lg:px-8">
+            <p className="shrink-0 text-sm leading-relaxed text-muted-foreground">
+              Good coffee.
+              <br />
+              <span className="font-medium text-foreground">Good company.</span>
             </p>
+            <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
+              {currentPartners.map((partner) => (
+                <div
+                  key={partner.name}
+                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-background px-3 py-3"
+                >
+                  <Image
+                    src={partner.logo}
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="size-10 shrink-0 rounded-full object-contain"
+                  />
+                  <span className="text-xs font-medium sm:text-sm">
+                    {partner.name}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-
-          <div className="mt-16 grid gap-8 sm:grid-cols-1 lg:grid-cols-4">
-            <Card className="border-border bg-background">
-              <CardContent className="p-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <BookOpen className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mt-4 text-xl font-semibold text-foreground">Simplify Café Discovery</h3>
-                <p className="mt-2 text-muted-foreground leading-relaxed">
-                  Make it easy for users to find, explore, and choose cafés and coffee shops around them.
-                </p>
-              </CardContent>
-            </Card>
-
-
-            <Card className="border-border bg-background">
-              <CardContent className="p-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Newspaper className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mt-4 text-xl font-semibold text-foreground">Deliver Curated Coffee Content</h3>
-                <p className="mt-2 text-muted-foreground leading-relaxed">
-                  Provide relevant, curated content that educates and inspires both new and seasoned coffee drinkers.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border bg-background">
-              <CardContent className="p-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mt-4 text-xl font-semibold text-foreground">Strengthen Customer Retention</h3>
-                <p className="mt-2 text-muted-foreground leading-relaxed">
-                  Offer digital loyalty tools that help cafés turn occasional visitors into repeat customers.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border bg-background">
-              <CardContent className="p-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Database className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mt-4 text-xl font-semibold text-foreground">Build a Reliable Data Foundation</h3>
-                <p className="mt-2 text-muted-foreground leading-relaxed">
-                  Create reliable data that supports cafés, brands, and investors.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+        </section>
 
       {/* App Preview Section */}
       <section id="app" className="border-b border-border bg-background py-16 sm:py-24">
