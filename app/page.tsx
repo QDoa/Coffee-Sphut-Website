@@ -127,52 +127,35 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mt-16 grid gap-12 md:grid-cols-3 md:gap-8">
-            <div className="flex flex-col items-center">
-              <Image
-                src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/home.png"
-                alt="Coffee Sphut home feed with articles"
-                width={250}
-                height={541}
-                className="rounded-[2rem] transition-transform duration-700 ease-in-out hover:scale-110"
-              />
-              <h3 className="mt-6 text-xl font-semibold text-foreground">Discover Content</h3>
-              <p className="mt-2 text-center text-muted-foreground">
-                Browse expertly curated articles and guides
+        <section
+          id="rewards"
+          className="border-y border-border bg-secondary/40"
+        >
+          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2 lg:gap-20 lg:px-8">
+            <SectionReveal>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Make a habit of good coffee
               </p>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <Image
-                src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/map.png"
-                alt="Coffee Sphut map showing nearby coffee stores"
-                width={250}
-                height={541}
-                className="rounded-[2rem] transition-transform duration-700 ease-in-out hover:scale-110"
-              />
-              <h3 className="mt-6 text-xl font-semibold text-foreground">Find Stores</h3>
-              <p className="mt-2 text-center text-muted-foreground">
-                Locate select coffee stores with interactive maps
+              <h2 className="mt-4 font-serif text-4xl leading-tight tracking-tight sm:text-5xl">
+                A familiar face.
+                <br />A favourite cup.
+                <br />
+                <span className="italic text-primary">A little thank you.</span>
+              </h2>
+              <p className="mt-6 max-w-md text-base leading-relaxed text-muted-foreground">
+                At participating cafés, each visit brings you closer to a
+                reward. Show your personal QR code in the app and let your
+                barista take care of the stamp.
               </p>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <Image
-                src="https://1iustwinxvwsck3s.public.blob.vercel-storage.com/account.png"
-                alt="Coffee Sphut account screen"
-                width={250}
-                height={541}
-                className="rounded-[2rem] transition-transform duration-700 ease-in-out hover:scale-110"
-              />
-              <h3 className="mt-6 text-xl font-semibold text-foreground">Save Favourites</h3>
-              <p className="mt-2 text-center text-muted-foreground">
-                Bookmark articles and store for quick access
+              <p className="mt-4 text-sm text-muted-foreground">
+                Every café sets its own rewards. Your digital card keeps track.
               </p>
-            </div>
-
+            </SectionReveal>
+            <SectionReveal>
+              <LoyaltyDemo />
+            </SectionReveal>
           </div>
-        </div>
-      </section>
+        </section>
 
       {/* Events Section */}
       {upcomingEvents.length > 0 && (
