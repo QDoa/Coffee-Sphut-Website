@@ -26,7 +26,7 @@ pnpm lint         # ESLint (eslint.config.mjs)
 pnpm exec tsc --noEmit --incremental false  # Type-check without updating build metadata
 ```
 
-**Note:** No test runner configured. If adding tests, use `.test.ts` / `.test.tsx` and configure Jest or Vitest.
+**Note:** No dedicated test script is configured. Café image cleanup uses Node's built-in test runner with the existing `tsx` dependency: `pnpm exec tsx --test lib/admin/cafe-images.test.ts`. Use `.test.ts` / `.test.tsx` for additional tests.
 
 ---
 
@@ -52,6 +52,14 @@ Use **`pnpm`**. The repo has both `npm` and `pnpm` lock files; `pnpm-lock.yaml` 
 - Required at runtime: `SUPABASE_URL`, `SUPABASE_ANON_KEY` (stored in `.env.local`)
 - Development server respects `.env.local` automatically
 - Vercel deployment uses these secrets in project settings
+
+### Admin OAuth on localhost
+- A localhost app using the hosted Supabase project needs `http://localhost:3000/admin/auth/callback` in that project's Auth redirect allow-list. The local `supabase/config.toml` does not update hosted settings automatically.
+- Preserve the production Site URL and existing callbacks. For a hosted callback change, preview `supabase config diff` against a minimal config declaring only the intended property; do not push the full local development config to production.
+- Keep staff authentication and Storage RLS enabled during image-deletion verification so the browser test exercises actual admin permissions.
+
+### Café IDs after data imports
+- Imports with explicit café IDs can leave `Cafe_id_seq` behind the highest record, causing `Cafe_id_key` errors on new cafés. The repair migration locks café writes briefly and advances the sequence without lowering it or editing records.
 
 ---
 
@@ -122,6 +130,10 @@ Use **`pnpm`**. The repo has both `npm` and `pnpm` lock files; `pnpm-lock.yaml` 
 - **Files:** lowercase with hyphens; PascalCase for component files
 
 ### Image Handling
+- Delete managed café uploads through the authenticated Supabase Storage API (`storage.from(bucket).remove(paths)`), never SQL/PostgREST deletes on `storage.objects` or `storage.buckets`. Preserve the existing admin-only deletion policy.
+- Save existing café image references before cleaning up removed files. Keep failed cleanup candidates for retries, retain files referenced by another café, and only delete this project's `media/cafes/` uploads. Other image URLs are detached rather than deleted.
+- Café editor tab panels stay mounted to preserve form fields across tabs. Menu-item inputs use their separate form via the `form` attribute; never nest forms.
+- Preserve uncontrolled café fields on failed saves: prevent the native form action reset and dispatch `useActionState` inside a transition. Keep pending feedback and inline error focus working.
 - Always use Next.js `Image` component with explicit `width` and `height`
 - Add `priority` for above-the-fold images
 - Remote images must match patterns in `next.config.ts` (Vercel Blob storage configured)
@@ -129,4 +141,4 @@ Use **`pnpm`**. The repo has both `npm` and `pnpm` lock files; `pnpm-lock.yaml` 
 
 ---
 
-**Last Updated:** 2026-10-21
+**Last Updated:** 2026-10-25

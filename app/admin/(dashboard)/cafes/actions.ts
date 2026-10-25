@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireStaff } from "@/lib/admin/auth";
+import { removedCafeImageUrls, removeUnusedCafeUploads } from "@/lib/admin/cafe-images";
 
 const cafeSchema = z.object({
   name: z.string().min(1, "Name is required").trim(),
@@ -25,8 +26,24 @@ const cafeSchema = z.object({
   image_url: z.string().optional().nullable(),
 });
 
-export async function saveCafeAction(id: string | null, formData: FormData) {
-  await requireStaff("editor");
+export async function saveCafeAction(id: string | null, formData: FormData): Promise<{ error: string; cafeId?: string }> {
+  const staff = await requireStaff("editor");
+  if (!id || id === "new") {
+    const persistedId = formData.get("persisted_cafe_id")?.toString();
+    if (persistedId) {
+      if (!/^[1-9]\d*$/.test(persistedId)) return { error: "Invalid café ID." };
+      id = persistedId;
+    }
+  }
+  const isNew = !id || id === "new";
+  if (formData.get("images_uploading") === "true") return { error: "Wait for the image uploads to finish before saving the café." };
+
+  let stagedRemovals: string[] = [];
+  try {
+    stagedRemovals = z.array(z.string()).max(500).parse(JSON.parse(formData.get("removed_image_urls")?.toString() || "[]"));
+  } catch {
+    return { error: "Invalid image removal request. Reload the café and try again." };
+  }
 
   const rawData = {
     name: formData.get("name"),
@@ -75,6 +92,26 @@ export async function saveCafeAction(id: string | null, formData: FormData) {
   }
 
   const supabase = await createClient();
+  const galleryUrlsRaw = formData.get("gallery_images")?.toString();
+  const galleryUrls = galleryUrlsRaw?.split("\n").map((url) => url.trim()).filter(Boolean);
+
+  if (id && id !== "new") {
+    const [cafe, gallery] = await Promise.all([
+      supabase.from("Cafe").select("image_url").eq("id", Number(id)).single(),
+      supabase.from("CafeImages").select("images_url").eq("cafe_id", Number(id)).maybeSingle(),
+    ]);
+    if (cafe.error || gallery.error) return { error: "Could not load the current café images. No changes were saved." };
+    const previousUrls = [cafe.data.image_url ?? "", ...(gallery.data?.images_url ?? [])];
+    // Missing fields must not clear images when a form omits its Images panel.
+    if (!formData.has("image_url")) parsed.data.image_url = cafe.data.image_url;
+    stagedRemovals = removedCafeImageUrls(
+      [...previousUrls, ...stagedRemovals],
+      parsed.data.image_url ?? null,
+      galleryUrls ?? gallery.data?.images_url ?? [],
+    );
+  } else {
+    stagedRemovals = removedCafeImageUrls(stagedRemovals, parsed.data.image_url ?? null, galleryUrls ?? []);
+  }
 
   const payload = {
     ...parsed.data,
@@ -89,17 +126,22 @@ export async function saveCafeAction(id: string | null, formData: FormData) {
     if (error) return { error: error.message };
 
     // Update cafe images array if provided
-    const galleryUrlsRaw = formData.get("gallery_images")?.toString();
-    if (galleryUrlsRaw !== undefined) {
-      const urls = galleryUrlsRaw
-        .split("\n")
-        .map((u) => u.trim())
-        .filter(Boolean);
-      await supabase
+    if (galleryUrls !== undefined) {
+      const { error } = await supabase
         .from("CafeImages")
-        .upsert({ cafe_id: cafeId, images_url: urls });
+        .upsert({ cafe_id: cafeId, images_url: galleryUrls });
+      if (error) return { error: `Café details were saved, but gallery changes failed: ${error.message}` };
     }
   } else {
+    // These candidates are discarded uploads from a new, unsaved café. Clean
+    // them before inserting so a cleanup retry cannot create duplicate cafés.
+    if (staff.role === "admin") {
+      try {
+        await removeUnusedCafeUploads(supabase, stagedRemovals, process.env.SUPABASE_URL!);
+      } catch (error) {
+        return { error: `Could not remove a discarded upload. ${error instanceof Error ? error.message : "Please try again."}` };
+      }
+    }
     const { data, error } = await supabase
       .from("Cafe")
       .insert(payload)
@@ -109,15 +151,22 @@ export async function saveCafeAction(id: string | null, formData: FormData) {
     if (error) return { error: error.message };
     id = String(data.id);
 
-    const galleryUrlsRaw = formData.get("gallery_images")?.toString();
-    if (galleryUrlsRaw) {
-      const urls = galleryUrlsRaw
-        .split("\n")
-        .map((u) => u.trim())
-        .filter(Boolean);
-      await supabase
+    if (galleryUrls?.length) {
+      const { error } = await supabase
         .from("CafeImages")
-        .upsert({ cafe_id: data.id, images_url: urls });
+        .upsert({ cafe_id: data.id, images_url: galleryUrls });
+      if (error) return { error: `The café was created, but its gallery could not be saved. Save again to retry: ${error.message}`, cafeId: String(data.id) };
+    }
+  }
+
+  // Editors can edit associations; only admins may permanently delete files.
+  // Keep failed removals in the mounted form so saving again can retry cleanup.
+  if (staff.role === "admin" && !isNew) {
+    try {
+      await removeUnusedCafeUploads(supabase, stagedRemovals, process.env.SUPABASE_URL!);
+    } catch (error) {
+      revalidatePath("/stores");
+      return { error: `Café changes were saved, but image cleanup failed. Save again to retry. ${error instanceof Error ? error.message : "Please try again."}` };
     }
   }
 
