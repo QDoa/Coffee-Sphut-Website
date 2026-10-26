@@ -60,9 +60,11 @@ export default function RedeemRewardClient() {
       toast.success(text);
       formRef.current?.reset();
       setReward({ rewardId, availability: "redeemed" });
-    } catch {
+    } catch (failure) {
       const text =
-        "We couldn’t redeem this reward. Check your café code and try again.";
+        typeof failure === "string"
+          ? failure
+          : "We couldn’t redeem this reward. Please try again or contact Coffee Sphut support.";
       setError(text);
       toast.error(text);
     }
