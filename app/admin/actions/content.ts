@@ -75,7 +75,10 @@ export async function savePostAction(id: string | null, formData: FormData) {
   } else {
     const { data, error } = await supabase
       .from("Post")
-      .insert(payload)
+      .insert({
+        ...payload,
+        published_at: formData.get("intent") === "publish" ? new Date().toISOString() : null,
+      })
       .select("id")
       .single();
 
@@ -160,7 +163,10 @@ export async function saveRecipeAction(id: string | null, formData: FormData) {
   } else {
     const { data, error } = await supabase
       .from("Recipe")
-      .insert(payload)
+      .insert({
+        ...payload,
+        published_at: formData.get("intent") === "publish" ? new Date().toISOString() : null,
+      })
       .select("id")
       .single();
 
@@ -230,7 +236,10 @@ export async function saveEventAction(id: string | null, formData: FormData) {
   } else {
     const { data, error } = await supabase
       .from("Event")
-      .insert(payload)
+      .insert({
+        ...payload,
+        published_at: formData.get("intent") === "publish" ? new Date().toISOString() : null,
+      })
       .select("id")
       .single();
 

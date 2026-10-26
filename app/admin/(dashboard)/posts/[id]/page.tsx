@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { FormSubmitButton } from "@/components/form-submit-button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PublishingControls } from "@/components/admin/publishing-controls";
 import { HistoryPanel } from "@/components/admin/history-panel";
@@ -186,11 +186,29 @@ export default async function PostEditPage({ params }: PostEditPageProps) {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t">
+                <div className="flex flex-wrap justify-end gap-3 pt-4 border-t">
                   <Button asChild variant="outline">
                     <Link href="/admin/posts">Cancel</Link>
                   </Button>
-                  <Button type="submit">Save Post</Button>
+                  <FormSubmitButton
+                    name="intent"
+                    value="draft"
+                    variant={isNew ? "outline" : "default"}
+                    pendingLabel="Saving..."
+                    className="h-9 w-auto"
+                  >
+                    {isNew ? "Save Draft" : "Save Post"}
+                  </FormSubmitButton>
+                  {isNew && (
+                    <FormSubmitButton
+                      name="intent"
+                      value="publish"
+                      pendingLabel="Publishing..."
+                      className="h-9 w-auto"
+                    >
+                      Publish Now
+                    </FormSubmitButton>
+                  )}
                 </div>
               </CardContent>
             </Card>
