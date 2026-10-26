@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Dev-only: allow opening the dev server from other devices on the LAN.
+  // Next.js 16 blocks dev resources (HMR websocket) for non-localhost hosts,
+  // which prevents client-side hydration entirely. Has no effect in production.
+  allowedDevOrigins: ["192.168.5.48"],
   images: {
     dangerouslyAllowLocalIP: true,
     remotePatterns: [

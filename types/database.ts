@@ -15,6 +15,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_reward_stamp: {
+        Args: { p_cafe_code: string; p_user_id: string }
+        Returns: string
+      }
       graphql: {
         Args: {
           extensions?: Json
@@ -849,6 +853,10 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
       log_staff_login: { Args: { p_method: string }; Returns: undefined }
+      redeem_reward: {
+        Args: { p_cafe_code: string; p_reward_id: string }
+        Returns: string
+      }
       staff_role: { Args: never; Returns: string }
     }
     Enums: {

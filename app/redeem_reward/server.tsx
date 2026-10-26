@@ -1,52 +1,53 @@
-"use server"
-import { getSupabaseServerClient } from "@/lib/supabase"
+"use server";
 
-export async function rewardAvailable(rewardId: string) {
-  const supabase = getSupabaseServerClient()
-  const { data: rewardData, error: rewardError } = await supabase
-    .from('Rewards')
-    .select()
-    .eq('id', rewardId)
-    .single()
-  if (rewardError || !rewardData || rewardData.status !== 'issued') {
-    return false;
-  }
-  console.log("Checking reward availability...");
-  return true;
+import { getSupabaseServerClient } from "@/lib/supabase";
+import { rewardErrorMessage } from "@/lib/reward-errors";
+
+interface RedemptionResult {
+  data: string | null;
+  error: string | null;
 }
 
-export async function redeemRewardRequest(formData: FormData, rewardId: string) {
-  try {
-    const supabase = getSupabaseServerClient()
-    // get chain id from cafe code
-    const {data: cafeIdData, error: cafeIdError} = await supabase
-      .from('Cafe')
-      .select('id, chain_id')
-      .eq('reward_code', formData.get('cafeCode'))
-      .single()
+export async function rewardAvailable(rewardId: string): Promise<boolean> {
+  if (!rewardId) return false;
 
-    if (cafeIdError || !cafeIdData) {
-      console.error("Error fetching store ID:", cafeIdError);
-      return { data: null, error: "Invalid cafe code" };
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("Rewards")
+    .select("status")
+    .eq("id", rewardId)
+    .maybeSingle();
+
+  if (error) throw new Error("Unable to check reward availability.");
+  return data?.status === "issued";
+}
+
+export async function redeemRewardRequest(
+  formData: FormData,
+  rewardId: string,
+): Promise<RedemptionResult> {
+  const cafeCode = formData.get("cafeCode");
+  if (!rewardId || typeof cafeCode !== "string" || !cafeCode.trim()) {
+    return { data: null, error: "A reward and café code are required." };
+  }
+
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase.rpc("redeem_reward", {
+    p_reward_id: rewardId,
+    p_cafe_code: cafeCode.trim(),
+  });
+
+  if (error || typeof data !== "string" || !data) {
+    if (error) {
+      console.error("Reward redemption failed", { code: error.code, message: error.message });
     }
-
-    const { data: rewardData, error: rewardError } = await supabase
-      .from('Rewards')
-      .update({status: 'redeemed'})
-      .eq('chain_id', cafeIdData.chain_id)
-      .eq('id', rewardId)
-      .eq('status', 'issued')
-      .select()
-      .single()
-
-    console.log("Reward data:", rewardData, "Reward error:", rewardError)
-
-    return { data: rewardData, error: rewardError }
-
-  } catch (error) {
-    console.error("Error sending unsubscribe request:", error);
-    throw error;
+    return {
+      data: null,
+      error: error
+        ? rewardErrorMessage(error, "redemption")
+        : "The database did not confirm redemption. Please try again.",
+    };
   }
+
+  return { data, error: null };
 }
-
-

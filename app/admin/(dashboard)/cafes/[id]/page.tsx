@@ -4,13 +4,14 @@ import Image from "next/image";
 import { ArrowLeft, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireStaff } from "@/lib/admin/auth";
+import { CafeForm } from "@/components/admin/cafe-form";
+import { FormSubmitButton } from "@/components/form-submit-button";
 import { CafeImageManager } from "@/components/admin/cafe-image-manager";
 import { saveCafeAction, saveMenuItemAction, deleteMenuItemAction } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -73,12 +74,6 @@ export default async function CafeEditPage({ params }: CafeEditPageProps) {
     menuItems = mData || [];
   }
 
-  const formAction = async (formData: FormData) => {
-    "use server";
-    const res = await saveCafeAction(isNew ? null : id, formData);
-    if (res?.error) throw new Error(res.error);
-  };
-
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
@@ -114,7 +109,13 @@ export default async function CafeEditPage({ params }: CafeEditPageProps) {
         </div>
       </div>
 
-      <form action={formAction}>
+      {!isNew && (
+        <form id="cafe-menu-item-form" action={async (formData: FormData) => {
+          "use server";
+          await saveMenuItemAction(Number(id), formData);
+        }} />
+      )}
+      <CafeForm action={saveCafeAction.bind(null, isNew ? null : id)}>
         <Tabs defaultValue="details" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 gap-1 group-data-[orientation=horizontal]/tabs:h-auto sm:grid-cols-3 xl:grid-cols-5">
             <TabsTrigger className="h-auto min-h-11 whitespace-normal px-3 py-2 text-center" value="details">Details</TabsTrigger>
@@ -127,7 +128,7 @@ export default async function CafeEditPage({ params }: CafeEditPageProps) {
           </TabsList>
 
           {/* TAB 1: DETAILS */}
-          <TabsContent value="details">
+          <TabsContent value="details" forceMount className="data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Core Store Details</CardTitle>
@@ -234,7 +235,7 @@ export default async function CafeEditPage({ params }: CafeEditPageProps) {
           </TabsContent>
 
           {/* TAB 2: LOCATION & HOURS */}
-          <TabsContent value="location">
+          <TabsContent value="location" forceMount className="data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Location & Coordinates</CardTitle>
@@ -295,7 +296,7 @@ export default async function CafeEditPage({ params }: CafeEditPageProps) {
           </TabsContent>
 
           {/* TAB 3: CONTACT & AMENITIES */}
-          <TabsContent value="contact">
+          <TabsContent value="contact" forceMount className="data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Contact Information & Amenities</CardTitle>
@@ -331,7 +332,7 @@ export default async function CafeEditPage({ params }: CafeEditPageProps) {
           </TabsContent>
 
           {/* TAB 4: IMAGES */}
-          <TabsContent value="images">
+          <TabsContent value="images" forceMount className="data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Store Imagery</CardTitle>
@@ -343,6 +344,7 @@ export default async function CafeEditPage({ params }: CafeEditPageProps) {
                 <CafeImageManager
                   initialCoverUrl={cafe?.image_url}
                   initialGalleryUrls={galleryImages}
+                  deleteUploadsOnSave={staff.role === "admin"}
                 />
               </CardContent>
             </Card>
@@ -350,7 +352,7 @@ export default async function CafeEditPage({ params }: CafeEditPageProps) {
 
           {/* TAB 5: MENU (Only for existing cafes) */}
           {!isNew && (
-            <TabsContent value="menu">
+            <TabsContent value="menu" forceMount className="data-[state=inactive]:hidden">
               <Card>
                 <CardHeader>
                   <CardTitle>Cafe Menu Items</CardTitle>
@@ -362,27 +364,21 @@ export default async function CafeEditPage({ params }: CafeEditPageProps) {
                     <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Add Menu Item
                     </h4>
-                    <form
-                      action={async (fd: FormData) => {
-                        "use server";
-                        await saveMenuItemAction(Number(id), fd);
-                      }}
-                      className="grid gap-3 sm:grid-cols-4 items-end"
-                    >
+                    <div className="grid gap-3 sm:grid-cols-4 items-end">
                       <div className="space-y-1 sm:col-span-2">
                         <Label htmlFor="menu_name" className="text-xs">Item Name</Label>
-                        <Input id="menu_name" name="name" required placeholder="Cortado" className="h-8 text-xs" />
+                        <Input form="cafe-menu-item-form" id="menu_name" name="name" required placeholder="Cortado" className="h-8 text-xs" />
                       </div>
                       <div className="space-y-1">
                         <Label htmlFor="menu_price" className="text-xs">Price (Cents)</Label>
-                        <Input id="menu_price" name="price" type="number" required placeholder="475" className="h-8 text-xs" />
+                        <Input form="cafe-menu-item-form" id="menu_price" name="price" type="number" required placeholder="475" className="h-8 text-xs" />
                       </div>
                       <div>
-                        <Button type="submit" size="sm" className="w-full h-8 text-xs">
+                        <Button form="cafe-menu-item-form" type="submit" size="sm" className="w-full h-8 text-xs">
                           <Plus className="h-3.5 w-3.5 mr-1" /> Add Item
                         </Button>
                       </div>
-                    </form>
+                    </div>
                   </div>
 
                   {/* Menu items table */}
@@ -433,10 +429,10 @@ export default async function CafeEditPage({ params }: CafeEditPageProps) {
             <Button asChild variant="outline">
               <Link href="/admin/cafes">Cancel</Link>
             </Button>
-            <Button type="submit">Save Cafe</Button>
+            <FormSubmitButton pendingLabel="Saving café…" className="h-10 w-auto">Save Cafe</FormSubmitButton>
           </div>
         </Tabs>
-      </form>
+      </CafeForm>
 
       {!isNew && <HistoryPanel tableName="Cafe" recordId={id} />}
     </div>

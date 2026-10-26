@@ -11,7 +11,6 @@ import {
   Plus,
   Loader2,
   Maximize2,
-  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,18 +23,22 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { uploadMediaAction } from "@/app/admin/actions/upload";
+import { removedCafeImageUrls } from "@/lib/admin/cafe-images";
 
 interface CafeImageManagerProps {
   initialCoverUrl?: string | null;
   initialGalleryUrls?: string[];
+  deleteUploadsOnSave?: boolean;
 }
 
 export function CafeImageManager({
   initialCoverUrl = "",
   initialGalleryUrls = [],
+  deleteUploadsOnSave = false,
 }: CafeImageManagerProps) {
   const [coverUrl, setCoverUrl] = useState<string>(initialCoverUrl || "");
   const [galleryUrls, setGalleryUrls] = useState<string[]>(initialGalleryUrls);
+  const [knownUrls, setKnownUrls] = useState<string[]>([initialCoverUrl || "", ...initialGalleryUrls]);
 
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
@@ -67,9 +70,10 @@ export function CafeImageManager({
         setUploadError(`Failed to upload cover: ${res.error}`);
       } else if (res.url) {
         setCoverUrl(res.url);
+        setKnownUrls((previous) => [...previous, res.url!]);
       }
-    } catch (err: any) {
-      setUploadError(err.message || "Failed to upload cover image");
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : "Failed to upload cover image");
     } finally {
       setUploadingCover(false);
       if (coverFileInputRef.current) coverFileInputRef.current.value = "";
@@ -102,9 +106,10 @@ export function CafeImageManager({
 
       if (uploaded.length > 0) {
         setGalleryUrls((prev) => [...prev, ...uploaded]);
+        setKnownUrls((previous) => [...previous, ...uploaded]);
       }
-    } catch (err: any) {
-      setUploadError(err.message || "Failed to upload gallery images");
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : "Failed to upload gallery images");
     } finally {
       setUploadingGallery(false);
       if (galleryFileInputRef.current) galleryFileInputRef.current.value = "";
@@ -140,6 +145,13 @@ export function CafeImageManager({
       {/* Hidden inputs to feed standard form submission */}
       <input type="hidden" name="image_url" value={coverUrl} />
       <input type="hidden" name="gallery_images" value={galleryUrls.join("\n")} />
+      <input type="hidden" name="removed_image_urls" value={JSON.stringify(removedCafeImageUrls(knownUrls, coverUrl, galleryUrls))} />
+      <input type="hidden" name="images_uploading" value={uploadingCover || uploadingGallery ? "true" : "false"} />
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        {deleteUploadsOnSave
+          ? "Changes take effect when you save the café. Removed café uploads are permanently deleted; images still used by a café are kept. Other image links are only removed from this café."
+          : "Changes take effect when you save the café. Removing an image here keeps its stored file; only admins can permanently delete uploads."}
+      </p>
 
       {uploadError && (
         <div className="p-3 text-sm rounded bg-destructive/15 text-destructive border border-destructive/20">
