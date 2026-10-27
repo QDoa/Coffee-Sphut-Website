@@ -6,36 +6,17 @@
         "appID": "76TF6WR84X.com.coffeesphut.app",
         "paths": ["*"],
         "components": [
-        {
-            "/": "/home"
-        },
-        {
-            "/": "/map"
-        },
-        {
-            "/": "/reward"
-        },
-        {
-            "/": "/base/*"
-        },
-        {
-            "/": "/account"
-        },
-        {
-            "/": "/blog/*"
-        },
-        {
-            "/": "/recipe/*"
-        },
-        {
-            "/": "/recipes"
-        },
-        {
-            "/": "/event/*"
-        },
-        {
-            "/": "/events"
-        }
+        { "/": "/blog/*" },
+        { "/": "/recipe/*" },
+        { "/": "/recipes" },
+        { "/": "/event/*" },
+        { "/": "/events" },
+        { "/": "/cafe/*" },
+        { "/": "/cafes/*" },
+        { "/": "/home" },
+        { "/": "/map" },
+        { "/": "/reward" },
+        { "/": "/account" }
         ]
       }
     ]

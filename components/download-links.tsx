@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { TrackedLink } from "@/components/tracked-link";
 import { buttonVariants } from "@/components/ui/button";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-stores";
 import { cn } from "@/lib/utils";
 
 interface DownloadLinksProps {
@@ -11,7 +12,7 @@ export function DownloadLinks({ className }: DownloadLinksProps) {
   return (
     <div className={cn("flex flex-wrap gap-3", className)}>
       <TrackedLink
-        href="https://apps.apple.com/us/app/coffee-sphut/id6759900667"
+        href={APP_STORE_URL}
         target="_blank"
         rel="noopener noreferrer"
         eventName="Download iOS"
@@ -29,7 +30,7 @@ export function DownloadLinks({ className }: DownloadLinksProps) {
         Get on iOS
       </TrackedLink>
       <TrackedLink
-        href="https://play.google.com/store/apps/details?id=com.coffeesphut.app"
+        href={PLAY_STORE_URL}
         target="_blank"
         rel="noopener noreferrer"
         eventName="Download Android"
