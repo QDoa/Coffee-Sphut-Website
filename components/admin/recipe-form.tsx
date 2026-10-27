@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FormSubmitButton } from "@/components/form-submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -108,7 +109,8 @@ export function RecipeForm({ recipe, action }: RecipeFormProps) {
     setError(null);
     setSubmitting(true);
 
-    const formData = new FormData(e.currentTarget);
+    const submitter = (e.nativeEvent as SubmitEvent).submitter;
+    const formData = new FormData(e.currentTarget, submitter);
 
     // Filter out empty ingredients
     const cleanIngredients = ingredients.filter((i) => i.name.trim() !== "");
@@ -340,13 +342,31 @@ export function RecipeForm({ recipe, action }: RecipeFormProps) {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end gap-3 pt-4 border-t">
+      <div className="flex flex-wrap justify-end gap-3 pt-4 border-t">
         <Button asChild variant="outline">
           <Link href="/admin/recipes">Cancel</Link>
         </Button>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Saving..." : "Save Recipe"}
-        </Button>
+        <FormSubmitButton
+          name="intent"
+          value="draft"
+          variant={recipe ? "default" : "outline"}
+          pendingLabel="Saving..."
+          disabled={submitting}
+          className="h-9 w-auto"
+        >
+          {submitting ? "Saving..." : recipe ? "Save Recipe" : "Save Draft"}
+        </FormSubmitButton>
+        {!recipe && (
+          <FormSubmitButton
+            name="intent"
+            value="publish"
+            pendingLabel="Publishing..."
+            disabled={submitting}
+            className="h-9 w-auto"
+          >
+            {submitting ? "Saving..." : "Publish Now"}
+          </FormSubmitButton>
+        )}
       </div>
     </form>
   );

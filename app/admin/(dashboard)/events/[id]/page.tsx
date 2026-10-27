@@ -10,6 +10,7 @@ import {
   setEventPublishStatusAction,
 } from "@/app/admin/actions/content";
 import { Button } from "@/components/ui/button";
+import { FormSubmitButton } from "@/components/form-submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -208,11 +209,29 @@ export default async function EventEditPage({ params }: EventEditPageProps) {
                   </Label>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t">
+                <div className="flex flex-wrap justify-end gap-3 pt-4 border-t">
                   <Button asChild variant="outline">
                     <Link href="/admin/events">Cancel</Link>
                   </Button>
-                  <Button type="submit">Save Event</Button>
+                  <FormSubmitButton
+                    name="intent"
+                    value="draft"
+                    variant={isNew ? "outline" : "default"}
+                    pendingLabel="Saving..."
+                    className="h-9 w-auto"
+                  >
+                    {isNew ? "Save Draft" : "Save Event"}
+                  </FormSubmitButton>
+                  {isNew && (
+                    <FormSubmitButton
+                      name="intent"
+                      value="publish"
+                      pendingLabel="Publishing..."
+                      className="h-9 w-auto"
+                    >
+                      Publish Now
+                    </FormSubmitButton>
+                  )}
                 </div>
               </CardContent>
             </Card>
