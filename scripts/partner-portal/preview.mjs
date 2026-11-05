@@ -13,11 +13,12 @@ const env = Object.fromEntries(
 if (env.SUPABASE_URL !== "http://127.0.0.1:55434")
   throw new Error("Preview must use the isolated loopback API.");
 const proxy = createServer((req, res) => {
+  const storage = req.url.startsWith("/storage/v1/");
   const remote = request(
     {
       hostname: "127.0.0.1",
-      port: 55431,
-      path: req.url.replace(/^\/rest\/v1/, ""),
+      port: storage ? 55435 : 55431,
+      path: req.url.replace(storage ? /^\/storage\/v1/ : /^\/rest\/v1/, ""),
       method: req.method,
       headers: req.headers,
     },

@@ -31,6 +31,8 @@ export const portalSchema = z.object({
   cafe: z.record(z.string(), z.unknown()).optional(),
   gallery: z.array(z.string()).nullable().optional(),
   menu: rows,
+  media: rows,
+  staff_admin: z.boolean().default(false),
 });
 export type PortalData = z.infer<typeof portalSchema>;
 export async function portalClient(reviewer = false) {
@@ -74,5 +76,20 @@ export async function portalData(
     p_input: input,
   });
   if (error) throw new Error(error.message);
-  return portalSchema.parse(data);
+  const parsed = portalSchema.parse(data);
+  if (section === "staff") {
+    const [media, admin] = await Promise.all([
+      client
+        .from("partner_media")
+        .select("id,state,created_at,cleanup_error")
+        .order("created_at", { ascending: false })
+        .limit(100),
+      client.rpc("is_admin"),
+    ]);
+    if (media.error) throw new Error(media.error.message);
+    parsed.media = media.data;
+    if (admin.error) throw new Error(admin.error.message);
+    parsed.staff_admin = admin.data;
+  }
+  return parsed;
 }

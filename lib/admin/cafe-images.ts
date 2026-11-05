@@ -62,6 +62,16 @@ export async function removeUnusedCafeUploads(
   // Read every page, and compare decoded object paths rather than raw URLs.
   // Query strings and alternate encodings must not hide a shared reference.
   const referenced = new Set<string>();
+  const protectedPaths = await supabase.rpc("partner_protected_image_paths");
+  if (protectedPaths.error || !protectedPaths.data)
+    throw new Error(
+      "Could not check partner image references. Its file was kept.",
+    );
+  for (const value of protectedPaths.data) {
+    const image = getStoredCafeImage(value, projectUrl);
+    if (image) referenced.add(image.path);
+    else if (value.startsWith("cafes/partner/")) referenced.add(value);
+  }
   const pageSize = 1000;
   for (let offset = 0; ; ) {
     const { data, error } = await supabase
@@ -114,7 +124,10 @@ export async function removeUnusedCafeUploads(
       if (
         existing.error &&
         "status" in existing.error &&
-        existing.error.status === 404
+        // Storage's HEAD endpoint uses 400 or 404 for an absent object;
+        // storage-js treats both as data:false. Other failures stay retryable.
+        [400, 404].includes(Number(existing.error.status)) &&
+        !existing.data
       )
         continue;
       throw new Error(

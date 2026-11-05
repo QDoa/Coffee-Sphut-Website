@@ -593,6 +593,7 @@ export type Database = {
           chain_id: string
           created_at: string
           id: string
+          media: Json
           payload: Json
           reason: string | null
           reviewed_at: string | null
@@ -606,6 +607,7 @@ export type Database = {
           chain_id: string
           created_at?: string
           id?: string
+          media?: Json
           payload: Json
           reason?: string | null
           reviewed_at?: string | null
@@ -619,6 +621,7 @@ export type Database = {
           chain_id?: string
           created_at?: string
           id?: string
+          media?: Json
           payload?: Json
           reason?: string | null
           reviewed_at?: string | null
@@ -741,6 +744,98 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partner_accounts"
             referencedColumns: ["chain_id"]
+          },
+        ]
+      }
+      partner_media: {
+        Row: {
+          cafe_id: number | null
+          chain_id: string
+          cleanup_error: string | null
+          created_at: string
+          id: string
+          mime: string
+          path: string
+          public_path: string
+          size: number
+          state: string
+          uploader: string
+        }
+        Insert: {
+          cafe_id?: number | null
+          chain_id: string
+          cleanup_error?: string | null
+          created_at?: string
+          id?: string
+          mime: string
+          path: string
+          public_path: string
+          size: number
+          state?: string
+          uploader: string
+        }
+        Update: {
+          cafe_id?: number | null
+          chain_id?: string
+          cleanup_error?: string | null
+          created_at?: string
+          id?: string
+          mime?: string
+          path?: string
+          public_path?: string
+          size?: number
+          state?: string
+          uploader?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_media_cafe_id_fkey"
+            columns: ["cafe_id"]
+            isOneToOne: false
+            referencedRelation: "Cafe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_media_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "partner_accounts"
+            referencedColumns: ["chain_id"]
+          },
+        ]
+      }
+      partner_media_publications: {
+        Row: {
+          change_id: string
+          completed_at: string | null
+          prepared_at: string
+          prepared_media: Json
+          prepared_payload: Json
+          reviewer: string
+        }
+        Insert: {
+          change_id: string
+          completed_at?: string | null
+          prepared_at?: string
+          prepared_media: Json
+          prepared_payload: Json
+          reviewer: string
+        }
+        Update: {
+          change_id?: string
+          completed_at?: string | null
+          prepared_at?: string
+          prepared_media?: Json
+          prepared_payload?: Json
+          reviewer?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_media_publications_change_id_fkey"
+            columns: ["change_id"]
+            isOneToOne: true
+            referencedRelation: "partner_changes"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1337,7 +1432,90 @@ export type Database = {
         Args: { p_action: string; p_input: Json }
         Returns: Json
       }
+      partner_command_core: {
+        Args: { p_action: string; p_input: Json }
+        Returns: Json
+      }
+      partner_media_cleanup: {
+        Args: { p_id: string; p_result?: string }
+        Returns: {
+          cafe_id: number | null
+          chain_id: string
+          cleanup_error: string | null
+          created_at: string
+          id: string
+          mime: string
+          path: string
+          public_path: string
+          size: number
+          state: string
+          uploader: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_media"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      partner_media_prepare: {
+        Args: { p_change: string }
+        Returns: {
+          cafe_id: number | null
+          chain_id: string
+          cleanup_error: string | null
+          created_at: string
+          id: string
+          mime: string
+          path: string
+          public_path: string
+          size: number
+          state: string
+          uploader: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "partner_media"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      partner_media_read: { Args: { asset: string }; Returns: boolean }
+      partner_media_ready: { Args: { p_id: string }; Returns: undefined }
+      partner_media_reserve: {
+        Args: {
+          p_cafe: number
+          p_chain: string
+          p_mime: string
+          p_size: number
+        }
+        Returns: {
+          cafe_id: number | null
+          chain_id: string
+          cleanup_error: string | null
+          created_at: string
+          id: string
+          mime: string
+          path: string
+          public_path: string
+          size: number
+          state: string
+          uploader: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_media"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      partner_media_scope: {
+        Args: { cafe: number; cid: string }
+        Returns: boolean
+      }
+      partner_media_url: { Args: { p_url: string }; Returns: string }
       partner_paid: { Args: { p_chain: string }; Returns: boolean }
+      partner_protected_image_paths: { Args: never; Returns: string[] }
       partner_role: { Args: { p_chain: string }; Returns: string }
       partner_snapshot: {
         Args: { p_input?: Json; p_section?: string }

@@ -105,12 +105,107 @@ test("drafts preserve edited fields and can be resumed and submitted", async ({
   await expect(page.getByLabel("Café name", { exact: true })).toHaveValue(name);
   await page.goto("/partner/cafes");
   await page
-    .getByRole("link", { name: "Resume draft", exact: true })
-    .last()
+    .getByRole("link", { name: `Resume draft: ${name}`, exact: true })
     .click();
   await expect(page.getByLabel("Café name", { exact: true })).toHaveValue(name);
   await page
     .getByRole("button", { name: "Submit for review", exact: true })
     .click();
   await expect(page.getByRole("status")).toContainText("Submitted");
+});
+
+test("managed images stay private through draft resume and render for the reviewer before publication", async ({
+  page,
+}) => {
+  const name = `Image browser ${Date.now()}`;
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aC1kAAAAASUVORK5CYII=",
+    "base64",
+  );
+  await page.goto("/partner/cafe");
+  await page.getByLabel("Café name", { exact: true }).fill(name);
+  await page
+    .getByLabel("Upload cover image", { exact: true })
+    .setInputFiles({ name: "cover.png", mimeType: "image/png", buffer: png });
+  await expect(page.getByAltText("Cover awaiting review")).toBeVisible();
+  await expect
+    .poll(() =>
+      page
+        .getByAltText("Cover awaiting review")
+        .evaluate(
+          (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
+        ),
+    )
+    .toBe(true);
+  for (const width of [320, 390, 897, 1280]) {
+    await page.setViewportSize({ width, height: 1000 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: `.partner-portal/images-${width}.png`,
+      fullPage: true,
+    });
+  }
+  const media = JSON.parse(
+    await page.locator('input[name="media"]').inputValue(),
+  );
+  await page.getByRole("button", { name: "Save draft", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("Saved");
+  await page.goto("/partner/cafes");
+  await page
+    .getByRole("link", { name: `Resume draft: ${name}`, exact: true })
+    .click();
+  await expect(page.locator('input[name="media"]')).toHaveValue(
+    JSON.stringify(media),
+  );
+  await page
+    .getByRole("button", { name: "Submit for review", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Submitted");
+  await page.goto("/partner/preview-review");
+  const request = page.locator("section").filter({ hasText: name });
+  await expect(request.getByAltText("Proposed cover")).toBeVisible();
+  await request.getByAltText("Proposed cover").scrollIntoViewIfNeeded();
+  await expect
+    .poll(() =>
+      request
+        .getByAltText("Proposed cover")
+        .evaluate(
+          (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
+        ),
+    )
+    .toBe(true);
+  await request
+    .getByRole("button", { name: "Approve request", exact: true })
+    .click();
+  await expect(request).toHaveCount(0);
+});
+
+test("an administrator can clean up a detached upload through the real Storage API", async ({
+  page,
+}) => {
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aC1kAAAAASUVORK5CYII=",
+    "base64",
+  );
+  await page.goto("/partner/cafe");
+  await page
+    .getByLabel("Upload cover image", { exact: true })
+    .setInputFiles({ name: "unused.png", mimeType: "image/png", buffer: png });
+  await expect(page.getByAltText("Cover awaiting review")).toBeVisible();
+  const { cover } = JSON.parse(
+    await page.locator('input[name="media"]').inputValue(),
+  );
+  await page.getByRole("button", { name: "Remove cover", exact: true }).click();
+  await page.goto("/partner/preview-review");
+  await page.getByLabel("Upload ID", { exact: true }).fill(cover);
+  await page
+    .getByRole("button", { name: "Remove unused upload", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Unused upload removed");
+  const response = await page.request.get(`/partner/media/${cover}`);
+  expect(response.status()).toBe(404);
 });

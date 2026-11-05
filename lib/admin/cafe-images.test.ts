@@ -20,6 +20,7 @@ interface FixtureOptions {
   noDeletedRows?: boolean;
   missing?: boolean;
   maxRows?: number;
+  protectedPaths?: string[];
 }
 
 function fixture(options: FixtureOptions = {}) {
@@ -37,6 +38,10 @@ function fixture(options: FixtureOptions = {}) {
           body: request.method === "DELETE" ? await request.text() : null,
         });
         if (url.pathname.startsWith("/rest/v1/")) {
+          if (url.pathname.endsWith("/rpc/partner_protected_image_paths"))
+            return options.failRead
+              ? Response.json({ message: "read failed" }, { status: 500 })
+              : Response.json(options.protectedPaths ?? []);
           assert.equal(
             request.method,
             "GET",
@@ -193,4 +198,22 @@ test("ignores linked external images without making API requests", async () => {
     PROJECT,
   );
   assert.equal(requests.length, 0);
+});
+
+test("keeps registered uploads and draft URL references during legacy admin cleanup", async () => {
+  for (const protectedPaths of [[PATH], [IMAGE]]) {
+    // Registered partner paths use a reserved namespace; arbitrary draft URLs
+    // are parsed with the same origin/path rules as live references.
+    const paths =
+      protectedPaths[0] === PATH
+        ? ["cafes/partner/chain/image.png"]
+        : protectedPaths;
+    const url =
+      protectedPaths[0] === PATH
+        ? `${PROJECT}/storage/v1/object/public/media/cafes/partner/chain/image.png`
+        : IMAGE;
+    const f = fixture({ protectedPaths: paths });
+    await removeUnusedCafeUploads(f.supabase, [url], PROJECT);
+    assert.equal(f.requests.filter((r) => r.method === "DELETE").length, 0);
+  }
 });

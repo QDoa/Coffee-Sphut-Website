@@ -35,6 +35,8 @@ export function ActionForm({
   }, [state]);
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (event.currentTarget.querySelector('[data-upload-pending="true"]'))
+      return;
     const data = new FormData(event.currentTarget);
     const submitter = (event.nativeEvent as SubmitEvent)
       .submitter as HTMLButtonElement | null;

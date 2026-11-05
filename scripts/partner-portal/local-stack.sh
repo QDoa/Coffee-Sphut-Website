@@ -41,4 +41,5 @@ if(c.Config.Image!=='public.ecr.aws/supabase/postgrest:v14.5'||!c.Config.Env.inc
 JS
   docker start coffee-partner-rest >/dev/null
 fi
+node scripts/partner-portal/storage-local.mjs
 echo 'Local fixtures ready. Run pnpm partner:preview and open http://127.0.0.1:3100/partner/overview'

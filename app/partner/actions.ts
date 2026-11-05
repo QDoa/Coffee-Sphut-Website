@@ -9,6 +9,7 @@ import { portalClient, portalData } from "@/lib/partner/portal";
 import { isLocalPartnerPreview } from "@/lib/partner/preview";
 import { safePartnerNext } from "@/lib/partner/redirects";
 import { cafePayload } from "@/lib/partner/forms";
+import { publishReviewedMedia } from "@/lib/partner/media";
 import type { Json } from "@/types/database";
 export interface PortalActionState {
   error?: string;
@@ -37,8 +38,12 @@ export async function commandAction(
         input[key] = value;
     if (!staff && action !== "accept_invite")
       input.chain_id = (await portalData("overview")).chain_id;
-    if (["save_change", "submit_change"].includes(action))
+    if (["save_change", "submit_change"].includes(action)) {
       input.payload = cafePayload(form) as Json;
+      input.media = JSON.parse(
+        String(form.get("media") || '{"cover":null,"gallery":[]}'),
+      ) as Json;
+    }
     if (action === "recipe")
       input.ingredients = JSON.parse(
         String(form.get("ingredients") || "[]"),
@@ -49,6 +54,10 @@ export async function commandAction(
         .filter((x) => String(x).trim() !== "")
         .map(Number);
     const client = await portalClient(staff && isLocalPartnerPreview());
+    if (action === "review" && input.decision === "approve") {
+      await publishReviewedMedia(client, input);
+      input.media_origin = new URL(process.env.SUPABASE_URL!).origin;
+    }
     const { data, error } = await client.rpc("partner_command", {
       p_action: action,
       p_input: input as Json,

@@ -2,6 +2,8 @@
 
 Current status (November 5, 2026): see the [implementation and validation report](IMPLEMENTATION_REPORT.md) for the working portal, test results, preview instructions and remaining production gates. The P0/P1 notes below are historical preparation evidence.
 
+Managed image uploads, private previews, retryable staff publication and administrator cleanup are implemented. See the [media operation and recovery runbook](MEDIA_WORKFLOW.md).
+
 Status: P0 repository/Dev inspection complete; first P1 permission rules implemented. Compatibility, deployment and later feature gates remain open. Updated October 25, 2026 (America/Regina).
 
 The [implementation plan](../../PARTNER_PORTAL_IMPLEMENTATION_PLAN.md) remains the delivery outline. This folder records implementation evidence and decisions rather than silently turning PRD proposals into policy.

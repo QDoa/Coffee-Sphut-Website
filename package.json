@@ -11,6 +11,7 @@
     "partner:preview": "node scripts/partner-portal/preview.mjs",
     "partner:test:setup": "tsx scripts/partner-portal/setup-local.ts",
     "partner:test:db": "tsx --test scripts/partner-portal/database.test.ts",
+    "partner:test:media": "tsx --test scripts/partner-portal/media.test.ts",
     "partner:test:browser": "playwright test --config playwright.partner.config.ts",
     "partner:local": "bash scripts/partner-portal/local-stack.sh",
     "partner:test:unit": "tsx --test lib/partner/*.test.ts scripts/partner-portal/p0-audit.test.ts"

@@ -1,4 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
+import { ImageUploader } from "./image-uploader";
+import { type MediaSelection, EMPTY_MEDIA } from "@/lib/partner/media";
+import { cleanupImageAction } from "@/app/partner/media-actions";
 import { RecipeEditor } from "./recipe-editor";
 import { randomUUID } from "node:crypto";
 import { ActionForm } from "./action-form";
@@ -274,6 +278,8 @@ export function Cafes({ data, q = "" }: { data: PortalData; q?: string }) {
                 {ch.status === "draft"
                   ? "Resume draft"
                   : "Revise rejected request"}
+                {": "}
+                {str((ch.payload as Row)?.name) || "Café request"}
               </Link>
             ))}
         </div>
@@ -428,7 +434,13 @@ export function CafeEditor({ data }: { data: PortalData }) {
           name="gallery"
           label="Gallery image URLs"
           value={data.gallery?.join("\n")}
-          help="One image URL per line. New image uploads require the media workflow described in the release report."
+          help="One image URL per line. Remove a URL to detach that image after approval."
+        />
+        <ImageUploader
+          cafeId={c.id ? Number(c.id) : undefined}
+          initial={
+            (data.changes[0]?.media as unknown as MediaSelection) || EMPTY_MEDIA
+          }
         />
         <Area
           name="menu"
@@ -882,6 +894,33 @@ export function StaffReviews({ data }: { data: PortalData }) {
                 )}
                 columns={["field", "current", "proposed"]}
               />
+              <div className="my-4 flex flex-wrap gap-4">
+                {(() => {
+                  const media =
+                    (ch.media as unknown as MediaSelection) || EMPTY_MEDIA;
+                  return [
+                    ...(media.cover
+                      ? [{ id: media.cover, label: "Proposed cover" }]
+                      : []),
+                    ...media.gallery.map((id, i) => ({
+                      id,
+                      label: `Proposed gallery ${i + 1}`,
+                    })),
+                  ].map(({ id, label }) => (
+                    <figure key={`${id}-${label}`}>
+                      <Image
+                        src={`/partner/media/${id}?review=1`}
+                        alt={label}
+                        width={240}
+                        height={180}
+                        unoptimized
+                        className="h-45 w-60 max-w-full rounded-lg object-cover"
+                      />
+                      <figcaption className="mt-2 text-sm">{label}</figcaption>
+                    </figure>
+                  ));
+                })()}
+              </div>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <ActionForm
                   operation="review"
@@ -893,7 +932,9 @@ export function StaffReviews({ data }: { data: PortalData }) {
                   label="Approve request"
                 >
                   <p className="text-xs text-muted-foreground">
-                    Publishes the reviewed values atomically.
+                    Approves publication of the images and café details. If an
+                    image copy fails, retry approval; the current listing stays
+                    unchanged.
                   </p>
                 </ActionForm>
                 <ActionForm
@@ -912,72 +953,98 @@ export function StaffReviews({ data }: { data: PortalData }) {
           ))}
         </div>
       </Panel>
-      <Panel title="Provision a partner Owner">
-        <ActionForm
-          operation="provision"
-          context={context(data)}
-          label="Provision partner"
-        >
-          <Field name="name" label="Chain name" required />
-          <Field name="chain_id" label="Existing chain ID (optional)" />
-          <Field
-            name="owner_id"
-            label="Existing authenticated Owner user ID"
-            required
-          />
-        </ActionForm>
-      </Panel>
-      <Panel title="Authoritative plan activation">
-        <p className="mb-4 text-sm text-muted-foreground">
-          Internal admin only. Record the approved activation reference. This
-          does not charge a payment method. Free transitions take effect
-          immediately and require an explicit café selection; scheduled
-          cancellation and payment grace await billing policy.
-        </p>
-        <ActionForm
-          operation="activate_plan"
-          context={context(data)}
-          label="Record plan change"
-        >
-          <Select
-            name="chain_id"
-            label="Partner"
-            options={data.accounts.map((a) => ({
-              value: str(a.chain_id),
-              label: `${a.name} · ${a.plan}`,
-            }))}
-          />
-          <Select
-            name="plan"
-            label="Plan"
-            options={[
-              { value: "paid", label: "Paid" },
-              { value: "free", label: "Free" },
-            ]}
-          />
-          <Field
-            name="reason"
-            label="Approval / subscription event reference"
-            required
-          />
-          <Field
-            name="cafe_ids"
-            label="For Free: selected café ID 1"
-            type="number"
-            help="Select the agreed cafés explicitly; automatic fallback is disabled."
-          />
-          <Field
-            name="cafe_ids"
-            label="For Free: selected café ID 2"
-            type="number"
-          />
-          <Field
-            name="cafe_ids"
-            label="For Free: selected café ID 3"
-            type="number"
-          />
-        </ActionForm>
-      </Panel>
+      {data.staff_admin && (
+        <>
+          <Panel title="Upload cleanup">
+            <p className="mb-4 text-sm text-muted-foreground">
+              Administrators can remove an unused upload by its ID. Draft,
+              pending and live image references are protected. Failed cleanup
+              remains available for retry.
+            </p>
+            <Records
+              rows={data.media.map((m) => ({
+                id: m.id,
+                state: m.state,
+                created_at: m.created_at,
+                cleanup_error: m.cleanup_error,
+              }))}
+              columns={["id", "state", "created_at", "cleanup_error"]}
+            />
+            <ActionForm
+              action={cleanupImageAction}
+              label="Remove unused upload"
+            >
+              <Field name="id" label="Upload ID" required />
+            </ActionForm>
+          </Panel>
+          <Panel title="Provision a partner Owner">
+            <ActionForm
+              operation="provision"
+              context={context(data)}
+              label="Provision partner"
+            >
+              <Field name="name" label="Chain name" required />
+              <Field name="chain_id" label="Existing chain ID (optional)" />
+              <Field
+                name="owner_id"
+                label="Existing authenticated Owner user ID"
+                required
+              />
+            </ActionForm>
+          </Panel>
+          <Panel title="Authoritative plan activation">
+            <p className="mb-4 text-sm text-muted-foreground">
+              Internal admin only. Record the approved activation reference.
+              This does not charge a payment method. Free transitions take
+              effect immediately and require an explicit café selection;
+              scheduled cancellation and payment grace await billing policy.
+            </p>
+            <ActionForm
+              operation="activate_plan"
+              context={context(data)}
+              label="Record plan change"
+            >
+              <Select
+                name="chain_id"
+                label="Partner"
+                options={data.accounts.map((a) => ({
+                  value: str(a.chain_id),
+                  label: `${a.name} · ${a.plan}`,
+                }))}
+              />
+              <Select
+                name="plan"
+                label="Plan"
+                options={[
+                  { value: "paid", label: "Paid" },
+                  { value: "free", label: "Free" },
+                ]}
+              />
+              <Field
+                name="reason"
+                label="Approval / subscription event reference"
+                required
+              />
+              <Field
+                name="cafe_ids"
+                label="For Free: selected café ID 1"
+                type="number"
+                help="Select the agreed cafés explicitly; automatic fallback is disabled."
+              />
+              <Field
+                name="cafe_ids"
+                label="For Free: selected café ID 2"
+                type="number"
+              />
+              <Field
+                name="cafe_ids"
+                label="For Free: selected café ID 3"
+                type="number"
+              />
+            </ActionForm>
+          </Panel>
+        </>
+      )}
     </div>
   );
 }

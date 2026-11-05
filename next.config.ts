@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   // Next.js 16 blocks dev resources (HMR websocket) for non-localhost hosts,
   // which prevents client-side hydration entirely. Has no effect in production.
   allowedDevOrigins: ["192.168.5.48"],
+  experimental: { serverActions: { bodySizeLimit: "6mb" } },
   images: {
     dangerouslyAllowLocalIP: true,
     remotePatterns: [
@@ -18,6 +19,12 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "tcxenxliwzykhxzhlien.supabase.co",
         port: "",
+        pathname: "/storage/v1/object/**",
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+        port: "55434",
         pathname: "/storage/v1/object/**",
       },
       {
