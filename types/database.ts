@@ -15,10 +15,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      add_reward_stamp: {
-        Args: { p_cafe_code: string; p_user_id: string }
-        Returns: string
-      }
       graphql: {
         Args: {
           extensions?: Json
@@ -173,6 +169,7 @@ export type Database = {
           longitude: number | null
           loyalty_threshold_override: number | null
           name: string
+          partner_revision: number
           phone_number: string | null
           postcode: string | null
           rating: number | null
@@ -198,6 +195,7 @@ export type Database = {
           longitude?: number | null
           loyalty_threshold_override?: number | null
           name: string
+          partner_revision?: number
           phone_number?: string | null
           postcode?: string | null
           rating?: number | null
@@ -223,6 +221,7 @@ export type Database = {
           longitude?: number | null
           loyalty_threshold_override?: number | null
           name?: string
+          partner_revision?: number
           phone_number?: string | null
           postcode?: string | null
           rating?: number | null
@@ -448,6 +447,460 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_accounts: {
+        Row: {
+          chain_id: string
+          created_at: string
+          plan: string
+          reward_coverage_at: string
+          selection_required: boolean
+          timezone: string
+        }
+        Insert: {
+          chain_id: string
+          created_at?: string
+          plan?: string
+          reward_coverage_at?: string
+          selection_required?: boolean
+          timezone?: string
+        }
+        Update: {
+          chain_id?: string
+          created_at?: string
+          plan?: string
+          reward_coverage_at?: string
+          selection_required?: boolean
+          timezone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_accounts_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: true
+            referencedRelation: "Chains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_assignments: {
+        Row: {
+          cafe_id: number
+          chain_id: string
+          membership_id: string
+        }
+        Insert: {
+          cafe_id: number
+          chain_id: string
+          membership_id: string
+        }
+        Update: {
+          cafe_id?: number
+          chain_id?: string
+          membership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_assignments_cafe_id_chain_id_fkey"
+            columns: ["cafe_id", "chain_id"]
+            isOneToOne: false
+            referencedRelation: "Cafe"
+            referencedColumns: ["id", "chain_id"]
+          },
+          {
+            foreignKeyName: "partner_assignments_membership_id_chain_id_fkey"
+            columns: ["membership_id", "chain_id"]
+            isOneToOne: false
+            referencedRelation: "partner_memberships"
+            referencedColumns: ["id", "chain_id"]
+          },
+        ]
+      }
+      partner_audit: {
+        Row: {
+          action: string
+          actor: string | null
+          chain_id: string
+          created_at: string
+          details: Json
+          id: number
+          target: string | null
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          chain_id: string
+          created_at?: string
+          details?: Json
+          id?: never
+          target?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          chain_id?: string
+          created_at?: string
+          details?: Json
+          id?: never
+          target?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_audit_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "partner_accounts"
+            referencedColumns: ["chain_id"]
+          },
+        ]
+      }
+      partner_cafe_access: {
+        Row: {
+          cafe_id: number
+          chain_id: string
+          restricted: boolean
+        }
+        Insert: {
+          cafe_id: number
+          chain_id: string
+          restricted?: boolean
+        }
+        Update: {
+          cafe_id?: number
+          chain_id?: string
+          restricted?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_cafe_access_cafe_id_chain_id_fkey"
+            columns: ["cafe_id", "chain_id"]
+            isOneToOne: false
+            referencedRelation: "Cafe"
+            referencedColumns: ["id", "chain_id"]
+          },
+          {
+            foreignKeyName: "partner_cafe_access_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "partner_accounts"
+            referencedColumns: ["chain_id"]
+          },
+        ]
+      }
+      partner_changes: {
+        Row: {
+          baseline: number | null
+          cafe_id: number | null
+          chain_id: string
+          created_at: string
+          id: string
+          payload: Json
+          reason: string | null
+          reviewed_at: string | null
+          reviewer: string | null
+          status: string
+          submitter: string
+        }
+        Insert: {
+          baseline?: number | null
+          cafe_id?: number | null
+          chain_id: string
+          created_at?: string
+          id?: string
+          payload: Json
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewer?: string | null
+          status?: string
+          submitter: string
+        }
+        Update: {
+          baseline?: number | null
+          cafe_id?: number | null
+          chain_id?: string
+          created_at?: string
+          id?: string
+          payload?: Json
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewer?: string | null
+          status?: string
+          submitter?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_changes_cafe_id_chain_id_fkey"
+            columns: ["cafe_id", "chain_id"]
+            isOneToOne: false
+            referencedRelation: "Cafe"
+            referencedColumns: ["id", "chain_id"]
+          },
+          {
+            foreignKeyName: "partner_changes_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "partner_accounts"
+            referencedColumns: ["chain_id"]
+          },
+        ]
+      }
+      partner_invitations: {
+        Row: {
+          accepted_at: string | null
+          cafe_ids: number[]
+          chain_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          revoked_at: string | null
+          role: string
+          token_hash: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          cafe_ids?: number[]
+          chain_id: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          revoked_at?: string | null
+          role: string
+          token_hash: string
+        }
+        Update: {
+          accepted_at?: string | null
+          cafe_ids?: number[]
+          chain_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          revoked_at?: string | null
+          role?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_invitations_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "partner_accounts"
+            referencedColumns: ["chain_id"]
+          },
+        ]
+      }
+      partner_items: {
+        Row: {
+          active: boolean
+          balance: number
+          cafe_id: number
+          chain_id: string
+          code: string
+          id: string
+          name: string
+          threshold: number
+          type: string
+          unit: string
+        }
+        Insert: {
+          active?: boolean
+          balance?: number
+          cafe_id: number
+          chain_id: string
+          code: string
+          id?: string
+          name: string
+          threshold?: number
+          type: string
+          unit: string
+        }
+        Update: {
+          active?: boolean
+          balance?: number
+          cafe_id?: number
+          chain_id?: string
+          code?: string
+          id?: string
+          name?: string
+          threshold?: number
+          type?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_items_cafe_id_chain_id_fkey"
+            columns: ["cafe_id", "chain_id"]
+            isOneToOne: false
+            referencedRelation: "Cafe"
+            referencedColumns: ["id", "chain_id"]
+          },
+          {
+            foreignKeyName: "partner_items_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "partner_accounts"
+            referencedColumns: ["chain_id"]
+          },
+        ]
+      }
+      partner_memberships: {
+        Row: {
+          chain_id: string
+          created_at: string
+          id: string
+          revoked_at: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          chain_id: string
+          created_at?: string
+          id?: string
+          revoked_at?: string | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          chain_id?: string
+          created_at?: string
+          id?: string
+          revoked_at?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_memberships_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "partner_accounts"
+            referencedColumns: ["chain_id"]
+          },
+        ]
+      }
+      partner_movements: {
+        Row: {
+          actor: string
+          cafe_id: number
+          chain_id: string
+          created_at: string
+          id: string
+          item_id: string
+          quantity: number
+          reason: string
+          resulting_balance: number
+          type: string
+        }
+        Insert: {
+          actor: string
+          cafe_id: number
+          chain_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+          quantity: number
+          reason: string
+          resulting_balance: number
+          type: string
+        }
+        Update: {
+          actor?: string
+          cafe_id?: number
+          chain_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          quantity?: number
+          reason?: string
+          resulting_balance?: number
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_movements_cafe_id_chain_id_fkey"
+            columns: ["cafe_id", "chain_id"]
+            isOneToOne: false
+            referencedRelation: "Cafe"
+            referencedColumns: ["id", "chain_id"]
+          },
+          {
+            foreignKeyName: "partner_movements_item_id_chain_id_fkey"
+            columns: ["item_id", "chain_id"]
+            isOneToOne: false
+            referencedRelation: "partner_items"
+            referencedColumns: ["id", "chain_id"]
+          },
+        ]
+      }
+      partner_operations: {
+        Row: {
+          action: string
+          actor: string
+          created_at: string
+          input: Json
+          request_id: string
+          result: Json
+        }
+        Insert: {
+          action: string
+          actor: string
+          created_at?: string
+          input: Json
+          request_id: string
+          result: Json
+        }
+        Update: {
+          action?: string
+          actor?: string
+          created_at?: string
+          input?: Json
+          request_id?: string
+          result?: Json
+        }
+        Relationships: []
+      }
+      partner_recipes: {
+        Row: {
+          active: boolean
+          chain_id: string
+          id: string
+          ingredients: Json
+          name: string
+          revision: number
+          updated_at: string
+          yield: number
+        }
+        Insert: {
+          active?: boolean
+          chain_id: string
+          id?: string
+          ingredients: Json
+          name: string
+          revision?: number
+          updated_at?: string
+          yield: number
+        }
+        Update: {
+          active?: boolean
+          chain_id?: string
+          id?: string
+          ingredients?: Json
+          name?: string
+          revision?: number
+          updated_at?: string
+          yield?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_recipes_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "partner_accounts"
+            referencedColumns: ["chain_id"]
+          },
+        ]
+      }
       Post: {
         Row: {
           author_id: string | null
@@ -610,6 +1063,7 @@ export type Database = {
           id: string
           issued_at: string
           redeemed_at: string
+          redeemed_cafe_id: number | null
           status: string
           user_id: string
           voided_at: string | null
@@ -620,6 +1074,7 @@ export type Database = {
           id?: string
           issued_at?: string
           redeemed_at?: string
+          redeemed_cafe_id?: number | null
           status?: string
           user_id: string
           voided_at?: string | null
@@ -630,6 +1085,7 @@ export type Database = {
           id?: string
           issued_at?: string
           redeemed_at?: string
+          redeemed_cafe_id?: number | null
           status?: string
           user_id?: string
           voided_at?: string | null
@@ -645,6 +1101,13 @@ export type Database = {
           {
             foreignKeyName: "Rewards_earned_store_fkey"
             columns: ["earned_store"]
+            isOneToOne: false
+            referencedRelation: "Cafe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Rewards_redeemed_cafe_id_fkey"
+            columns: ["redeemed_cafe_id"]
             isOneToOne: false
             referencedRelation: "Cafe"
             referencedColumns: ["id"]
@@ -773,6 +1236,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_reward_stamp: {
+        Args: { p_cafe_code: string; p_user_id: string }
+        Returns: string
+      }
       admin_adjust_punch_count: {
         Args: {
           p_chain_id: string
@@ -809,6 +1276,7 @@ export type Database = {
           id: string
           issued_at: string
           redeemed_at: string
+          redeemed_cafe_id: number | null
           status: string
           user_id: string
           voided_at: string | null
@@ -850,13 +1318,41 @@ export type Database = {
           time_open: Json
         }[]
       }
+      get_closest_cafes_v2: {
+        Args: {
+          amenity_ids?: string[]
+          has_reward?: boolean
+          max_results?: number
+          search_term?: string
+          user_lat: number
+          user_long: number
+        }
+        Returns: Json
+      }
       is_admin: { Args: never; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
       log_staff_login: { Args: { p_method: string }; Returns: undefined }
+      partner_can_cafe: { Args: { p_cafe: number }; Returns: boolean }
+      partner_command: {
+        Args: { p_action: string; p_input: Json }
+        Returns: Json
+      }
+      partner_paid: { Args: { p_chain: string }; Returns: boolean }
+      partner_role: { Args: { p_chain: string }; Returns: string }
+      partner_snapshot: {
+        Args: { p_input?: Json; p_section?: string }
+        Returns: Json
+      }
+      partner_validate_cafe: { Args: { p: Json }; Returns: undefined }
+      public_cafes_v2: {
+        Args: { p_ids?: number[]; p_search?: string }
+        Returns: Json
+      }
       redeem_reward: {
         Args: { p_cafe_code: string; p_reward_id: string }
         Returns: string
       }
+      reward_available: { Args: { p_reward: string }; Returns: boolean }
       staff_role: { Args: never; Returns: string }
     }
     Enums: {

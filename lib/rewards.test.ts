@@ -107,12 +107,12 @@ test("incomplete QR links and missing cafe codes do not make database requests",
 });
 
 test("availability accepts an issued reward", async (t) => {
-  fixture(t, { status: "issued" });
+  fixture(t, true);
   assert.equal(await rewardAvailable(ID), true);
 });
 
 test("availability rejects a consumed reward", async (t) => {
-  fixture(t, { status: "redeemed" });
+  fixture(t, false);
   assert.equal(await rewardAvailable(ID), false);
 });
 

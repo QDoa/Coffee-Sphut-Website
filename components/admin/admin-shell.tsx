@@ -60,6 +60,7 @@ const NAV_SECTIONS = [
     label: "Coffee & cafés",
     items: [
       { title: "Cafés", href: "/admin/cafes", icon: Store, adminOnly: false },
+      { title: "Partner reviews", href: "/admin/partner-reviews", icon: ShieldCheck, adminOnly: false },
       {
         title: "Chains",
         href: "/admin/chains",

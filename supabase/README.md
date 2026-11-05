@@ -1,5 +1,10 @@
 # Loyalty database handlers
 
+Partner portal P0 inspection and environment findings are documented in
+[`docs/partner-portal`](../docs/partner-portal/README.md). The operator audit at
+`audits/partner-portal-p0.sql` is read-only and is intentionally outside the
+migrations directory. It does not apply pending migrations or alter policies.
+
 `20261025000100_restore_loyalty_handlers.sql` installs the current definitions of
 both reward trigger functions, including on databases that already applied the
 baseline migration:
@@ -83,3 +88,15 @@ They also cover wrong/blank café codes, cross-chain redemption, and retries.
 Separate database sessions are needed to exercise concurrent writes under
 contention. The TypeScript tests exercise the real server actions and Supabase
 client with mocked HTTP responses, including database failures and missing RPCs.
+
+## Partner portal migration and rollout
+
+`20261105053034_partner_portal.sql` adds the partner tables, RLS, transactional
+commands, café revision checks, redemption attribution, and safe v2 public reads.
+Apply it before deploying the new partner website readers. Hosted deployment is
+not performed by the local test scripts.
+
+`rollout/partner-private-boundary.sql` is intentionally outside automatic
+migrations: it disables legacy public readers only after the mobile v2 rollout.
+The [implementation report](../docs/partner-portal/IMPLEMENTATION_REPORT.md) lists
+its deployment gates, the local test setup, and outstanding production work.

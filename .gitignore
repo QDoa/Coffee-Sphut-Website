@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# Local partner-portal schema/audit snapshots (review before publishing findings)
+/.partner-portal/
+
 # next.js
 /.next/
 /out/

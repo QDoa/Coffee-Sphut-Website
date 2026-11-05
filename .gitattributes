@@ -1,0 +1,2 @@
+# Unified-diff context lines intentionally begin with a space, including blank lines.
+docs/partner-portal/*.patch -whitespace

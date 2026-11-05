@@ -12,14 +12,12 @@ export async function rewardAvailable(rewardId: string): Promise<boolean> {
   if (!rewardId) return false;
 
   const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("Rewards")
-    .select("status")
-    .eq("id", rewardId)
-    .maybeSingle();
-
-  if (error) throw new Error("Unable to check reward availability.");
-  return data?.status === "issued";
+  const { data, error } = await supabase.rpc("reward_available", {
+    p_reward: rewardId,
+  });
+  if (error || typeof data !== "boolean")
+    throw new Error("Unable to check reward availability.");
+  return data;
 }
 
 export async function redeemRewardRequest(
@@ -39,7 +37,10 @@ export async function redeemRewardRequest(
 
   if (error || typeof data !== "string" || !data) {
     if (error) {
-      console.error("Reward redemption failed", { code: error.code, message: error.message });
+      console.error("Reward redemption failed", {
+        code: error.code,
+        message: error.message,
+      });
     }
     return {
       data: null,

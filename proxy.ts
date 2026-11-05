@@ -11,5 +11,6 @@ export const config = {
      * Match all /admin paths, excluding static files, images, favicon.
      */
     "/admin/:path*",
+    "/partner/:path*",
   ],
 };

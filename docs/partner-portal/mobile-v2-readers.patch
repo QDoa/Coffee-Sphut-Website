@@ -1,0 +1,59 @@
+--- a/lib/services/location_service.dart
++++ b/lib/services/location_service.dart
+@@ -138,7 +138,7 @@
+     // final currentLocation = await getCurrentLocation();
+     try {
+       final List<dynamic> response = await _supabase.rpc(
+-        'get_closest_cafes',
++        'get_closest_cafes_v2',
+         params: {
+           'user_lat': currentLocation.latitude,
+           'user_long': currentLocation.longitude,
+@@ -202,7 +202,7 @@
+             socialMedia: socialMedia,
+             amenities: amenities,
+             showDetails: cafe['show_details'],
+-            hasReward: cafe['reward_code'] != null && cafe['reward_code'] != '',
++            hasReward: cafe['has_reward'] == true,
+             imageUrls: cafe['images_url'] != null
+                 ? List<String>.from(cafe['images_url'])
+                 : [],
+@@ -249,21 +249,14 @@
+ 
+     List<Cafe> cafes = [];
+     try {
+-      final results = await Future.wait([
+-        _supabase
+-            .from('Cafe')
+-            .select(
+-              'id, name, address, latitude, longitude, image_url, description, phone_number, email, social_media, amenities, rating, time_open, link, show_details, reward_code',
+-            )
+-            .inFilter('id', cafeIds),
+-        _supabase
+-            .from('CafeImages')
+-            .select('cafe_id, images_url')
+-            .inFilter('cafe_id', cafeIds),
+-      ]);
+-
+-      final response = results[0];
+-      final cafeImagesResponse = results[1];
++      final List<dynamic> response = await _supabase.rpc(
++        'public_cafes_v2',
++        params: {'p_ids': cafeIds},
++      );
++      final cafeImagesResponse = response.map((row) => {
++        'cafe_id': row['id'],
++        'images_url': row['images_url'] ?? [],
++      }).toList();
+ 
+       final Map<int, List<String>> imagesByCafeId = {};
+       for (var row in cafeImagesResponse) {
+@@ -327,7 +320,7 @@
+             socialMedia: socialMedia,
+             amenities: amenities,
+             showDetails: cafe['show_details'],
+-            hasReward: cafe['reward_code'] != null && cafe['reward_code'] != '',
++            hasReward: cafe['has_reward'] == true,
+             imageUrls: imagesByCafeId[cafeId] ?? [],
+           ),
+         );
