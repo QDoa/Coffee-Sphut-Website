@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { partnerSignOut } from "@/app/partner/actions";
 import type { PortalData } from "@/lib/partner/portal";
 const links = [
-  ["Overview", "overview", Coffee],
+  ["Dashboard", "overview", Coffee],
   ["Cafés", "cafes", Store],
   ["Reward activity", "rewards", ChartNoAxesCombined],
   ["Inventory", "inventory", Boxes],

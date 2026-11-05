@@ -56,6 +56,16 @@ Hosted authentication, existing admin checks and Storage deletion permissions re
 - Shared recipe ingredient definitions expose the name/unit needed for chain recipes, without exposing other cafés' stock balances.
 - Free café selection is separate from archival. A subscription lock does not unpublish a previously approved public café listing. Archival removes public discovery after staff approval and retains authorized private history.
 
+## Dashboard and inventory design follow-up
+
+Overview is now labeled **Dashboard** (the existing `/partner/overview` link remains compatible). It includes an accessible eight-week rewards graphic, current-week redemptions, café totals and a stock watch list. Weeks use the chain timezone and Monday boundaries, with current/partial tracking coverage marked and pre-coverage bins distinguished. Only completed, attributed redemptions inside tracking coverage are counted.
+
+Inventory now has summary cards, item/code search, café/status filters, a stock table with persistent row actions, restock priorities, recent activity, and an Activity tab. Add-item, movement and activation actions use accessible side panels with focus restoration. Restock alerts preselect the relevant item and café; no purchase order or automatic supplier action is implied.
+
+Stock runway is current balance divided by daily recorded consumption plus wastage over up to 28 elapsed days since the first movement. It uses complete scoped history, independent of the latest-100 activity display. Receipts/counts/corrections do not count as consumption. Fewer than 24 hours of history shows **Building usage history**; no recorded usage shows no finite estimate. Items below threshold or with seven days or less remaining are highlighted. Forecasts assume complete records and steady usage. Paid, tenant and café assignment checks run on the database for every analytics request.
+
+Additional validation: stock-state unit test, real-database analytics/authorization test on a fresh migration replay, and responsive chart/filter/drawer workflows at 320, 390, 897 and 1280 pixels. Nine inherited database advisor warnings remain; none concern the new analytics. Deploy `20261105160940_partner_dashboard_insights.sql` alongside the application update. No hosted project was changed.
+
 ## Managed image workflow completed in this follow-up
 
 Partners can upload JPEG, PNG or WebP cover/gallery files up to 5 MB each. The server checks file signatures and size; Storage enforces bucket limits, current membership/café scope and immutable object paths. Upload metadata is checked before the file becomes selectable. Drafts retain selected upload IDs across saves and resubmission.
@@ -86,10 +96,10 @@ The legacy mobile source reads raw café codes as a loyalty-availability flag an
 
 ## Verification evidence
 
-- 76 domain/action/audit/helper tests passed, including the new preview guards and café-field round trips, plus the existing reward, image and deep-link regressions.
+- 77 domain/action/audit/helper tests passed, including the new preview guards and café-field round trips, plus the existing reward, image and deep-link regressions.
 - 18 core Postgres integration tests and 3 post-cutoff privacy tests passed, including real RLS roles, cross-tenant/assignment denial, revocation, Free feature denial, reviewed publication, rejection/stale/self-review checks, receipt/consume/count integrity, immutable history, recipe ownership/units, downgrade preservation and re-upgrade, invitation binding, and actual redemption-café reporting.
 - Multi-session tests passed for the final Free slot, competing consumption with insufficient combined stock, and a stock write waiting behind a downgrade.
-- 8 browser tests passed: every portal screen, pending-to-approved café publication, receipt feedback/history, interactive recipe creation, named draft resume/submit, private upload and reviewer preview/publication, authenticated administrator cleanup, and responsive inventory/image-editor layouts at 320, 390, 897 and 1280 pixels. Screenshots and browser traces are under ignored `.partner-portal/`.
+- 9 browser tests passed: every portal screen, pending-to-approved café publication, receipt feedback/history, interactive recipe creation, named draft resume/submit, private upload and reviewer preview/publication, authenticated administrator cleanup, and responsive inventory/image-editor layouts at 320, 390, 897 and 1280 pixels. Screenshots and browser traces are under ignored `.partner-portal/`.
 - 6 additional integration tests passed against real local Supabase Storage v1.80.2 and PostgREST v14.5: tenant/café scope, revocation, immutable/private files, injected partial-copy failure and idempotent retry, stale final approval rollback, draft/live reference protection, cleanup retries and encoded URL aliases.
 - All repository migrations, including `20261105151503_partner_managed_images.sql`, were replayed from scratch into `partner_replay`. The existing `supabase/tests/loyalty-handlers.sql` assertions passed there.
 - The earlier core-validation `pg_dump` was restored into a separate `partner_restore` database. Café/item/request/movement counts and fixture balance checksum matched, and a restored café-manager query returned only its assigned-café items. That drill preceded managed images; backup/restore of Storage bytes and the new media metadata remains a hosted acceptance gate.

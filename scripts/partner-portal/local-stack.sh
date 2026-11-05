@@ -42,4 +42,8 @@ JS
   docker start coffee-partner-rest >/dev/null
 fi
 node scripts/partner-portal/storage-local.mjs
+fixture_insights=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select to_regprocedure('public.partner_insights()') is not null")
+if [[ "$fixture_insights" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/migrations/20261105160940_partner_dashboard_insights.sql
+fi
 echo 'Local fixtures ready. Run pnpm partner:preview and open http://127.0.0.1:3100/partner/overview'

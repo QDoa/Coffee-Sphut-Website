@@ -32,6 +32,8 @@ export const portalSchema = z.object({
   gallery: z.array(z.string()).nullable().optional(),
   menu: rows,
   media: rows,
+  weekly_rewards: rows,
+  stock_rates: rows,
   staff_admin: z.boolean().default(false),
 });
 export type PortalData = z.infer<typeof portalSchema>;
@@ -69,6 +71,7 @@ export async function portalData(
   section: string,
   input: Json = {},
   reviewer = false,
+  withInsights = false,
 ): Promise<PortalData> {
   const client = await portalClient(reviewer);
   const { data, error } = await client.rpc("partner_snapshot", {
@@ -90,6 +93,30 @@ export async function portalData(
     parsed.media = media.data;
     if (admin.error) throw new Error(admin.error.message);
     parsed.staff_admin = admin.data;
+  }
+  // Keep command-context and café-editor lookups lightweight.
+  if (withInsights && ["overview", "inventory"].includes(section)) {
+    const insights = await client.rpc("partner_insights");
+    if (insights.error) throw new Error(insights.error.message);
+    if (section === "overview" && parsed.plan === "paid") {
+      const inventory = await client.rpc("partner_snapshot", {
+        p_section: "inventory",
+        p_input: {},
+      });
+      if (inventory.error) throw new Error(inventory.error.message);
+      parsed.items = portalSchema.parse(inventory.data).items;
+    }
+    Object.assign(
+      parsed,
+      portalSchema
+        .pick({
+          weekly_rewards: true,
+          stock_rates: true,
+          timezone: true,
+          refreshed_at: true,
+        })
+        .parse(insights.data),
+    );
   }
   return parsed;
 }

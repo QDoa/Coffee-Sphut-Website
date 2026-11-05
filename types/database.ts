@@ -1436,6 +1436,7 @@ export type Database = {
         Args: { p_action: string; p_input: Json }
         Returns: Json
       }
+      partner_insights: { Args: never; Returns: Json }
       partner_media_cleanup: {
         Args: { p_id: string; p_result?: string }
         Returns: {

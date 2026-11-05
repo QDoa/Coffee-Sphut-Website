@@ -1,3 +1,5 @@
+import { Dashboard } from "@/components/partner/dashboard";
+import { Inventory } from "@/components/partner/inventory";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { randomUUID } from "node:crypto";
@@ -5,11 +7,9 @@ import { portalData } from "@/lib/partner/portal";
 import { isLocalPartnerPreview } from "@/lib/partner/preview";
 import { PartnerShell } from "@/components/partner/shell";
 import {
-  Overview,
   Cafes,
   CafeEditor,
   Rewards,
-  Inventory,
   Recipes,
   Team,
   Billing,
@@ -102,6 +102,7 @@ export default async function WorkspacePage({
       Object.entries(query).filter(([, v]) => v !== "" && v !== undefined),
     ),
     section === "preview-review",
+    ["overview", "inventory"].includes(section),
   )
     .then((data) => ({ data, error: null }))
     .catch((error: Error) => {
@@ -118,7 +119,7 @@ export default async function WorkspacePage({
         )}
         <div className="flex gap-4">
           <Link className="underline" href="/partner/overview">
-            Overview
+            Dashboard
           </Link>
           <Link className="underline" href="/partner/billing">
             Plan & access
@@ -161,7 +162,7 @@ export default async function WorkspacePage({
   return (
     <PartnerShell data={data} preview={preview}>
       {section === "overview" ? (
-        <Overview data={data} />
+        <Dashboard data={data} />
       ) : section === "cafes" ? (
         <Cafes data={data} q={query.q} />
       ) : section === "cafe" ? (

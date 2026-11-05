@@ -4,7 +4,7 @@ test("all partner screens render without sign-in in the loopback preview", async
   page,
 }) => {
   for (const [route, title] of [
-    ["overview", "Overview"],
+    ["overview", "Dashboard"],
     ["cafes", "Cafés"],
     ["rewards", "Reward activity"],
     ["inventory", "Inventory"],
@@ -48,10 +48,21 @@ test("stock receipt produces a movement and success feedback", async ({
   page,
 }) => {
   await page.goto("/partner/inventory");
+  await page
+    .getByRole("button", { name: "Record movement", exact: true })
+    .click();
   await page.getByLabel("Quantity in base units").fill("20");
   await page.getByLabel("Reason / reference").fill("Browser receipt");
-  await page.getByRole("button", { name: "Record movement" }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Record movement", exact: true })
+    .click();
   await expect(page.getByRole("status")).toContainText("Saved");
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Close menu" })
+    .click();
+  await page.getByRole("tab", { name: "Activity", exact: true }).click();
   await expect(
     page.getByRole("cell", { name: "Browser receipt", exact: true }).first(),
   ).toBeVisible();
@@ -208,4 +219,48 @@ test("an administrator can clean up a detached upload through the real Storage A
   await expect(page.getByRole("status")).toContainText("Unused upload removed");
   const response = await page.request.get(`/partner/media/${cover}`);
   expect(response.status()).toBe(404);
+});
+
+test("dashboard chart and inventory filters are usable at mobile and desktop widths", async ({
+  page,
+}) => {
+  for (const width of [320, 390, 897, 1280]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/partner/overview");
+    await expect(
+      page.getByRole("heading", { name: "Dashboard", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("img", { name: /Weekly completed rewards/ }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: `.partner-portal/dashboard-${width}.png`,
+      fullPage: true,
+    });
+  }
+  await page.goto("/partner/inventory");
+  await page.getByLabel("Search inventory").fill("Whole milk");
+  await expect(
+    page.getByRole("cell").filter({ hasText: "Whole milk" }),
+  ).toHaveCount(1);
+  await page.getByLabel("Filter by café").selectOption("102");
+  await expect(
+    page.getByText("No items match this view", { exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("Search inventory").fill("");
+  await page.getByLabel("Filter by café").selectOption("");
+  await page.getByRole("button", { name: "Add item", exact: true }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Close menu" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Add item", exact: true }),
+  ).toBeFocused();
 });
