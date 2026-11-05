@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { uploadMediaAction } from "@/app/admin/actions/upload";
+import { uploadMedia } from "@/lib/admin/upload-media";
 import { cn } from "@/lib/utils";
 
 interface SingleImageUploaderProps {
@@ -73,17 +73,14 @@ export function SingleImageUploader({
       setUploading(true);
       setUploadError(null);
 
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await uploadMediaAction(formData);
+      const res = await uploadMedia(file);
       if (res?.error) {
         setUploadError(res.error);
       } else if (res?.url) {
         handleUpdateUrl(res.url);
       }
-    } catch (err: any) {
-      setUploadError(err.message || "Failed to upload image.");
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : "Failed to upload image.");
     } finally {
       setUploading(false);
       if (fileInputRef.current) {

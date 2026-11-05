@@ -22,8 +22,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { uploadMediaAction } from "@/app/admin/actions/upload";
 import { removedCafeImageUrls } from "@/lib/admin/cafe-images";
+import { uploadMedia } from "@/lib/admin/upload-media";
 
 interface CafeImageManagerProps {
   initialCoverUrl?: string | null;
@@ -61,16 +61,13 @@ export function CafeImageManager({
       setUploadingCover(true);
       setUploadError(null);
 
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "cafes/covers");
-
-      const res = await uploadMediaAction(formData);
+      const res = await uploadMedia(file, "cafes/covers");
       if (res.error) {
         setUploadError(`Failed to upload cover: ${res.error}`);
       } else if (res.url) {
-        setCoverUrl(res.url);
-        setKnownUrls((previous) => [...previous, res.url!]);
+        const url = res.url;
+        setCoverUrl(url);
+        setKnownUrls((previous) => [...previous, url]);
       }
     } catch (err: unknown) {
       setUploadError(err instanceof Error ? err.message : "Failed to upload cover image");
@@ -89,24 +86,15 @@ export function CafeImageManager({
       setUploadingGallery(true);
       setUploadError(null);
 
-      const uploaded: string[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("folder", "cafes/gallery");
-
-        const res = await uploadMediaAction(formData);
+      for (const file of Array.from(files)) {
+        const res = await uploadMedia(file, "cafes/gallery");
         if (res.url) {
-          uploaded.push(res.url);
+          const url = res.url;
+          setGalleryUrls((previous) => [...previous, url]);
+          setKnownUrls((previous) => [...previous, url]);
         } else if (res.error) {
           setUploadError(`Error uploading ${file.name}: ${res.error}`);
         }
-      }
-
-      if (uploaded.length > 0) {
-        setGalleryUrls((prev) => [...prev, ...uploaded]);
-        setKnownUrls((previous) => [...previous, ...uploaded]);
       }
     } catch (err: unknown) {
       setUploadError(err instanceof Error ? err.message : "Failed to upload gallery images");
@@ -154,7 +142,7 @@ export function CafeImageManager({
       </p>
 
       {uploadError && (
-        <div className="p-3 text-sm rounded bg-destructive/15 text-destructive border border-destructive/20">
+        <div role="alert" className="p-3 text-sm rounded bg-destructive/15 text-destructive border border-destructive/20">
           {uploadError}
         </div>
       )}
@@ -261,7 +249,7 @@ export function CafeImageManager({
                   )}
                   {uploadingCover ? "Uploading..." : "Upload Cover Image"}
                 </Button>
-                <span className="text-[11px] text-muted-foreground">PNG, JPG, WEBP up to 10MB</span>
+                <span className="text-[11px] text-muted-foreground">JPG, PNG, WebP, GIF, AVIF up to 10 MB</span>
               </div>
             </div>
 

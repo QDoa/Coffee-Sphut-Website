@@ -28,7 +28,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { uploadMediaAction } from "@/app/admin/actions/upload";
+import { uploadMedia } from "@/lib/admin/upload-media";
 
 export interface RichTextEditorProps {
   id?: string;
@@ -190,12 +190,8 @@ export function RichTextEditor({
     setIsUploading(true);
     setUploadError(null);
 
-    const formData = new FormData();
-    formData.set("file", file);
-    formData.set("folder", uploadFolder);
-
     try {
-      const res = await uploadMediaAction(formData);
+      const res = await uploadMedia(file, uploadFolder);
       if (res?.error) {
         setUploadError(res.error);
       } else if (res?.url) {
@@ -204,8 +200,8 @@ export function RichTextEditor({
         setImageUrlInput("");
         setImageAltInput("");
       }
-    } catch (err: any) {
-      setUploadError(err.message || "Failed to upload image");
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : "Failed to upload image");
     } finally {
       setIsUploading(false);
     }
