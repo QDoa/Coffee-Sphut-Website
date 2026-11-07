@@ -1,5 +1,5 @@
 "use client";
-import { useId, useState, useRef } from "react";
+import { useId, useState, useRef, type ChangeEvent } from "react";
 import {
   Plus,
   ArrowDownUp,
@@ -70,7 +70,9 @@ const movementOptions = Object.entries(movementTypes).map(
 );
 
 function movementLabel(value: unknown): string {
-  return movementTypes[String(value) as MovementType]?.label ?? "Stock movement";
+  return (
+    movementTypes[String(value) as MovementType]?.label ?? "Stock movement"
+  );
 }
 
 interface FieldProps {
@@ -81,8 +83,9 @@ interface FieldProps {
   min?: number;
   step?: number;
   options?: { value: string; label: string }[];
-  onSelect?: (value: string) => void;
+  onChange?: (value: string) => void;
   describedBy?: string;
+  suffix?: string;
 }
 function Field({
   name,
@@ -92,10 +95,18 @@ function Field({
   min,
   step,
   options,
-  onSelect,
+  onChange,
   describedBy,
+  suffix,
 }: FieldProps) {
   const id = useId();
+  const valueProps = onChange
+    ? {
+        value: value ?? "",
+        onChange: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+          onChange(event.currentTarget.value),
+      }
+    : { defaultValue: value };
   return (
     <div className="space-y-2 text-sm font-medium">
       <label htmlFor={id} className="block">
@@ -105,8 +116,7 @@ function Field({
         <select
           id={id}
           name={name}
-          defaultValue={value}
-          onChange={(event) => onSelect?.(event.currentTarget.value)}
+          {...valueProps}
           aria-describedby={describedBy}
           required
           className="min-h-11 w-full rounded-xl border bg-card px-3"
@@ -118,25 +128,148 @@ function Field({
           ))}
         </select>
       ) : (
-        <Input
-          id={id}
-          name={name}
-          type={type}
-          min={min}
-          step={step ?? (type === "number" ? "any" : undefined)}
-          defaultValue={value}
-          required
-          className="min-h-11"
-        />
+        <div className="relative">
+          <Input
+            id={id}
+            name={name}
+            type={type}
+            min={min}
+            step={step ?? (type === "number" ? "any" : undefined)}
+            {...valueProps}
+            aria-describedby={suffix ? `${id}-unit` : describedBy}
+            required
+            className={suffix ? "min-h-11 pr-16" : "min-h-11"}
+          />
+          {suffix && (
+            <span
+              id={`${id}-unit`}
+              className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm text-muted-foreground"
+            >
+              {suffix}
+            </span>
+          )}
+        </div>
       )}
     </div>
   );
 }
+
+function StockMovementFields({
+  items,
+  initialItemId,
+  cafeName,
+}: {
+  items: PortalData["items"];
+  initialItemId?: string;
+  cafeName: (id: unknown) => string;
+}) {
+  const [itemId, setItemId] = useState(initialItemId ?? "");
+  const [type, setType] = useState<MovementType>("receipt");
+  const [quantity, setQuantity] = useState("");
+  const [direction, setDirection] = useState("add");
+  const activeItems = items.filter((item) => item.active);
+  const item = activeItems.find((item) => item.id === itemId) ?? activeItems[0];
+  const unit = item ? String(item.unit) : undefined;
+  const balance = Number(item?.balance);
+  const entered = Number(quantity);
+  const minimum = type === "count" ? 0 : 0.000001;
+  const validQuantity =
+    quantity !== "" &&
+    Number.isFinite(entered) &&
+    entered >= minimum &&
+    Number(entered.toFixed(6)) === entered;
+  const subtract =
+    type === "consumption" ||
+    type === "wastage" ||
+    (type === "correction" && direction === "subtract");
+  const projected =
+    type === "count" ? entered : balance + (subtract ? -entered : entered);
+  const newBalance =
+    item && validQuantity ? Number(projected.toFixed(6)) : null;
+
+  return (
+    <>
+      <Field
+        name="item_id"
+        label="Item and café"
+        value={String(item?.id ?? "")}
+        onChange={setItemId}
+        options={activeItems.map((entry) => ({
+          value: String(entry.id),
+          label: `${entry.name} · ${cafeName(entry.cafe_id)} · ${entry.unit}`,
+        }))}
+      />
+      <Field
+        name="type"
+        label="What happened?"
+        value={type}
+        options={movementOptions}
+        onChange={(value) => {
+          setType(value as MovementType);
+          setDirection("add");
+        }}
+        describedBy="stock-movement-help"
+      />
+      <p id="stock-movement-help" className="text-sm text-muted-foreground">
+        {movementTypes[type].help}
+      </p>
+      <Field
+        name="quantity"
+        label={movementTypes[type].quantityLabel}
+        type="number"
+        value={quantity}
+        min={minimum}
+        step={0.000001}
+        suffix={unit}
+        onChange={setQuantity}
+      />
+      {type === "correction" && (
+        <Field
+          name="direction"
+          label="Adjust the balance"
+          value={direction}
+          onChange={setDirection}
+          options={[
+            { value: "add", label: "Add to stock" },
+            { value: "subtract", label: "Subtract from stock" },
+          ]}
+        />
+      )}
+      {item && (
+        <div className="space-y-2 rounded-xl border bg-muted/35 p-3">
+          <dl className="grid grid-cols-2 gap-3 text-sm">
+            <div className="min-w-0">
+              <dt className="text-muted-foreground">Current balance</dt>
+              <dd className="break-words font-medium tabular-nums">
+                {amount(balance)} {unit}
+              </dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-muted-foreground">New balance (preview)</dt>
+              <dd
+                aria-live="polite"
+                className="break-words font-semibold tabular-nums"
+              >
+                {newBalance === null ? "—" : `${amount(newBalance)} ${unit}`}
+              </dd>
+            </div>
+          </dl>
+          {newBalance !== null && newBalance < 0 && (
+            <p className="text-sm text-destructive" role="status">
+              This would take stock below zero. Enter a smaller quantity.
+            </p>
+          )}
+        </div>
+      )}
+      <Field name="reason" label="Reason / reference" />
+    </>
+  );
+}
+
 export function Inventory({ data }: { data: PortalData }) {
   const [search, setSearch] = useState(""),
     [cafe, setCafe] = useState(""),
     [filter, setFilter] = useState("all");
-  const [movementType, setMovementType] = useState<MovementType>("receipt");
   const [drawer, setDrawer] = useState<{
     kind: "add" | "movement" | "manage";
     id?: string;
@@ -146,7 +279,6 @@ export function Inventory({ data }: { data: PortalData }) {
   const opener = useRef<HTMLElement | null>(null);
   const open = (kind: "add" | "movement" | "manage", id?: string) => {
     if (!drawer) opener.current = document.activeElement as HTMLElement | null;
-    if (kind === "movement") setMovementType("receipt");
     setDrawer({
       kind,
       id,
@@ -645,49 +777,11 @@ export function Inventory({ data }: { data: PortalData }) {
                   />
                 </>
               ) : drawer.kind === "movement" ? (
-                <>
-                  <Field
-                    name="item_id"
-                    label="Item and café"
-                    value={drawer.id}
-                    options={data.items
-                      .filter((i) => i.active)
-                      .map((i) => ({
-                        value: String(i.id),
-                        label: `${i.name} · ${cafeName(i.cafe_id)} · ${i.unit}`,
-                      }))}
-                  />
-                  <Field
-                    name="type"
-                    label="What happened?"
-                    value="receipt"
-                    options={movementOptions}
-                    onSelect={(value) => setMovementType(value as MovementType)}
-                    describedBy="stock-movement-help"
-                  />
-                  <p
-                    id="stock-movement-help"
-                    className="text-sm text-muted-foreground"
-                  >
-                    {movementTypes[movementType].help}
-                  </p>
-                  <Field
-                    name="quantity"
-                    label={movementTypes[movementType].quantityLabel}
-                    type="number"
-                  />
-                  {movementType === "correction" && (
-                    <Field
-                      name="direction"
-                      label="Adjust the balance"
-                      options={[
-                        { value: "add", label: "Add to stock" },
-                        { value: "subtract", label: "Subtract from stock" },
-                      ]}
-                    />
-                  )}
-                  <Field name="reason" label="Reason / reference" />
-                </>
+                <StockMovementFields
+                  items={data.items}
+                  initialItemId={drawer.id}
+                  cafeName={cafeName}
+                />
               ) : (
                 <>
                   <p className="text-sm">

@@ -106,7 +106,7 @@ test("removal archives an existing café after approval without submitting unsav
   await expect(page.getByText("Archived · history preserved")).toBeVisible();
 });
 
-test("stock movement options explain the effect and show the saved activity", async ({
+test("stock movements preview balances in the selected item's unit before saving", async ({
   page,
 }) => {
   await page.goto("/partner/inventory");
@@ -114,19 +114,48 @@ test("stock movement options explain the effect and show the saved activity", as
     .getByRole("button", { name: "Record movement", exact: true })
     .click();
   const dialog = page.getByRole("dialog");
+  const item = dialog.getByLabel("Item and café", { exact: true });
+  await item.selectOption("40000000-0000-4000-8000-000000000001");
+  const current = dialog
+    .getByText("Current balance", { exact: true })
+    .locator("..")
+    .locator("dd");
+  const preview = dialog
+    .getByText("New balance (preview)", { exact: true })
+    .locator("..")
+    .locator("dd");
+  const balance = Number((await current.textContent())?.replace(/[^\d.]/g, ""));
+  const formatted = (value: number) =>
+    `${value.toLocaleString("en", { maximumFractionDigits: 6 })} g`;
   const movementType = dialog.getByLabel("What happened?", { exact: true });
   await expect(movementType).toHaveValue("receipt");
   await expect(
     dialog.getByText("Add stock that arrived in a delivery."),
   ).toBeVisible();
+  await expect(preview).toHaveText("—");
+  const received = dialog.getByLabel("Quantity received");
+  await expect(received).toHaveAccessibleDescription("g");
+  await received.fill("20");
+  await expect(preview).toHaveText(formatted(balance + 20));
   await expect(dialog.getByLabel("Adjust the balance")).toHaveCount(0);
   await movementType.selectOption({ label: "Stock count" });
-  await expect(dialog.getByLabel("Total counted")).toBeVisible();
+  await dialog.getByLabel("Total counted").fill("0");
+  await expect(preview).toHaveText("0 g");
   await movementType.selectOption({ label: "Manual adjustment" });
-  await expect(dialog.getByLabel("Adjust the balance")).toBeVisible();
+  await dialog.getByLabel("Adjust the balance").selectOption("subtract");
+  await dialog
+    .getByLabel("Quantity to adjust")
+    .fill(String(Math.ceil(balance) + 1));
+  await expect(
+    dialog.getByText("This would take stock below zero."),
+  ).toBeVisible();
   await movementType.selectOption({ label: "Stock received" });
   await expect(dialog.getByLabel("Adjust the balance")).toHaveCount(0);
-  await dialog.getByLabel("Quantity received").fill("20");
+  await item.selectOption("40000000-0000-4000-8000-000000000002");
+  await expect(received).toHaveAccessibleDescription("ml");
+  await expect(preview).toContainText("ml");
+  await item.selectOption("40000000-0000-4000-8000-000000000001");
+  await received.fill("20");
   await dialog.getByLabel("Reason / reference").fill("Browser stock received");
   await dialog
     .getByRole("button", { name: "Record movement", exact: true })
@@ -196,7 +225,9 @@ test("drafts preserve edited fields and can be resumed and submitted", async ({
   ).toHaveCount(5);
   await page.getByLabel("Café name", { exact: true }).fill(name);
   await page.getByRole("checkbox", { name: "WiFi", exact: true }).check();
-  await page.getByRole("checkbox", { name: "Work Station", exact: true }).check();
+  await page
+    .getByRole("checkbox", { name: "Work Station", exact: true })
+    .check();
   await page.getByRole("button", { name: "Save draft", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Saved");
   await expect(page.getByLabel("Café name", { exact: true })).toHaveValue(name);
