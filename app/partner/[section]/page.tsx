@@ -164,8 +164,6 @@ export default async function WorkspacePage({
     data.changes = [draft];
     if (Array.isArray(payload.gallery))
       data.gallery = payload.gallery as string[];
-    if (Array.isArray(payload.menu))
-      data.menu = payload.menu as Record<string, unknown>[];
   }
   return (
     <PartnerShell data={data} preview={preview}>

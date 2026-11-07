@@ -80,23 +80,6 @@ export function cafePayload(form: FormData): Record<string, unknown> {
   payload.time_open = updateHours
     ? hours
     : JSON.parse(String(form.get("previous_hours") || "null"));
-  payload.menu = (form.get("menu")?.toString() || "")
-    .split("\n")
-    .filter((x) => x.trim())
-    .map((line) => {
-      const [name, price, currency, ...description] = line
-        .split("|")
-        .map((x) => x.trim());
-      return {
-        name: z.string().min(1).parse(name),
-        price: z.coerce.number().int().nonnegative().parse(price),
-        currency: z
-          .string()
-          .regex(/^[A-Z]{3}$/)
-          .parse(currency),
-        description: description.join(" | ") || null,
-      };
-    });
   for (const url of payload.gallery as string[]) z.url().parse(url);
   for (const key of ["image_url", "link"])
     if (payload[key]) z.url().parse(payload[key]);

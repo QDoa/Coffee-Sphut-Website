@@ -407,34 +407,14 @@ export function CafeEditor({
           value={socials}
           help="One per line, for example Instagram=https://instagram.com/yourcafe"
         />
-        <Field
-          name="image_url"
-          label="Cover image URL"
-          type="url"
-          value={c.image_url}
-        />
-        <Area
-          name="gallery"
-          label="Gallery image URLs"
-          value={data.gallery?.join("\n")}
-          help="One image URL per line. Remove a URL to detach that image after approval."
-        />
         <ImageUploader
+          key={`${c.id ?? "new"}:${data.changes[0]?.id ?? "live"}`}
           cafeId={c.id ? Number(c.id) : undefined}
+          initialCoverUrl={str(c.image_url)}
+          initialGalleryUrls={data.gallery ?? []}
           initial={
             (data.changes[0]?.media as unknown as MediaSelection) || EMPTY_MEDIA
           }
-        />
-        <Area
-          name="menu"
-          label="Menu"
-          value={data.menu
-            .map(
-              (m) =>
-                `${m.name} | ${m.price} | ${m.currency} | ${m.description || ""}`,
-            )
-            .join("\n")}
-          help="One item per line: Name | price in cents | CAD | description"
         />
       </ActionForm>
     </Panel>

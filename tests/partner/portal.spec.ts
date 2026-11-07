@@ -211,10 +211,25 @@ test("managed images stay private through draft resume and render for the review
   );
   await page.goto("/partner/cafe");
   await page.getByLabel("Café name", { exact: true }).fill(name);
+  await page.setViewportSize({ width: 320, height: 1000 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await expect(page.locator('[name="menu"]')).toHaveCount(0);
+  const linkedPhoto = "https://example.test/cafe-photo.png";
+  await page.route(linkedPhoto, (route) =>
+    route.fulfill({ contentType: "image/png", body: png }),
+  );
+  const coverLink = page.getByLabel("Or paste a cover image URL");
+  await coverLink.fill(linkedPhoto);
+  await expect(page.getByAltText("Store cover photo")).toBeVisible();
   await page
-    .getByLabel("Upload cover image", { exact: true })
+    .getByLabel("Cover image file", { exact: true })
     .setInputFiles({ name: "cover.png", mimeType: "image/png", buffer: png });
   await expect(page.getByAltText("Cover awaiting review")).toBeVisible();
+  await expect(coverLink).toHaveValue("");
   await expect
     .poll(() =>
       page
@@ -224,6 +239,15 @@ test("managed images stay private through draft resume and render for the review
         ),
     )
     .toBe(true);
+  await page.getByRole("button", { name: "Add URL", exact: true }).click();
+  const galleryLink = page.getByLabel("Gallery image URL", { exact: true });
+  await galleryLink.fill(linkedPhoto);
+  await galleryLink.press("Enter");
+  await page.getByLabel("Gallery image files", { exact: true }).setInputFiles([
+    { name: "interior.png", mimeType: "image/png", buffer: png },
+    { name: "storefront.png", mimeType: "image/png", buffer: png },
+  ]);
+  await expect(page.getByText("3 photos", { exact: true })).toBeVisible();
   for (const width of [320, 390, 897, 1280]) {
     await page.setViewportSize({ width, height: 1000 });
     expect(
@@ -248,6 +272,8 @@ test("managed images stay private through draft resume and render for the review
   await expect(page.locator('input[name="media"]')).toHaveValue(
     JSON.stringify(media),
   );
+  await expect(page.locator('input[name="gallery"]')).toHaveValue(linkedPhoto);
+  await expect(page.getByText("3 photos", { exact: true })).toBeVisible();
   await page
     .getByRole("button", { name: "Submit for review", exact: true })
     .click();
@@ -255,6 +281,7 @@ test("managed images stay private through draft resume and render for the review
   await page.goto("/partner/preview-review");
   const request = page.locator("section").filter({ hasText: name });
   await expect(request.getByAltText("Proposed cover")).toBeVisible();
+  await expect(request.getByAltText("Proposed gallery 2")).toBeVisible();
   await request.getByAltText("Proposed cover").scrollIntoViewIfNeeded();
   await expect
     .poll(() =>
@@ -280,7 +307,7 @@ test("an administrator can clean up a detached upload through the real Storage A
   );
   await page.goto("/partner/cafe");
   await page
-    .getByLabel("Upload cover image", { exact: true })
+    .getByLabel("Cover image file", { exact: true })
     .setInputFiles({ name: "unused.png", mimeType: "image/png", buffer: png });
   await expect(page.getByAltText("Cover awaiting review")).toBeVisible();
   const { cover } = JSON.parse(

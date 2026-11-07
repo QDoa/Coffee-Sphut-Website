@@ -10,7 +10,6 @@ function form() {
     "gallery",
     "https://example.test/one.jpg\nhttps://example.test/two.jpg",
   );
-  f.set("menu", "Latte | 500 | CAD | Milk coffee");
   return f;
 }
 test("cafe business fields and related records survive parsing without accepting system fields", () => {
@@ -23,15 +22,16 @@ test("cafe business fields and related records survive parsing without accepting
   f.set("chain_id", "tampered");
   f.set("partner_revision", "0");
   f.set("rating", "5");
+  f.set("menu", "Latte | 500 | CAD | Milk coffee");
   const p = cafePayload(f);
   assert.deepEqual(p.time_open, { Monday: { open: "08:00", close: "18:00" } });
   assert.deepEqual(p.social_media, { Instagram: "https://example.test/cafe" });
-  assert.equal((p.menu as Record<string, unknown>[])[0].price, 500);
   assert.equal((p.gallery as string[]).length, 2);
   assert.equal(p.reward_code, "private");
   assert.equal("chain_id" in p, false);
   assert.equal("partner_revision" in p, false);
   assert.equal("rating" in p, false);
+  assert.equal("menu" in p, false);
 });
 test("amenities accept only catalog IDs and omit unchanged selections", () => {
   const f = form();
@@ -57,9 +57,9 @@ test("legacy hours are preserved until a user explicitly replaces them", () => {
   f.set("hours_update", "on");
   assert.deepEqual(cafePayload(f).time_open, {});
 });
-test("invalid menu prices, social links and partial hours do not silently clear data", () => {
+test("invalid gallery links, social links and partial hours do not silently clear data", () => {
   for (const [key, value] of [
-    ["menu", "Latte | -5 | CAD"],
+    ["gallery", "invalid image link"],
     ["social_media", "bad link"],
     ["hours_Monday_open", "08:00"],
   ]) {
