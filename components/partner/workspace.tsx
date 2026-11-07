@@ -235,7 +235,9 @@ export function Cafes({ data, q = "" }: { data: PortalData; q?: string }) {
                   ? "Resume draft"
                   : "Revise rejected request"}
                 {": "}
-                {str((ch.payload as Row)?.name) || "Café request"}
+                {str((ch.payload as Row)?.name) ||
+                  str(data.cafes.find((cafe) => cafe.id === ch.cafe_id)?.name) ||
+                  "Café request"}
               </Link>
             ))}
         </div>
@@ -680,6 +682,12 @@ export function StaffReviews({ data }: { data: PortalData }) {
               <p className="mb-4 break-all text-xs text-muted-foreground">
                 Request {str(ch.id)} · submitted {str(ch.created_at)}
               </p>
+              {!!ch.cafe_id && (ch.payload as Row)?.is_active === false && (
+                <p className="mb-4 text-sm font-medium">
+                  Approval removes this café from public listings and keeps
+                  its history in the workspace.
+                </p>
+              )}
               <Records
                 rows={Object.entries((ch.payload || {}) as Row).map(
                   ([field, proposed]) => ({

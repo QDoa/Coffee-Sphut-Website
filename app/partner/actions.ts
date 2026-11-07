@@ -24,8 +24,10 @@ export async function commandAction(
   form: FormData,
 ): Promise<PortalActionState> {
   try {
-    const action = String(form.get("operation"));
-    const input: Record<string, Json | undefined> = JSON.parse(
+    const operation = String(form.get("operation"));
+    const removal = operation === "remove_cafe";
+    const action = removal ? "submit_change" : operation;
+    let input: Record<string, Json | undefined> = JSON.parse(
       String(form.get("context") || "{}"),
     );
     const staff = ["review", "provision", "activate_plan"].includes(action);
@@ -33,16 +35,34 @@ export async function commandAction(
       await requireStaff(action === "review" ? "editor" : "admin", {
         redirectOnFailure: false,
       });
-    for (const [key, value] of form.entries())
-      if (!["operation", "context"].includes(key) && typeof value === "string")
-        input[key] = value;
-    if (!staff && action !== "accept_invite")
-      input.chain_id = (await portalData("overview")).chain_id;
-    if (["save_change", "submit_change"].includes(action)) {
-      input.payload = cafePayload(form) as Json;
-      input.media = JSON.parse(
-        String(form.get("media") || '{"cover":null,"gallery":[]}'),
-      ) as Json;
+    if (removal) {
+      const target = z
+        .object({
+          cafe_id: z.number().int().positive(),
+          baseline: z.number().int().positive(),
+          request_id: z.uuid(),
+        })
+        .parse(input);
+      const { cafe, chain_id } = await portalData("cafe", {
+        id: target.cafe_id,
+      });
+      if (cafe?.is_active !== true)
+        return { error: "This café is already archived or unavailable." };
+      if (cafe.partner_revision !== target.baseline)
+        return { error: "The café has changed. Refresh the page and try again." };
+      input = { ...target, chain_id, payload: { is_active: false } };
+    } else {
+      for (const [key, value] of form.entries())
+        if (!["operation", "context"].includes(key) && typeof value === "string")
+          input[key] = value;
+      if (!staff && action !== "accept_invite")
+        input.chain_id = (await portalData("overview")).chain_id;
+      if (["save_change", "submit_change"].includes(action)) {
+        input.payload = cafePayload(form) as Json;
+        input.media = JSON.parse(
+          String(form.get("media") || '{"cover":null,"gallery":[]}'),
+        ) as Json;
+      }
     }
     if (action === "recipe")
       input.ingredients = JSON.parse(
@@ -62,7 +82,17 @@ export async function commandAction(
       p_action: action,
       p_input: input as Json,
     });
-    if (error) return { error: error.message };
+    if (error) {
+      if (
+        removal &&
+        error.code === "23505" &&
+        error.message.includes("partner_one_pending")
+      )
+        return {
+          error: "This café already has a request awaiting review. Wait for that review before requesting removal.",
+        };
+      return { error: error.message };
+    }
     revalidatePath("/partner", "layout");
     revalidatePath("/admin/partner-reviews");
     if (action === "review") {
@@ -76,6 +106,13 @@ export async function commandAction(
       typeof data.id === "string"
         ? data.id
         : undefined;
+    if (removal && savedId)
+      redirect(
+        `/partner/cafe?${new URLSearchParams({
+          id: String(input.cafe_id),
+          change: savedId,
+        })}`,
+      );
     const token =
       data && typeof data === "object" && !Array.isArray(data)
         ? data.token

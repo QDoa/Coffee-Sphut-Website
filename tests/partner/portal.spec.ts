@@ -44,6 +44,68 @@ test("cafe edit stays pending until an independent reviewer publishes it", async
     address,
   );
 });
+test("removal archives an existing café after approval without submitting unsaved edits", async ({
+  page,
+}) => {
+  const name = `Removal test ${randomUUID().slice(0, 8)}`;
+  const address = "10 Preview Street";
+  await page.goto("/partner/cafe");
+  await page.getByLabel("Café name", { exact: true }).fill(name);
+  await page.getByLabel("Address", { exact: true }).fill(address);
+  await page.getByRole("button", { name: "Submit for review" }).click();
+  await expect(page.getByRole("status")).toContainText("Submitted");
+
+  await page.goto("/partner/preview-review");
+  const creation = page.locator("section").filter({
+    has: page.getByRole("cell", { name, exact: true }),
+  });
+  await creation.getByRole("button", { name: "Approve request" }).click();
+  await expect(creation).toHaveCount(0);
+
+  const list = `/partner/cafes?q=${encodeURIComponent(name)}`;
+  await page.goto(list);
+  await page.getByRole("link", { name: "Details & edit request" }).click();
+  await expect(page).toHaveURL(/\/partner\/cafe\?id=\d+$/);
+  const cafeUrl = page.url();
+  const addressField = page.getByLabel("Address", { exact: true });
+  const remove = page.getByRole("button", { name: "Remove café", exact: true });
+  const dialog = page.getByRole("alertdialog");
+  await addressField.fill("Unsaved address");
+  await remove.click();
+  await dialog.getByRole("button", { name: "Keep café" }).click();
+  await expect(addressField).toHaveValue("Unsaved address");
+  await remove.click();
+  await dialog.getByRole("button", { name: "Request removal" }).click();
+  await expect(
+    page.getByText("Café removal request", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("pending");
+
+  await page.goto(cafeUrl);
+  await expect(page.getByLabel("Active café")).toBeChecked();
+  await expect(addressField).toHaveValue(address);
+  await remove.click();
+  await dialog.getByRole("button", { name: "Request removal" }).click();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "already has a request awaiting review",
+  );
+
+  await page.goto("/partner/preview-review");
+  const removal = page.locator("section").filter({
+    has: page.getByRole("heading", { name, exact: true }),
+  });
+  await expect(removal).toContainText("removes this café from public listings");
+  await removal.getByRole("button", { name: "Approve request" }).click();
+  await expect(removal).toHaveCount(0);
+
+  await page.goto(cafeUrl);
+  await expect(page.getByLabel("Active café")).not.toBeChecked();
+  await expect(addressField).toHaveValue(address);
+  await expect(remove).toHaveCount(0);
+  await page.goto(list);
+  await expect(page.getByText("Archived · history preserved")).toBeVisible();
+});
+
 test("stock receipt produces a movement and success feedback", async ({
   page,
 }) => {

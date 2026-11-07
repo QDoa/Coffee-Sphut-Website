@@ -18,6 +18,7 @@ import {
   Field,
 } from "@/components/partner/workspace";
 import { ActionForm } from "@/components/partner/action-form";
+import { RemoveCafeButton } from "@/components/partner/remove-cafe-button";
 import { passwordAction } from "../actions";
 export const dynamic = "force-dynamic";
 export default async function WorkspacePage({
@@ -135,10 +136,17 @@ export default async function WorkspacePage({
     const available = await portalData("cafes");
     const draft = available.changes.find((ch) => ch.id === query.change);
     if (!draft) notFound();
+    const payload = draft.payload as Record<string, unknown>;
     if (!["draft", "rejected"].includes(String(draft.status)))
       return (
         <PartnerShell data={data} preview={preview}>
-          <Panel title="Change request">
+          <Panel
+            title={
+              draft.cafe_id && payload.is_active === false
+                ? "Café removal request"
+                : "Change request"
+            }
+          >
             <p role="status">
               Submitted for review. Current status: {String(draft.status)}.
             </p>
@@ -153,7 +161,6 @@ export default async function WorkspacePage({
       ...(draft.payload as Record<string, unknown>),
     };
     data.changes = [draft];
-    const payload = draft.payload as Record<string, unknown>;
     if (Array.isArray(payload.gallery))
       data.gallery = payload.gallery as string[];
     if (Array.isArray(payload.menu))
@@ -166,7 +173,19 @@ export default async function WorkspacePage({
       ) : section === "cafes" ? (
         <Cafes data={data} q={query.q} />
       ) : section === "cafe" ? (
-        <CafeEditor data={data} />
+        <>
+          {!query.change && data.cafe?.is_active === true && (
+            <div className="flex justify-end">
+              <RemoveCafeButton
+                cafeId={Number(data.cafe.id)}
+                name={String(data.cafe.name || "this café")}
+                revision={Number(data.cafe.partner_revision)}
+                requestId={randomUUID()}
+              />
+            </div>
+          )}
+          <CafeEditor data={data} />
+        </>
       ) : section === "rewards" ? (
         <Rewards data={data} params={query} />
       ) : section === "inventory" ? (
