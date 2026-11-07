@@ -1,5 +1,6 @@
 import { Dashboard } from "@/components/partner/dashboard";
 import { Inventory } from "@/components/partner/inventory";
+import { Recipes } from "@/components/partner/recipes";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { randomUUID } from "node:crypto";
@@ -10,7 +11,6 @@ import {
   Cafes,
   CafeEditor,
   Rewards,
-  Recipes,
   Team,
   Billing,
   StaffReviews,

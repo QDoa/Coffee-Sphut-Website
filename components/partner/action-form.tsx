@@ -15,6 +15,7 @@ interface Props {
   children: ReactNode;
   label: string;
   secondaryLabel?: string;
+  submitDisabled?: boolean;
   action?: (
     previous: PortalActionState,
     form: FormData,
@@ -26,6 +27,7 @@ export function ActionForm({
   children,
   label,
   secondaryLabel,
+  submitDisabled = false,
   action = commandAction,
 }: Props) {
   const [state, dispatch, pending] = useActionState(action, {});
@@ -35,6 +37,7 @@ export function ActionForm({
   }, [state]);
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitDisabled) return;
     if (event.currentTarget.querySelector('[data-upload-pending="true"]'))
       return;
     const data = new FormData(event.currentTarget);
@@ -71,7 +74,7 @@ export function ActionForm({
         className="min-w-0 space-y-4"
       >
         {children}
-        <Button type="submit" className="min-h-11">
+        <Button type="submit" className="min-h-11" disabled={submitDisabled}>
           {pending ? "Saving…" : label}
         </Button>
         {secondaryLabel && (

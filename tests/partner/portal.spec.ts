@@ -174,22 +174,55 @@ test("stock movements preview balances in the selected item's unit before saving
     savedMovement.getByRole("cell", { name: "Stock received", exact: true }),
   ).toBeVisible();
 });
-test("recipe creation is interactive and does not request stock deductions", async ({
+test("recipes can be created, found by ingredient, and edited from the library", async ({
   page,
 }) => {
+  const name = `Test recipe ${Date.now()}`;
   await page.goto("/partner/recipes");
-  await page
-    .getByLabel("Recipe name", { exact: true })
-    .fill(`Test recipe ${Date.now()}`);
-  await page
+  await page.getByRole("button", { name: "Add recipe", exact: true }).click();
+  const editor = page.getByRole("dialog");
+  await editor.getByLabel("Recipe name", { exact: true }).fill(name);
+  await expect(
+    editor.getByRole("button", { name: "Save recipe" }),
+  ).toBeDisabled();
+  await editor
     .getByRole("button", { name: "Add ingredient", exact: true })
     .click();
-  await page
+  await editor
     .getByLabel("Ingredient 1", { exact: true })
-    .selectOption({ index: 1 });
-  await page.getByLabel("Quantity 1", { exact: true }).fill("18");
-  await page.getByRole("button", { name: "Save recipe", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("Saved");
+    .selectOption("40000000-0000-4000-8000-000000000001");
+  const quantity = editor.getByLabel("Quantity 1", { exact: true });
+  await expect(quantity).toHaveAccessibleDescription("g");
+  await quantity.fill("18");
+  await editor
+    .getByRole("button", { name: "Save recipe", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toHaveText(`${name} saved.`);
+  await expect(editor).toHaveCount(0);
+
+  const card = page.getByRole("article", { name, exact: true });
+  const search = page.getByLabel("Search recipes", { exact: true });
+  await search.fill("House espresso beans");
+  await expect(card).toContainText("18 g");
+  await search.fill(name);
+  await card.getByRole("button", { name: `Edit ${name}` }).click();
+  await expect(quantity).toHaveValue("18");
+  await editor.getByLabel("Servings per batch").fill("2");
+  await editor.getByLabel("Recipe status").selectOption("false");
+  await editor
+    .getByRole("button", { name: "Save recipe", exact: true })
+    .click();
+  await expect(editor).toHaveCount(0);
+  await expect(card).toContainText("Makes 2 servings");
+  await expect(card).toContainText("Inactive");
+
+  const status = page.getByLabel("Filter recipes by status");
+  await status.selectOption("active");
+  await expect(
+    page.getByText("No matching recipes", { exact: true }),
+  ).toBeVisible();
+  await status.selectOption("inactive");
+  await expect(card).toBeVisible();
 });
 test("responsive layouts fit mobile, intermediate and desktop widths", async ({
   page,

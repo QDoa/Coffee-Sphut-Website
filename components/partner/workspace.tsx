@@ -4,7 +4,6 @@ import { ImageUploader } from "./image-uploader";
 import { type MediaSelection, EMPTY_MEDIA } from "@/lib/partner/media";
 import { cleanupImageAction } from "@/app/partner/media-actions";
 import { CAFE_AMENITIES } from "@/lib/partner/amenities";
-import { RecipeEditor } from "./recipe-editor";
 import { randomUUID } from "node:crypto";
 import { ActionForm } from "./action-form";
 import type { PortalData } from "@/lib/partner/portal";
@@ -539,46 +538,6 @@ export function Rewards({
           )}
         </div>
       </Panel>
-    </>
-  );
-}
-export function Recipes({ data }: { data: PortalData }) {
-  return (
-    <>
-      <Panel title="Shared chain recipes">
-        <p className="mb-5 text-sm text-muted-foreground">
-          Recipes describe ingredient quantities. Saving a recipe never deducts
-          stock.
-        </p>
-        {!data.recipes.length && (
-          <p className="text-sm text-muted-foreground">No recipes yet.</p>
-        )}
-        <div className="space-y-4">
-          {data.recipes.map((r) => (
-            <div key={str(r.id)} className="rounded-xl border p-4">
-              <h3 className="font-serif text-xl">{str(r.name)}</h3>
-              <p className="mt-2 text-sm">
-                Yield {str(r.yield)} · {r.active ? "Active" : "Inactive"}
-              </p>
-              <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-                {(r.ingredients as Row[]).map((i, index) => (
-                  <li key={index}>
-                    {str(
-                      data.ingredients.find((x) => x.id === i.item_id)?.name,
-                    ) || "Retained ingredient"}{" "}
-                    · {str(i.quantity)} {str(i.unit)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </Panel>
-      {data.role !== "cafe_manager" && (
-        <Panel title="Create or revise a recipe">
-          <RecipeEditor data={data} requestId={randomUUID()} />
-        </Panel>
-      )}
     </>
   );
 }
