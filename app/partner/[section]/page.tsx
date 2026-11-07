@@ -132,6 +132,7 @@ export default async function WorkspacePage({
       </main>
     );
   const data = result.data;
+  const approvedAmenities = data.cafe?.amenities;
   if (section === "cafe" && query.change) {
     const available = await portalData("cafes");
     const draft = available.changes.find((ch) => ch.id === query.change);
@@ -184,7 +185,7 @@ export default async function WorkspacePage({
               />
             </div>
           )}
-          <CafeEditor data={data} />
+          <CafeEditor data={data} approvedAmenities={approvedAmenities} />
         </>
       ) : section === "rewards" ? (
         <Rewards data={data} params={query} />

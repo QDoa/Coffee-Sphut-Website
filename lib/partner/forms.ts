@@ -1,4 +1,11 @@
 import { z } from "zod";
+import { CAFE_AMENITIES } from "./amenities";
+
+const amenitySelection = z.array(
+  z.enum(CAFE_AMENITIES.map(({ id }) => id), {
+    error: "Choose from the available café amenities.",
+  }),
+);
 const optionalNumber = (value: FormDataEntryValue | null): number | null =>
   value === null || value === ""
     ? null
@@ -24,16 +31,19 @@ export function cafePayload(form: FormData): Record<string, unknown> {
     .parse(form.get("name"));
   payload.latitude = optionalNumber(form.get("latitude"));
   payload.longitude = optionalNumber(form.get("longitude"));
-  payload.rating = optionalNumber(form.get("rating"));
   payload.loyalty_threshold_override = optionalNumber(
     form.get("loyalty_threshold_override"),
   );
   payload.is_active = form.get("is_active") === "on";
   payload.show_details = form.get("show_details") === "on";
-  payload.amenities = (form.get("amenities")?.toString() || "")
-    .split(",")
-    .map((x) => x.trim())
-    .filter(Boolean);
+  const selected = new Set(amenitySelection.parse(form.getAll("amenities")));
+  const approved = new Set(form.getAll("approved_amenities"));
+  // Omit unchanged selections so ordinary edits preserve legacy amenity data.
+  if (
+    selected.size !== approved.size ||
+    [...selected].some((id) => !approved.has(id))
+  )
+    payload.amenities = [...selected];
   payload.gallery = (form.get("gallery")?.toString() || "")
     .split("\n")
     .map((x) => x.trim())

@@ -22,6 +22,7 @@ test("cafe business fields and related records survive parsing without accepting
   f.set("reward_code", "private");
   f.set("chain_id", "tampered");
   f.set("partner_revision", "0");
+  f.set("rating", "5");
   const p = cafePayload(f);
   assert.deepEqual(p.time_open, { Monday: { open: "08:00", close: "18:00" } });
   assert.deepEqual(p.social_media, { Instagram: "https://example.test/cafe" });
@@ -30,6 +31,23 @@ test("cafe business fields and related records survive parsing without accepting
   assert.equal(p.reward_code, "private");
   assert.equal("chain_id" in p, false);
   assert.equal("partner_revision" in p, false);
+  assert.equal("rating" in p, false);
+});
+test("amenities accept only catalog IDs and omit unchanged selections", () => {
+  const f = form();
+  f.append("amenities", "wifi");
+  f.append("amenities", "wifi");
+  f.append("amenities", "work_station");
+  assert.deepEqual(cafePayload(f).amenities, ["wifi", "work_station"]);
+
+  f.append("approved_amenities", "work_station");
+  f.append("approved_amenities", "wifi");
+  assert.equal("amenities" in cafePayload(f), false);
+
+  f.delete("amenities");
+  assert.deepEqual(cafePayload(f).amenities, []);
+  f.append("amenities", "custom_amenity");
+  assert.throws(() => cafePayload(f), /available café amenities/);
 });
 test("legacy hours are preserved until a user explicitly replaces them", () => {
   const f = form();

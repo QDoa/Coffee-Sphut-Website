@@ -172,7 +172,15 @@ test("drafts preserve edited fields and can be resumed and submitted", async ({
 }) => {
   const name = `Draft café ${Date.now()}`;
   await page.goto("/partner/cafe");
+  await expect(page.locator('[name="rating"]')).toHaveCount(0);
+  await expect(
+    page
+      .getByRole("group", { name: "Amenities", exact: true })
+      .getByRole("checkbox"),
+  ).toHaveCount(5);
   await page.getByLabel("Café name", { exact: true }).fill(name);
+  await page.getByRole("checkbox", { name: "WiFi", exact: true }).check();
+  await page.getByRole("checkbox", { name: "Work Station", exact: true }).check();
   await page.getByRole("button", { name: "Save draft", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Saved");
   await expect(page.getByLabel("Café name", { exact: true })).toHaveValue(name);
@@ -181,6 +189,12 @@ test("drafts preserve edited fields and can be resumed and submitted", async ({
     .getByRole("link", { name: `Resume draft: ${name}`, exact: true })
     .click();
   await expect(page.getByLabel("Café name", { exact: true })).toHaveValue(name);
+  await expect(
+    page.getByRole("checkbox", { name: "WiFi", exact: true }),
+  ).toBeChecked();
+  await expect(
+    page.getByRole("checkbox", { name: "Work Station", exact: true }),
+  ).toBeChecked();
   await page
     .getByRole("button", { name: "Submit for review", exact: true })
     .click();

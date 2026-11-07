@@ -22,8 +22,8 @@ Exhaustive against `types/database.ts` for Cafe, CafeImages, and CafeMenu. Syste
 | `phone_number` | reviewed business field | Saved | Publish only after staff approval. |
 | `email` | reviewed business field | Saved | Publish only after staff approval. |
 | `social_media` | reviewed business field | No form control or save mapping | Missing from current admin editor; include explicitly in partner validation and review. |
-| `amenities` | reviewed business field | Saved as comma-separated IDs | Preserve mobile amenity IDs; validate supported entries. |
-| `rating` | reviewed business field | Saved | 0–5; retain field coverage even if a later policy changes who may propose it. |
+| `amenities` | reviewed business field | Saved as comma-separated IDs | Partners select from the mobile amenity catalog. Unchanged selections preserve legacy values. |
+| `rating` | staff managed | Saved | Partner requests preserve the saved rating. |
 | `is_active` | lifecycle review | Saved; nullable in schema | False means archived; approval removes discovery but retains authorized history. Slot consumed only on approved activation. Flag legacy nulls for review; subscription locks remain separate. |
 | `chain_id` | staff-managed transfer | Staff can select any chain | Partners request a staff-managed transfer; ordinary edits cannot reassign tenants. Preserve historical ownership and validate target access/limits. |
 | `loyalty_threshold_override` | reviewed business field | Saved | Positive integer or null; reward-sensitive changes still require review. |

@@ -7,6 +7,7 @@ interface FieldCoverage {
     | "reviewed business field"
     | "lifecycle review"
     | "staff-managed transfer"
+    | "staff managed"
     | "system managed";
   currentAdmin: string;
   notes: string;
@@ -76,12 +77,13 @@ const coverage = {
     ),
     amenities: business(
       "Saved as comma-separated IDs",
-      "Preserve mobile amenity IDs; validate supported entries.",
+      "Partners select from the mobile amenity catalog. Unchanged selections preserve legacy values.",
     ),
-    rating: business(
-      "Saved",
-      "0–5; retain field coverage even if a later policy changes who may propose it.",
-    ),
+    rating: {
+      handling: "staff managed",
+      currentAdmin: "Saved",
+      notes: "Partner requests preserve the saved rating.",
+    },
     is_active: {
       handling: "lifecycle review",
       currentAdmin: "Saved; nullable in schema",

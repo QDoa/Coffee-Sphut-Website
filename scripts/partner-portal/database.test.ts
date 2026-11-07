@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { randomUUID } from "node:crypto";
 import type { Client } from "pg";
 import { db } from "./database";
+import { CAFE_AMENITIES } from "../../lib/partner/amenities";
 const A = "20000000-0000-4000-8000-000000000001",
   B = "20000000-0000-4000-8000-000000000002";
 const uid = (n: number) =>
@@ -101,6 +102,52 @@ test("database RLS isolates tenants/assigned cafes and prohibits direct writes",
     );
     await actor(c, 2);
     await denied(c, () => snapshot(c, "overview"), /No active partner/);
+  }));
+
+test("partner café requests restrict editable amenities and preserve existing ratings", () =>
+  transaction(async (c) => {
+    await c.query(
+      `UPDATE public."Cafe" SET rating=4.5, amenities=ARRAY['wifi', 'legacy'] WHERE id=102`,
+    );
+    await actor(c, 1);
+    const { cafe } = await snapshot(c, "cafe", { id: 102 });
+    const target = { cafe_id: 102, baseline: cafe.partner_revision };
+    await denied(
+      c,
+      () => command(c, "save_change", { ...target, payload: { rating: 5 } }),
+      /cannot propose café rating changes/,
+    );
+    for (const amenities of [["custom_amenity"], "wifi", [null]]) {
+      await denied(
+        c,
+        () => command(c, "submit_change", { ...target, payload: { amenities } }),
+        /available café amenities/,
+      );
+    }
+    const draft = await command(c, "save_change", {
+      ...target,
+      payload: { amenities: CAFE_AMENITIES.map(({ id }) => id) },
+    });
+    await denied(
+      c,
+      () =>
+        command(c, "submit_change", {
+          ...target,
+          id: draft.id,
+          payload: { amenities: ["custom_amenity"] },
+        }),
+      /available café amenities/,
+    );
+    const unrelatedEdit = await command(c, "submit_change", {
+      ...target,
+      payload: { description: "New description" },
+    });
+    await actor(c, 4);
+    await command(c, "review", { id: unrelatedEdit.id, decision: "approve" });
+    await actor(c, 1);
+    const updated = (await snapshot(c, "cafe", { id: 102 })).cafe;
+    assert.deepEqual(updated.amenities, ["wifi", "legacy"]);
+    assert.equal(updated.rating, 4.5);
   }));
 
 test("Free cannot access Paid data through reads, commands or forged plan activation", () =>

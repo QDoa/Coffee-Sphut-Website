@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ImageUploader } from "./image-uploader";
 import { type MediaSelection, EMPTY_MEDIA } from "@/lib/partner/media";
 import { cleanupImageAction } from "@/app/partner/media-actions";
+import { CAFE_AMENITIES } from "@/lib/partner/amenities";
 import { RecipeEditor } from "./recipe-editor";
 import { randomUUID } from "node:crypto";
 import { ActionForm } from "./action-form";
@@ -245,8 +246,19 @@ export function Cafes({ data, q = "" }: { data: PortalData; q?: string }) {
     </>
   );
 }
-export function CafeEditor({ data }: { data: PortalData }) {
+export function CafeEditor({
+  data,
+  approvedAmenities,
+}: {
+  data: PortalData;
+  approvedAmenities: unknown;
+}) {
   const c = data.cafe || {};
+  const selectedAmenities = Array.isArray(c.amenities) ? c.amenities : [];
+  const liveAmenities = Array.isArray(approvedAmenities) ? approvedAmenities : [];
+  const hasLegacyAmenities = liveAmenities.some(
+    (value) => !CAFE_AMENITIES.some(({ id }) => id === value),
+  );
   const hours = (c.time_open || {}) as Record<
     string,
     { open?: string; close?: string }
@@ -307,18 +319,31 @@ export function CafeEditor({ data }: { data: PortalData }) {
             type="number"
             value={c.loyalty_threshold_override}
           />
-          <Field
-            name="rating"
-            label="Rating (0–5)"
-            type="number"
-            value={c.rating}
-          />
-          <Field
-            name="amenities"
-            label="Amenities (comma separated)"
-            value={Array.isArray(c.amenities) ? c.amenities.join(", ") : ""}
-          />
         </div>
+        <fieldset className="space-y-2 rounded-xl border p-4">
+          <legend className="px-2 text-sm font-medium">Amenities</legend>
+          <p className="text-sm text-muted-foreground">
+            Select the amenities available at this café.
+            {hasLegacyAmenities &&
+              " Changing this selection replaces older amenity entries."}
+          </p>
+          <div className="grid gap-x-4 sm:grid-cols-2">
+            {CAFE_AMENITIES.map(({ id, label }) => (
+              <label key={id} className="flex min-h-11 items-center gap-2 text-sm">
+                {liveAmenities.includes(id) && (
+                  <input type="hidden" name="approved_amenities" value={id} />
+                )}
+                <input
+                  type="checkbox"
+                  name="amenities"
+                  value={id}
+                  defaultChecked={selectedAmenities.includes(id)}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <div className="flex flex-wrap gap-6">
           <label className="flex min-h-11 items-center gap-2">
             <input
