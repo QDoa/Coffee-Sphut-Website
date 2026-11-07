@@ -195,6 +195,13 @@ test("recipes can be created, found by ingredient, and edited from the library",
   await expect(quantity).toHaveAccessibleDescription("g");
   await quantity.fill("18");
   await editor
+    .getByRole("button", { name: "Add ingredient", exact: true })
+    .click();
+  await editor
+    .getByLabel("Ingredient 2", { exact: true })
+    .selectOption("40000000-0000-4000-8000-000000000001");
+  await editor.getByLabel("Quantity 2", { exact: true }).fill("2");
+  await editor
     .getByRole("button", { name: "Save recipe", exact: true })
     .click();
   await expect(page.getByRole("status")).toHaveText(`${name} saved.`);
@@ -210,6 +217,26 @@ test("recipes can be created, found by ingredient, and edited from the library",
   await target.fill("2.5");
   await expect(card).toContainText("45 g");
   await expect(card).toContainText("Makes 1 serving");
+  const cafe = card.getByLabel("Check stock at café", { exact: true });
+  await cafe.selectOption("101");
+  const onHand = card.getByText(/g on hand$/);
+  await expect(onHand).toHaveCount(1);
+  const available = Number(
+    (await onHand.textContent())?.replace(/[^\d.]/g, ""),
+  );
+  const servings = Math.floor(available / 20) + 1;
+  await target.fill(String(servings));
+  await expect(
+    card.getByText(
+      `Short by ${(servings * 20 - available).toLocaleString("en", { maximumFractionDigits: 6 })} g`,
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await cafe.selectOption("102");
+  await expect(
+    card.getByText("No matching stock item", { exact: true }).first(),
+  ).toBeVisible();
+  await expect(onHand).toHaveCount(0);
   await target.fill("0");
   await expect(
     card.getByText("Enter a valid number of servings greater than zero."),

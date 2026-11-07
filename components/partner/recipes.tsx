@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { BookOpen, Calculator, Pencil, Plus, Search } from "lucide-react";
+import { getRecipeStock } from "@/app/partner/actions";
 import type { PortalData } from "@/lib/partner/portal";
 import { amount } from "@/lib/partner/stock";
 import {
@@ -23,25 +24,86 @@ import {
 } from "@/components/ui/sheet";
 
 type Recipe = PortalData["recipes"][number];
+type StockResult = Awaited<ReturnType<typeof getRecipeStock>>;
+
+function formatQuantity(quantity: number): string {
+  return quantity > 0 && quantity < 0.000001 ? "<0.000001" : amount(quantity);
+}
 
 function RecipeAmounts({
+  recipeId,
   ingredients,
   names,
   servings,
+  cafes,
 }: {
+  recipeId: string;
   ingredients: RecipeIngredient[];
   names: Map<string, string>;
   servings: number;
+  cafes: PortalData["cafes"];
 }) {
   const id = useId();
   const [target, setTarget] = useState<string | null>(null);
+  const [cafeId, setCafeId] = useState("");
+  const [response, setResponse] = useState<{
+    cafeId: string;
+    result: StockResult;
+  } | null>(null);
+  const stock = response?.cafeId === cafeId ? response.result : null;
+
+  useEffect(() => {
+    if (!cafeId) return;
+    let cancelled = false;
+    getRecipeStock(recipeId, Number(cafeId))
+      .then((result) => {
+        if (!cancelled) setResponse({ cafeId, result });
+      })
+      .catch(() => {
+        if (!cancelled)
+          setResponse({
+            cafeId,
+            result: { error: "Stock could not be checked for this café." },
+          });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cafeId, recipeId]);
+
   const scaling = target !== null;
   const requested = Number(target);
   const factor = scaling ? requested / servings : 1;
+  const matches = new Map(
+    stock?.items?.map((item) => [item.ingredient_id, item]),
+  );
+  const rows = new Map<
+    string,
+    { name: string; unit: string; quantity: number; available?: number | null }
+  >();
+  ingredients.forEach((ingredient, index) => {
+    const match = matches.get(ingredient.item_id);
+    const quantity = Number(ingredient.quantity);
+    const key = match?.stock_item_id
+      ? `stock-${match.stock_item_id}`
+      : `ingredient-${ingredient.item_id}-${index}`;
+    const row = rows.get(key);
+    // Several recipe lines can draw from the same stock item.
+    if (row) row.quantity += quantity;
+    else
+      rows.set(key, {
+        name: names.get(ingredient.item_id) ?? "Retained ingredient",
+        unit: ingredient.unit,
+        quantity,
+        available: stock?.items ? (match?.available ?? null) : undefined,
+      });
+  });
   const valid =
     factor > 0 &&
     Number.isFinite(factor) &&
-    ingredients.every(({ quantity }) => Number.isFinite(quantity * factor));
+    [...rows.values()].every(({ quantity }) =>
+      Number.isFinite(quantity * factor),
+    );
 
   return (
     <div className="space-y-3">
@@ -53,7 +115,11 @@ function RecipeAmounts({
           className="min-h-11 text-primary"
           aria-expanded={scaling}
           aria-controls={scaling ? `${id}-calculator` : undefined}
-          onClick={() => setTarget(scaling ? null : String(servings))}
+          onClick={() => {
+            setTarget(scaling ? null : String(servings));
+            setCafeId("");
+            setResponse(null);
+          }}
         >
           <Calculator aria-hidden="true" />
           {scaling ? "Done scaling" : "Scale recipe"}
@@ -86,26 +152,90 @@ function RecipeAmounts({
               ? `Preview for ${requested < 0.000001 ? target : amount(requested)} ${requested === 1 ? "serving" : "servings"}.`
               : "Enter a valid number of servings greater than zero."}
           </p>
+          {cafes.length > 0 ? (
+            <div className="space-y-2 pt-2">
+              <Label htmlFor={`${id}-cafe`}>Check stock at café</Label>
+              <select
+                id={`${id}-cafe`}
+                className="min-h-11 w-full min-w-0 rounded-xl border bg-background px-3 text-sm"
+                value={cafeId}
+                onChange={(event) => {
+                  setResponse(null);
+                  setCafeId(event.currentTarget.value);
+                }}
+              >
+                <option value="">Choose a café</option>
+                {cafes.map((cafe) => (
+                  <option key={String(cafe.id)} value={String(cafe.id)}>
+                    {String(cafe.name)}
+                    {cafe.is_active === false ? " (archived)" : ""}
+                  </option>
+                ))}
+              </select>
+              {cafeId && !stock && (
+                <p role="status" className="text-sm text-muted-foreground">
+                  Checking stock…
+                </p>
+              )}
+              {stock?.error && (
+                <p role="alert" className="text-sm text-destructive">
+                  {stock.error}
+                </p>
+              )}
+              {stock?.items && (
+                <p className="text-xs text-muted-foreground">
+                  Ingredients match by inventory code and unit.
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No cafés are available for a stock check.
+            </p>
+          )}
         </div>
       )}
       <ul className="divide-y border-y text-sm">
-        {ingredients.map((ingredient, index) => {
+        {[...rows].map(([key, ingredient]) => {
           const quantity = ingredient.quantity * factor;
-          const display =
-            scaling && ingredient.quantity > 0 && quantity < 0.000001
-              ? "<0.000001"
-              : amount(quantity);
+          const available = ingredient.available;
+          const difference = available == null ? 0 : quantity - available;
+          const tolerance =
+            Number.EPSILON *
+            Math.max(quantity, available ?? 0) *
+            (ingredients.length + 2);
+          const shortage = difference > tolerance ? difference : 0;
           return (
-            <li
-              key={`${ingredient.item_id}-${index}`}
-              className="flex justify-between gap-3 py-2"
-            >
-              <span className="min-w-0 break-words">
-                {names.get(ingredient.item_id) ?? "Retained ingredient"}
-              </span>
-              <span className="min-w-0 max-w-[55%] break-words text-right text-muted-foreground tabular-nums">
-                {valid ? `${display} ${ingredient.unit}` : "—"}
-              </span>
+            <li key={key} className="space-y-1.5 py-2">
+              <div className="flex justify-between gap-3">
+                <span className="min-w-0 break-words">{ingredient.name}</span>
+                <span className="min-w-0 max-w-[55%] break-words text-right text-muted-foreground tabular-nums">
+                  {valid
+                    ? `${formatQuantity(quantity)} ${ingredient.unit}`
+                    : "—"}
+                </span>
+              </div>
+              {valid && available !== undefined && (
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  {available === null ? (
+                    <Badge variant="outline">No matching stock item</Badge>
+                  ) : (
+                    <>
+                      <span className="text-muted-foreground">
+                        {amount(available)} {ingredient.unit} on hand
+                      </span>
+                      <Badge
+                        variant={shortage ? "destructive" : "secondary"}
+                        className="max-w-full whitespace-normal break-words"
+                      >
+                        {shortage
+                          ? `Short by ${formatQuantity(shortage)} ${ingredient.unit}`
+                          : "Enough stock"}
+                      </Badge>
+                    </>
+                  )}
+                </div>
+              )}
             </li>
           );
         })}
@@ -257,9 +387,12 @@ export function Recipes({ data }: { data: PortalData }) {
                     {ingredients.length === 1 ? "ingredient" : "ingredients"}
                   </p>
                   <RecipeAmounts
+                    key={String(recipe.revision)}
+                    recipeId={String(recipe.id)}
                     ingredients={ingredients}
                     names={names}
                     servings={servings}
+                    cafes={data.cafes}
                   />
                   {canEdit && (
                     <Button

@@ -19,6 +19,34 @@ export interface PortalActionState {
   savedRevision?: number;
   nextRequestId?: string;
 }
+
+const recipeStockSchema = z.array(
+  z.object({
+    ingredient_id: z.uuid(),
+    stock_item_id: z.uuid().nullable(),
+    available: z.number().nonnegative().nullable(),
+  }),
+);
+
+export async function getRecipeStock(recipeId: string, cafeId: number) {
+  if (
+    !z.uuid().safeParse(recipeId).success ||
+    !Number.isSafeInteger(cafeId) ||
+    cafeId <= 0
+  )
+    return { error: "Choose a recipe and café to check stock." };
+
+  const client = await portalClient();
+  const { data, error } = await client.rpc("partner_recipe_stock", {
+    p_recipe_id: recipeId,
+    p_cafe_id: cafeId,
+  });
+  const parsed = recipeStockSchema.safeParse(data);
+  if (error || !parsed.success)
+    return { error: "Stock could not be checked for this café." };
+  return { items: parsed.data };
+}
+
 export async function commandAction(
   _previous: PortalActionState,
   form: FormData,

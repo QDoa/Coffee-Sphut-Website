@@ -50,4 +50,8 @@ fixture_cafe_fields=$(docker exec coffee-partner-test psql -U postgres -d postgr
 if [[ "$fixture_cafe_fields" != 't' ]]; then
   docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261107225828_partner_cafe_field_options.sql
 fi
+fixture_recipe_stock=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select to_regprocedure('public.partner_recipe_stock(uuid,bigint)') is not null")
+if [[ "$fixture_recipe_stock" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261107235247_partner_recipe_stock_preview.sql
+fi
 echo 'Local fixtures ready. Run pnpm partner:preview and open http://127.0.0.1:3100/partner/overview'

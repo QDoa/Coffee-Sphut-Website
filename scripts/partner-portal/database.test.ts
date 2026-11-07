@@ -120,7 +120,8 @@ test("partner café requests restrict editable amenities and preserve existing r
     for (const amenities of [["custom_amenity"], "wifi", [null]]) {
       await denied(
         c,
-        () => command(c, "submit_change", { ...target, payload: { amenities } }),
+        () =>
+          command(c, "submit_change", { ...target, payload: { amenities } }),
         /available café amenities/,
       );
     }
@@ -421,6 +422,85 @@ test("inventory thresholds respect café access and preserve stock and history",
       ).rows.length,
       1,
     );
+  }));
+
+test("recipe stock checks match codes and units at an authorized café", () =>
+  transaction(async (c) => {
+    await actor(c, 1);
+    const beansId = "40000000-0000-4000-8000-000000000001";
+    const milkId = "40000000-0000-4000-8000-000000000002";
+    const recipe = await command(c, "recipe", {
+      name: "Stock check recipe",
+      yield: 1,
+      ingredients: [
+        { item_id: beansId, quantity: 18, unit: "g" },
+        { item_id: milkId, quantity: 200, unit: "ml" },
+      ],
+    });
+    const riversideBeans = await command(c, "item", {
+      cafe_id: 102,
+      name: "Riverside espresso",
+      code: "BEANS",
+      type: "ingredient",
+      unit: "g",
+    });
+    await command(c, "movement", {
+      item_id: riversideBeans.id,
+      type: "receipt",
+      quantity: "37.5",
+      reason: "Stock check fixture",
+    });
+    await command(c, "item", {
+      cafe_id: 102,
+      name: "Milk weighed in grams",
+      code: "MILK",
+      type: "ingredient",
+      unit: "g",
+    });
+
+    async function checkStock(cafeId: number) {
+      const result = await c.query(
+        "select public.partner_recipe_stock($1,$2) as stock",
+        [recipe.id, cafeId],
+      );
+      return result.rows[0].stock as {
+        ingredient_id: string;
+        stock_item_id: string | null;
+        available: number | null;
+      }[];
+    }
+    const riverside = await checkStock(102);
+    assert.deepEqual(
+      riverside.find((row) => row.ingredient_id === beansId),
+      {
+        ingredient_id: beansId,
+        stock_item_id: riversideBeans.id,
+        available: 37.5,
+      },
+    );
+    assert.deepEqual(
+      riverside.find((row) => row.ingredient_id === milkId),
+      {
+        ingredient_id: milkId,
+        stock_item_id: null,
+        available: null,
+      },
+    );
+    await actor(c, 2);
+    assert.equal(
+      (await checkStock(101)).find((row) => row.ingredient_id === beansId)
+        ?.stock_item_id,
+      beansId,
+    );
+    await denied(c, () => checkStock(102), /Café access required/);
+    await actor(c, 4);
+    await command(c, "activate_plan", {
+      plan: "free",
+      cafe_ids: [101, 102],
+      reason: "Verify stock check after downgrade",
+    });
+    await actor(c, 1);
+    await denied(c, () => checkStock(101), /Paid recipe access required/);
   }));
 
 test("recipes enforce ownership, units, role, quantities, and do not deduct stock", () =>

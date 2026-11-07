@@ -1517,6 +1517,10 @@ export type Database = {
       partner_media_url: { Args: { p_url: string }; Returns: string }
       partner_paid: { Args: { p_chain: string }; Returns: boolean }
       partner_protected_image_paths: { Args: never; Returns: string[] }
+      partner_recipe_stock: {
+        Args: { p_cafe_id: number; p_recipe_id: string }
+        Returns: Json
+      }
       partner_role: { Args: { p_chain: string }; Returns: string }
       partner_snapshot: {
         Args: { p_input?: Json; p_section?: string }
