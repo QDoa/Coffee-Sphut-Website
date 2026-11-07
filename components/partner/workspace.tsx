@@ -8,6 +8,7 @@ import { RecipeEditor } from "./recipe-editor";
 import { randomUUID } from "node:crypto";
 import { ActionForm } from "./action-form";
 import type { PortalData } from "@/lib/partner/portal";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -428,6 +429,25 @@ export function Rewards({
   params: Record<string, string | undefined>;
 }) {
   const offset = Number(params.offset || 0);
+  const dateOptions = { dateStyle: "medium", timeStyle: "short" } as const;
+  let dateFormat: Intl.DateTimeFormat;
+  try {
+    dateFormat = new Intl.DateTimeFormat("en-CA", {
+      ...dateOptions,
+      timeZone: data.timezone || "UTC",
+    });
+  } catch {
+    dateFormat = new Intl.DateTimeFormat("en-CA", {
+      ...dateOptions,
+      timeZone: "UTC",
+    });
+  }
+  function formatTime(value: unknown): string {
+    const date = new Date(str(value));
+    return Number.isNaN(date.getTime())
+      ? "Time unavailable"
+      : dateFormat.format(date);
+  }
   return (
     <>
       <Panel title="Reward usage">
@@ -452,16 +472,54 @@ export function Rewards({
           </span>
         </p>
         <p className="mt-3 text-xs text-muted-foreground">
-          Timezone: {data.timezone}. Workspace activated{" "}
-          {data.coverage_at?.slice(0, 10)}. Earlier unattributed records are
-          excluded. Refreshed {data.refreshed_at}.
+          Workspace activated {data.coverage_at?.slice(0, 10)}. Earlier
+          unattributed records are excluded.
+          {data.refreshed_at && <> Refreshed {formatTime(data.refreshed_at)}.</>}
         </p>
       </Panel>
       <Panel title="Redemption events">
-        <Records
-          rows={data.events}
-          columns={["id", "cafe_name", "occurred_at", "status"]}
-        />
+        <p className="text-sm text-muted-foreground">
+          Times shown in{" "}
+          {dateFormat.resolvedOptions().timeZone.replaceAll("_", " ")}.
+        </p>
+        {data.events.length ? (
+          <ul role="list" aria-label="Redemption events" className="mt-2 divide-y">
+            {data.events.map((event) => {
+              const reference = str(event.id);
+              return (
+                <li key={reference} className="py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+                    <div className="min-w-0 space-y-1">
+                      <p className="break-words font-medium">
+                        {str(event.cafe_name) || "Café"}
+                      </p>
+                      <time
+                        dateTime={str(event.occurred_at) || undefined}
+                        className="block text-sm text-muted-foreground"
+                      >
+                        {formatTime(event.occurred_at)}
+                      </time>
+                    </div>
+                    <Badge variant="secondary">Redeemed</Badge>
+                  </div>
+                  <details className="mt-2 text-xs text-muted-foreground">
+                    <summary className="min-h-11 w-fit cursor-pointer rounded-sm py-3 focus-visible:ring-2 focus-visible:ring-ring">
+                      Reference{" "}
+                      <span className="font-mono">{reference.slice(0, 8)}</span>
+                    </summary>
+                    <code className="block select-all break-all rounded-md bg-muted px-3 py-2 text-foreground">
+                      {reference}
+                    </code>
+                  </details>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="py-6 text-sm text-muted-foreground">
+            No redemptions match these filters.
+          </p>
+        )}
         <div className="mt-4 flex gap-3">
           {offset > 0 && (
             <Link
