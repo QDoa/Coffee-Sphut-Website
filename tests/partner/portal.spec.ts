@@ -106,17 +106,29 @@ test("removal archives an existing café after approval without submitting unsav
   await expect(page.getByText("Archived · history preserved")).toBeVisible();
 });
 
-test("stock receipt produces a movement and success feedback", async ({
+test("stock movement options explain the effect and show the saved activity", async ({
   page,
 }) => {
   await page.goto("/partner/inventory");
   await page
     .getByRole("button", { name: "Record movement", exact: true })
     .click();
-  await page.getByLabel("Quantity in base units").fill("20");
-  await page.getByLabel("Reason / reference").fill("Browser receipt");
-  await page
-    .getByRole("dialog")
+  const dialog = page.getByRole("dialog");
+  const movementType = dialog.getByLabel("What happened?", { exact: true });
+  await expect(movementType).toHaveValue("receipt");
+  await expect(
+    dialog.getByText("Add stock that arrived in a delivery."),
+  ).toBeVisible();
+  await expect(dialog.getByLabel("Adjust the balance")).toHaveCount(0);
+  await movementType.selectOption({ label: "Stock count" });
+  await expect(dialog.getByLabel("Total counted")).toBeVisible();
+  await movementType.selectOption({ label: "Manual adjustment" });
+  await expect(dialog.getByLabel("Adjust the balance")).toBeVisible();
+  await movementType.selectOption({ label: "Stock received" });
+  await expect(dialog.getByLabel("Adjust the balance")).toHaveCount(0);
+  await dialog.getByLabel("Quantity received").fill("20");
+  await dialog.getByLabel("Reason / reference").fill("Browser stock received");
+  await dialog
     .getByRole("button", { name: "Record movement", exact: true })
     .click();
   await expect(page.getByRole("status")).toContainText("Saved");
@@ -125,8 +137,12 @@ test("stock receipt produces a movement and success feedback", async ({
     .getByRole("button", { name: "Close menu" })
     .click();
   await page.getByRole("tab", { name: "Activity", exact: true }).click();
+  const savedMovement = page
+    .getByRole("row")
+    .filter({ hasText: "Browser stock received" })
+    .first();
   await expect(
-    page.getByRole("cell", { name: "Browser receipt", exact: true }).first(),
+    savedMovement.getByRole("cell", { name: "Stock received", exact: true }),
   ).toBeVisible();
 });
 test("recipe creation is interactive and does not request stock deductions", async ({

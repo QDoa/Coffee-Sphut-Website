@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useId, useState, useRef } from "react";
 import {
   Plus,
   ArrowDownUp,
@@ -29,6 +29,50 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+
+const movementTypes = {
+  receipt: {
+    label: "Stock received",
+    help: "Add stock that arrived in a delivery.",
+    quantityLabel: "Quantity received",
+  },
+  consumption: {
+    label: "Stock used",
+    help: "Subtract stock that was used or sold.",
+    quantityLabel: "Quantity used",
+  },
+  wastage: {
+    label: "Stock wasted",
+    help: "Subtract stock that was spoiled, damaged, or discarded.",
+    quantityLabel: "Quantity wasted",
+  },
+  count: {
+    label: "Stock count",
+    help: "Set the balance to the total you counted on hand.",
+    quantityLabel: "Total counted",
+  },
+  correction: {
+    label: "Manual adjustment",
+    help: "Correct the balance by adding or subtracting a specific quantity.",
+    quantityLabel: "Quantity to adjust",
+  },
+  opening: {
+    label: "Starting stock",
+    help: "Add the stock already on hand when you start tracking this item.",
+    quantityLabel: "Starting quantity",
+  },
+} as const;
+
+type MovementType = keyof typeof movementTypes;
+
+const movementOptions = Object.entries(movementTypes).map(
+  ([value, { label }]) => ({ value, label }),
+);
+
+function movementLabel(value: unknown): string {
+  return movementTypes[String(value) as MovementType]?.label ?? "Stock movement";
+}
+
 interface FieldProps {
   name: string;
   label: string;
@@ -37,6 +81,8 @@ interface FieldProps {
   min?: number;
   step?: number;
   options?: { value: string; label: string }[];
+  onSelect?: (value: string) => void;
+  describedBy?: string;
 }
 function Field({
   name,
@@ -46,14 +92,22 @@ function Field({
   min,
   step,
   options,
+  onSelect,
+  describedBy,
 }: FieldProps) {
+  const id = useId();
   return (
-    <label className="block space-y-2 text-sm font-medium">
-      <span>{label}</span>
+    <div className="space-y-2 text-sm font-medium">
+      <label htmlFor={id} className="block">
+        {label}
+      </label>
       {options ? (
         <select
+          id={id}
           name={name}
           defaultValue={value}
+          onChange={(event) => onSelect?.(event.currentTarget.value)}
+          aria-describedby={describedBy}
           required
           className="min-h-11 w-full rounded-xl border bg-card px-3"
         >
@@ -65,6 +119,7 @@ function Field({
         </select>
       ) : (
         <Input
+          id={id}
           name={name}
           type={type}
           min={min}
@@ -74,13 +129,14 @@ function Field({
           className="min-h-11"
         />
       )}
-    </label>
+    </div>
   );
 }
 export function Inventory({ data }: { data: PortalData }) {
   const [search, setSearch] = useState(""),
     [cafe, setCafe] = useState(""),
     [filter, setFilter] = useState("all");
+  const [movementType, setMovementType] = useState<MovementType>("receipt");
   const [drawer, setDrawer] = useState<{
     kind: "add" | "movement" | "manage";
     id?: string;
@@ -90,6 +146,7 @@ export function Inventory({ data }: { data: PortalData }) {
   const opener = useRef<HTMLElement | null>(null);
   const open = (kind: "add" | "movement" | "manage", id?: string) => {
     if (!drawer) opener.current = document.activeElement as HTMLElement | null;
+    if (kind === "movement") setMovementType("receipt");
     setDrawer({
       kind,
       id,
@@ -376,9 +433,7 @@ export function Inventory({ data }: { data: PortalData }) {
                           {cafeName(m.cafe_id)}
                         </span>
                       </TableCell>
-                      <TableCell className="capitalize">
-                        {String(m.type)}
-                      </TableCell>
+                      <TableCell>{movementLabel(m.type)}</TableCell>
                       <TableCell>{amount(m.quantity)}</TableCell>
                       <TableCell>{amount(m.resulting_balance)}</TableCell>
                       <TableCell className="min-w-40 whitespace-normal">
@@ -453,8 +508,8 @@ export function Inventory({ data }: { data: PortalData }) {
                       {amount(m.quantity)}
                     </span>
                   </p>
-                  <p className="mt-1 text-xs capitalize text-muted-foreground">
-                    {String(m.type)} · {cafeName(m.cafe_id)}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {movementLabel(m.type)} · {cafeName(m.cafe_id)}
                   </p>
                 </div>
               ))}
@@ -468,11 +523,10 @@ export function Inventory({ data }: { data: PortalData }) {
         </aside>
       </div>
       <p className="max-w-4xl text-xs leading-relaxed text-muted-foreground">
-        Runway = current balance ÷ average daily usage (consumption + wastage),
+        Runway = current balance ÷ average daily usage (stock used and wasted),
         measured over up to 28 days since the first recorded movement. At least
-        24 hours of history is needed. Receipts, physical counts and corrections
-        are excluded from usage. The runway bar represents up to 14 days;
-        forecasts assume consistent usage and complete records.
+        24 hours of history is needed. The runway bar represents up to 14 days.
+        Forecasts assume consistent usage and complete records.
       </p>
       <Sheet
         open={Boolean(drawer)}
@@ -605,36 +659,33 @@ export function Inventory({ data }: { data: PortalData }) {
                   />
                   <Field
                     name="type"
-                    label="Movement type"
+                    label="What happened?"
                     value="receipt"
-                    options={[
-                      "receipt",
-                      "consumption",
-                      "wastage",
-                      "count",
-                      "correction",
-                      "opening",
-                    ].map((value) => ({
-                      value,
-                      label:
-                        value === "count"
-                          ? "Physical count (actual quantity)"
-                          : value,
-                    }))}
+                    options={movementOptions}
+                    onSelect={(value) => setMovementType(value as MovementType)}
+                    describedBy="stock-movement-help"
                   />
+                  <p
+                    id="stock-movement-help"
+                    className="text-sm text-muted-foreground"
+                  >
+                    {movementTypes[movementType].help}
+                  </p>
                   <Field
                     name="quantity"
-                    label="Quantity in base units"
+                    label={movementTypes[movementType].quantityLabel}
                     type="number"
                   />
-                  <Field
-                    name="direction"
-                    label="Correction direction"
-                    options={[
-                      { value: "add", label: "Add" },
-                      { value: "subtract", label: "Subtract" },
-                    ]}
-                  />
+                  {movementType === "correction" && (
+                    <Field
+                      name="direction"
+                      label="Adjust the balance"
+                      options={[
+                        { value: "add", label: "Add to stock" },
+                        { value: "subtract", label: "Subtract from stock" },
+                      ]}
+                    />
+                  )}
                   <Field name="reason" label="Reason / reference" />
                 </>
               ) : (
