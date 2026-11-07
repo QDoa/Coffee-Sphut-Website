@@ -204,9 +204,23 @@ test("recipes can be created, found by ingredient, and edited from the library",
   const search = page.getByLabel("Search recipes", { exact: true });
   await search.fill("House espresso beans");
   await expect(card).toContainText("18 g");
+  await card.getByRole("button", { name: "Scale recipe", exact: true }).click();
+  const target = card.getByLabel("Target servings", { exact: true });
+  await expect(target).toHaveValue("1");
+  await target.fill("2.5");
+  await expect(card).toContainText("45 g");
+  await expect(card).toContainText("Makes 1 serving");
+  await target.fill("0");
+  await expect(
+    card.getByText("Enter a valid number of servings greater than zero."),
+  ).toBeVisible();
+  await expect(card.getByText("45 g", { exact: true })).toHaveCount(0);
+  await page.reload();
+  await expect(card).toContainText("18 g");
   await search.fill(name);
   await card.getByRole("button", { name: `Edit ${name}` }).click();
   await expect(quantity).toHaveValue("18");
+  await expect(editor.getByLabel("Servings per batch")).toHaveValue("1");
   await editor.getByLabel("Servings per batch").fill("2");
   await editor.getByLabel("Recipe status").selectOption("false");
   await editor
