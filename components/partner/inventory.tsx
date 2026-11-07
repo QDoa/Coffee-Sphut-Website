@@ -34,9 +34,19 @@ interface FieldProps {
   label: string;
   type?: string;
   value?: string;
+  min?: number;
+  step?: number;
   options?: { value: string; label: string }[];
 }
-function Field({ name, label, type = "text", value, options }: FieldProps) {
+function Field({
+  name,
+  label,
+  type = "text",
+  value,
+  min,
+  step,
+  options,
+}: FieldProps) {
   return (
     <label className="block space-y-2 text-sm font-medium">
       <span>{label}</span>
@@ -57,7 +67,8 @@ function Field({ name, label, type = "text", value, options }: FieldProps) {
         <Input
           name={name}
           type={type}
-          step={type === "number" ? "any" : undefined}
+          min={min}
+          step={step ?? (type === "number" ? "any" : undefined)}
           defaultValue={value}
           required
           className="min-h-11"
@@ -74,11 +85,17 @@ export function Inventory({ data }: { data: PortalData }) {
     kind: "add" | "movement" | "manage";
     id?: string;
     request_id: string;
+    thresholdRequestId?: string;
   } | null>(null);
   const opener = useRef<HTMLElement | null>(null);
   const open = (kind: "add" | "movement" | "manage", id?: string) => {
     if (!drawer) opener.current = document.activeElement as HTMLElement | null;
-    setDrawer({ kind, id, request_id: crypto.randomUUID() });
+    setDrawer({
+      kind,
+      id,
+      request_id: crypto.randomUUID(),
+      ...(kind === "manage" && { thresholdRequestId: crypto.randomUUID() }),
+    });
   };
   const rows = data.items.map(
     (item) =>
@@ -484,6 +501,30 @@ export function Inventory({ data }: { data: PortalData }) {
                 : "Keep each café’s stock and movement history accurate."}
             </SheetDescription>
           </SheetHeader>
+          {drawer?.kind === "manage" && selected && (
+            <ActionForm
+              key={drawer.thresholdRequestId}
+              operation="item"
+              context={{
+                request_id: drawer.thresholdRequestId,
+                id: selected.id,
+                cafe_id: selected.cafe_id,
+              }}
+              label="Save threshold"
+            >
+              <Field
+                name="threshold"
+                label={`Low-stock threshold (${selected.unit})`}
+                type="number"
+                value={String(selected.threshold)}
+                min={0}
+                step={0.000001}
+              />
+              <p className="text-sm text-muted-foreground">
+                Stock is flagged as low at or below this amount.
+              </p>
+            </ActionForm>
+          )}
           {drawer && (
             <ActionForm
               key={drawer.request_id}

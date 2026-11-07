@@ -348,7 +348,7 @@ test("stock ledger: 20 receipt minus 3 consumed then count 15; retries and insuf
     );
   }));
 
-test("inventory balances remain cafe-specific and deactivation preserves history", () =>
+test("inventory thresholds respect café access and preserve stock and history", () =>
   transaction(async (c) => {
     await actor(c, 1);
     const initialBalance = (
@@ -377,7 +377,41 @@ test("inventory balances remain cafe-specific and deactivation preserves history
       ).rows[0].balance,
       initialBalance,
     );
-    await command(c, "item", { id: item.id, cafe_id: 102, active: false });
+    const target = { id: item.id, cafe_id: 102 };
+    await actor(c, 2);
+    await denied(
+      c,
+      () => command(c, "item", { ...target, threshold: "125.5" }),
+      /Paid cafe access required/,
+    );
+    await actor(c, 1);
+    for (const threshold of ["-1", "NaN", "0.0000001"]) {
+      await denied(
+        c,
+        () => command(c, "item", { ...target, threshold }),
+        /Finite stock threshold|nonnegative low-stock threshold/,
+      );
+    }
+    await command(c, "item", { ...target, threshold: "125.5" });
+    async function stock() {
+      const result = await c.query(
+        "select balance, threshold, active from public.partner_items where id=$1",
+        [item.id],
+      );
+      return result.rows[0];
+    }
+    assert.deepEqual(await stock(), {
+      balance: "100.000000",
+      threshold: "125.500000",
+      active: true,
+    });
+    await command(c, "item", { ...target, active: false });
+    await command(c, "item", { ...target, threshold: "0" });
+    assert.deepEqual(await stock(), {
+      balance: "100.000000",
+      threshold: "0.000000",
+      active: false,
+    });
     assert.equal(
       (
         await c.query(
