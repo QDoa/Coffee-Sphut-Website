@@ -716,11 +716,22 @@ test("a staff Free downgrade requires explicit confirmation to remove all café 
 test("invitation acceptance is bound to email, role, cafe scope and single active membership", () =>
   transaction(async (c) => {
     await actor(c, 1);
-    const invitation = await command(c, "invite", {
+    const invite = {
+      request_id: randomUUID(),
       email: "reviewer@example.test",
       role: "cafe_manager",
       cafe_ids: [101],
-    });
+    };
+    const invitation = await command(c, "invite", invite);
+    const retried = await command(c, "invite", invite);
+    assert.ok(retried.token === invitation.token);
+    await denied(
+      c,
+      () => command(c, "invite", { ...invite, email: "different@example.test" }),
+      /Request ID was reused/,
+    );
+    await denied(c, () => c.query("select partner_internal.invitation_receipt_key()"), /permission denied/);
+    await denied(c, () => c.query("select decrypted_secret from vault.decrypted_secrets"), /permission denied/);
     await actor(c, 3);
     await denied(
       c,
@@ -728,7 +739,14 @@ test("invitation acceptance is bound to email, role, cafe scope and single activ
       /unavailable/,
     );
     await actor(c, 4);
-    await command(c, "accept_invite", { token: invitation.token });
+    const acceptance = { request_id: randomUUID(), token: invitation.token };
+    await command(c, "accept_invite", acceptance);
+    assert.deepEqual(await command(c, "accept_invite", acceptance), {});
+    await denied(
+      c,
+      () => command(c, "accept_invite", { ...acceptance, token: "different" }),
+      /Request ID was reused/,
+    );
     const data = await snapshot(c, "overview");
     assert.equal(data.role, "cafe_manager");
     assert.deepEqual(
@@ -740,6 +758,16 @@ test("invitation acceptance is bound to email, role, cafe scope and single activ
       () => command(c, "accept_invite", { token: invitation.token }),
       /unavailable/,
     );
+
+    await c.query("RESET ROLE");
+    const { rows } = await c.query(
+      "select action,input,result from public.partner_operations where request_id=any($1::uuid[])",
+      [[invite.request_id, acceptance.request_id]],
+    );
+    assert.equal(rows.length, 2);
+    assert.ok(rows.every((row) => !JSON.stringify(row).includes(invitation.token)));
+    assert.match(rows.find((row) => row.action === "invite")?.result.token_ciphertext, /^[0-9a-f]+$/);
+    assert.match(rows.find((row) => row.action === "accept_invite")?.input.token.sha256, /^[0-9a-f]{64}$/);
   }));
 
 test("only Owners can edit a manager in place and concurrent edits preserve current access", () =>

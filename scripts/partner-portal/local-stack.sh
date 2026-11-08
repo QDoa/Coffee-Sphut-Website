@@ -76,4 +76,8 @@ fixture_reward_ranges=$(docker exec coffee-partner-test psql -U postgres -d post
 if [[ "$fixture_reward_ranges" != 't' ]]; then
   docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261108055121_align_partner_reward_reporting.sql
 fi
+fixture_invite_receipts=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select to_regprocedure('partner_internal.invitation_receipt_key()') is not null")
+if [[ "$fixture_invite_receipts" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < supabase/migrations/20261108060449_protect_partner_invitation_receipts.sql
+fi
 echo 'Local fixtures ready. Run pnpm partner:preview and open http://127.0.0.1:3100/partner/overview'
