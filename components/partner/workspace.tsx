@@ -147,11 +147,13 @@ export function Cafes({
   data,
   q,
   removed,
+  tab,
   queueQuery,
 }: {
   data: PortalData;
   q?: string;
   removed?: string;
+  tab?: "directory" | "requests";
   queueQuery: RequestQueueQuery;
 }) {
   const initialSearch = typeof q === "string" ? q : "";
@@ -201,6 +203,7 @@ export function Cafes({
     <CafeDirectory
       key={initialSearch}
       initialSearch={initialSearch}
+      tab={tab}
       notice={
         removed === "draft"
           ? "Draft discarded."

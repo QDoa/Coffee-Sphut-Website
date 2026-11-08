@@ -263,7 +263,7 @@ test("staff can filter the review queue and reject a request with feedback", asy
   await expect(card).toHaveCount(0);
   await expect(page.getByRole("status")).toContainText(`Rejected the request for ${name}.`);
 
-  await page.goto("/partner/cafes");
+  await page.goto("/partner/cafes?tab=requests");
   const request = page.getByRole("region", { name: "Change requests" })
     .getByRole("listitem").filter({ hasText: name });
   await expect(request).toContainText("Changes requested");
@@ -307,7 +307,7 @@ test("older drafts open directly and both queues search and paginate on the serv
     await page.goto(`/partner/cafe?change=${existingDraft}&id=101`);
     await expect(page.getByLabel("Café name", { exact: true })).toHaveValue(`${prefix} existing café`);
 
-    await page.goto("/partner/cafes");
+    await page.goto("/partner/cafes?tab=requests");
     const requests = page.getByRole("region", { name: "Change requests" });
     await requests.getByLabel("Search change requests").fill(`${prefix} draft`);
     await requests.getByLabel("Filter change requests by status").selectOption("draft");
@@ -405,6 +405,7 @@ test("removal archives an existing café after approval without submitting unsav
   await cafeFilter.selectOption("archived");
   await expect(directory.getByRole("heading", { name, exact: true })).toBeVisible();
 
+  await page.getByRole("link", { name: /^Change requests/ }).click();
   const requests = page.getByRole("region", { name: "Change requests" });
   await requests
     .getByLabel("Filter change requests by status")
@@ -435,7 +436,7 @@ test("a partner can discard a draft and withdraw a café removal request", async
   await page.getByLabel("Café name", { exact: true }).fill(name);
   await page.getByRole("button", { name: "Save draft" }).click();
   await expect(page.getByRole("status")).toContainText("Saved");
-  await page.goto("/partner/cafes");
+  await page.goto("/partner/cafes?tab=requests");
   const discard = requests.getByRole("button", {
     name: `Discard draft for ${name}`,
   });
@@ -598,6 +599,9 @@ test("recipes can be created, found by ingredient, and edited from the library",
   const card = page.getByRole("article", { name, exact: true });
   const search = page.getByLabel("Search recipes", { exact: true });
   await search.fill("House espresso beans");
+  await expect(card).toContainText("Makes 1 serving · 2 ingredients");
+  await expect(card.getByRole("button", { name: "Scale recipe", exact: true })).toHaveCount(0);
+  await card.getByRole("button", { name: "View recipe", exact: true }).click();
   await expect(card).toContainText("18 g");
   await card.getByRole("button", { name: "Scale recipe", exact: true }).click();
   const target = card.getByLabel("Target servings", { exact: true });
@@ -631,6 +635,7 @@ test("recipes can be created, found by ingredient, and edited from the library",
   ).toBeVisible();
   await expect(card.getByText("45 g", { exact: true })).toHaveCount(0);
   await page.reload();
+  await card.getByRole("button", { name: "View recipe", exact: true }).click();
   await expect(card).toContainText("18 g");
   await search.fill(name);
   await card.getByRole("button", { name: `Edit ${name}` }).click();
@@ -675,8 +680,16 @@ test("responsive layouts fit mobile, intermediate and desktop widths", async ({
     await expect(
       page.getByRole("region", { name: "Café directory" }),
     ).toBeVisible();
-    await page.getByRole("link", { name: "Jump to change requests" }).click();
-    await expect(page).toHaveURL(/#cafe-change-requests$/);
+    await page.getByRole("link", { name: /^Change requests.*pending/ }).click();
+    await expect(page).toHaveURL(/tab=requests/);
+    await expect(page.getByRole("region", { name: "Change requests" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Café directory" })).toHaveCount(0);
+    if (width === 390) {
+      await page.goto("/partner/cafes#cafe-change-requests");
+      await expect(page.getByRole("region", { name: "Change requests" })).toBeVisible();
+      await page.getByRole("link", { name: "Directory", exact: true }).click();
+      await expect(page.getByRole("region", { name: "Café directory" })).toBeVisible();
+    }
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -717,7 +730,7 @@ test("drafts preserve edited fields and can be resumed and submitted", async ({
   await page.getByRole("button", { name: "Save draft", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Saved");
   await expect(page.getByLabel("Café name", { exact: true })).toHaveValue(name);
-  await page.goto("/partner/cafes");
+  await page.goto("/partner/cafes?tab=requests");
   await page
     .getByRole("link", { name: `Resume draft: ${name}`, exact: true })
     .click();
@@ -798,7 +811,7 @@ test("managed images stay private through draft resume and render for the review
   );
   await page.getByRole("button", { name: "Save draft", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Saved");
-  await page.goto("/partner/cafes");
+  await page.goto("/partner/cafes?tab=requests");
   await page
     .getByRole("link", { name: `Resume draft: ${name}`, exact: true })
     .click();

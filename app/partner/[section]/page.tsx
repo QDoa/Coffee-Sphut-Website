@@ -195,7 +195,15 @@ export default async function WorkspacePage({
       {section === "overview" ? (
         <Dashboard data={data} />
       ) : section === "cafes" ? (
-        <Cafes data={data} q={query.q} removed={query.removed} queueQuery={requestQueueQuery(query)} />
+        <Cafes
+          data={data}
+          q={query.q}
+          removed={query.removed}
+          tab={query.tab === "directory" ? "directory" :
+            query.tab === "requests" || query.removed || query.request_q ||
+              query.request_filter || query.request_page ? "requests" : undefined}
+          queueQuery={requestQueueQuery(query)}
+        />
       ) : section === "cafe" ? (
         <>
           {query.change &&

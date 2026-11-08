@@ -9,14 +9,16 @@ interface QueueLocation {
   path: string;
   anchor?: string;
   directorySearch?: string;
+  tab?: string;
 }
 
 function queueHref(
-  { path, anchor = "", directorySearch }: QueueLocation,
+  { path, anchor = "", directorySearch, tab }: QueueLocation,
   query?: RequestQueueQuery,
   page = 1,
 ) {
   const params = new URLSearchParams();
+  if (tab) params.set("tab", tab);
   if (directorySearch) params.set("q", directorySearch);
   if (query?.search) params.set("request_q", query.search);
   if (query && query.filter !== "all") params.set("request_filter", query.filter);
@@ -46,6 +48,7 @@ export function RequestQueueFilters({
         key={JSON.stringify(query)}
         className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]"
       >
+        {location.tab && <input type="hidden" name="tab" value={location.tab} />}
         {location.directorySearch && <input type="hidden" name="q" value={location.directorySearch} />}
         <label className="relative min-w-0">
           <span className="sr-only">{searchLabel}</span>

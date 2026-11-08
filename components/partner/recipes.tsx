@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Calculator, Pencil, Plus, Search } from "lucide-react";
+import { BookOpen, Calculator, ChevronDown, Pencil, Plus, Search } from "lucide-react";
 import { getRecipeStock } from "@/app/partner/actions";
 import type { PortalData } from "@/lib/partner/portal";
 import { amount } from "@/lib/partner/stock";
@@ -248,6 +248,7 @@ export function Recipes({ data }: { data: PortalData }) {
   const canEdit = data.role === "owner" || data.role === "chain_manager";
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const [editor, setEditor] = useState<{
     recipe?: Recipe;
@@ -362,6 +363,8 @@ export function Recipes({ data }: { data: PortalData }) {
             {visible.map((recipe) => {
               const ingredients = recipeIngredients(recipe.ingredients);
               const servings = Number(recipe.yield);
+              const recipeId = String(recipe.id);
+              const open = expanded === recipeId;
               return (
                 <article
                   key={String(recipe.id)}
@@ -386,26 +389,43 @@ export function Recipes({ data }: { data: PortalData }) {
                     {ingredients.length}{" "}
                     {ingredients.length === 1 ? "ingredient" : "ingredients"}
                   </p>
-                  <RecipeAmounts
-                    key={String(recipe.revision)}
-                    recipeId={String(recipe.id)}
-                    ingredients={ingredients}
-                    names={names}
-                    servings={servings}
-                    cafes={data.cafes}
-                  />
-                  {canEdit && (
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
                       variant="outline"
                       className="min-h-11"
-                      aria-label={`Edit ${recipe.name}`}
-                      onClick={() => openEditor(recipe)}
+                      aria-expanded={open}
+                      aria-controls={`recipe-details-${recipeId}`}
+                      onClick={() => setExpanded(open ? null : recipeId)}
                     >
-                      <Pencil aria-hidden="true" />
-                      Edit recipe
+                      <ChevronDown className={open ? "rotate-180" : ""} aria-hidden="true" />
+                      {open ? "Hide recipe" : "View recipe"}
                     </Button>
-                  )}
+                    {canEdit && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="min-h-11"
+                        aria-label={`Edit ${recipe.name}`}
+                        onClick={() => openEditor(recipe)}
+                      >
+                        <Pencil aria-hidden="true" />
+                        Edit recipe
+                      </Button>
+                    )}
+                  </div>
+                  <div id={`recipe-details-${recipeId}`} hidden={!open}>
+                    {open && (
+                      <RecipeAmounts
+                        key={String(recipe.revision)}
+                        recipeId={recipeId}
+                        ingredients={ingredients}
+                        names={names}
+                        servings={servings}
+                        cafes={data.cafes}
+                      />
+                    )}
+                  </div>
                 </article>
               );
             })}
