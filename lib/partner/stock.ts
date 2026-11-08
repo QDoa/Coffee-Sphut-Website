@@ -37,3 +37,9 @@ export function stockView(item: Row, rates: Row[]) {
 }
 export const amount = (value: unknown) =>
   Number(value).toLocaleString("en", { maximumFractionDigits: 6 });
+
+export function restockSuggestion(balance: number, threshold: number, daily: number | null, days: number) {
+  // A whole base unit keeps the suggestion from falling short of the target.
+  const quantity = Math.max(0, Math.ceil(threshold + (daily ?? 0) * days - balance));
+  return { quantity, needsReview: balance === 0 && quantity === 0 };
+}

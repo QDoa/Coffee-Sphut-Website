@@ -939,6 +939,46 @@ test("reward CSV includes every matching redemption across report pages", async 
   }
 });
 
+test("restock planner uses the selected horizon and copies café-specific quantities", async ({ page, context }) => {
+  const client = await db("postgres");
+  const id = randomUUID();
+  const name = `Restock fixture ${id.slice(0, 8)}`;
+  const chain = "20000000-0000-4000-8000-000000000001";
+  try {
+    await client.query(
+      `insert into public.partner_items(id,chain_id,cafe_id,name,code,type,unit,balance,threshold)
+       values($1::uuid,$2,101,$3,$1::uuid::text,'ingredient','g',20,5)`, [id, chain, name],
+    );
+    await client.query(
+      `insert into public.partner_movements(chain_id,cafe_id,item_id,quantity,resulting_balance,type,actor,reason,created_at)
+       values($1,101,$2,111,111,'opening','10000000-0000-4000-8000-000000000001','Restock fixture',now()-interval '30 days'),
+             ($1,101,$2,-91,20,'consumption','10000000-0000-4000-8000-000000000001','Restock fixture',now()-interval '2 days')`,
+      [chain, id],
+    );
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/partner/inventory");
+    await page.getByRole("link", { name: "Restock planner", exact: true }).click();
+    const planner = page.getByRole("region", { name: "Restock planner" });
+    const cafe = planner.getByRole("combobox", { name: "Café", exact: true });
+    await cafe.selectOption("101");
+    const row = planner.getByRole("listitem").filter({ hasText: name });
+    await expect(row.getByText("8 g", { exact: true })).toBeVisible();
+    await planner.getByLabel("Days of coverage").fill("14");
+    await expect(row.getByText("31 g", { exact: true })).toBeVisible();
+    await planner.getByRole("button", { name: "Copy restock list" }).click();
+    await expect(planner.getByRole("status")).toHaveText("Restock list copied.");
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(`${name} (${id}) · 31 g`);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await cafe.selectOption("102");
+    await expect(row).toHaveCount(0);
+  } finally {
+    await client.query("delete from public.partner_movements where item_id=$1", [id]);
+    await client.query("delete from public.partner_items where id=$1", [id]);
+    await client.end();
+  }
+});
+
 test("stock watch explains threshold alerts and opens the exact café item", async ({ page }) => {
   const client = await db("postgres");
   const id = randomUUID();

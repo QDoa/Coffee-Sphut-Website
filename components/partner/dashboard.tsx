@@ -183,10 +183,10 @@ export function Dashboard({ data }: { data: PortalData }) {
                 )}
               </div>
               <Link
-                href="/partner/inventory"
+                href="/partner/inventory?view=restock"
                 className="mt-3 inline-flex text-sm font-medium text-primary underline underline-offset-4"
               >
-                Open inventory →
+                Open restock planner →
               </Link>
             </>
           )}

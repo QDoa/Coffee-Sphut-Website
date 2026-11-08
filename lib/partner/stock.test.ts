@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { stockView } from "./stock";
+import { restockSuggestion, stockView } from "./stock";
 test("runway distinguishes low, empty, no history and no recorded usage", () => {
   const item = { id: "a", balance: 100, threshold: 10, active: true };
   assert.equal(stockView(item, []).runway, "Building usage history");
@@ -22,4 +22,11 @@ test("runway distinguishes low, empty, no history and no recorded usage", () => 
     stockView({ ...item, active: false, balance: 0 }, []).attention,
     false,
   );
+});
+
+test("restock suggestions cover demand plus the threshold and preserve the no-history fallback", () => {
+  assert.deepEqual(restockSuggestion(20, 5, 3.25, 7), { quantity: 8, needsReview: false });
+  assert.deepEqual(restockSuggestion(20, 5, 3.25, 1), { quantity: 0, needsReview: false });
+  assert.deepEqual(restockSuggestion(3, 5, null, 7), { quantity: 2, needsReview: false });
+  assert.deepEqual(restockSuggestion(0, 0, null, 7), { quantity: 0, needsReview: true });
 });

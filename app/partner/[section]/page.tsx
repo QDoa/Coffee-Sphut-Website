@@ -1,6 +1,7 @@
 import { StaffReviews } from "@/components/partner/staff-reviews";
 import { Dashboard } from "@/components/partner/dashboard";
 import { Inventory } from "@/components/partner/inventory";
+import { RestockPlanner } from "@/components/partner/restock-planner";
 import { PlanSettings } from "@/components/partner/plan-settings";
 import { Recipes } from "@/components/partner/recipes";
 import { Team } from "@/components/partner/team";
@@ -9,6 +10,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { randomUUID } from "node:crypto";
 import { portalCafeRequest, portalData, portalReviewNotifications } from "@/lib/partner/portal";
+import { Button } from "@/components/ui/button";
 import { isLocalPartnerPreview } from "@/lib/partner/preview";
 import { requestQueueQuery } from "@/lib/partner/request-queue";
 import { PartnerShell } from "@/components/partner/shell";
@@ -141,6 +143,7 @@ export default async function WorkspacePage({
       </main>
     );
   let data = result.data;
+  const inventoryView = query.view === "restock" ? "restock" : "stock";
   const requestedPage = Number(query.page);
   const notificationPage = section === "notifications"
     ? Number.isInteger(requestedPage) && requestedPage > 0 && requestedPage <= 2_147_483_647
@@ -241,12 +244,38 @@ export default async function WorkspacePage({
       ) : section === "rewards" ? (
         <Rewards data={data} params={query} />
       ) : section === "inventory" ? (
-        <Inventory
-          key={`${query.cafe_id || ""}:${query.item_id || ""}`}
-          data={data}
-          cafeId={query.cafe_id}
-          itemId={query.item_id}
-        />
+        <>
+          <nav aria-label="Inventory views" className="grid grid-cols-2 gap-1 sm:flex sm:flex-wrap sm:gap-2">
+            {[
+              ["stock", "Inventory & activity", "Inventory"],
+              ["restock", "Restock planner", "Restock"],
+            ].map(([view, label, shortLabel]) => {
+              const params = new URLSearchParams();
+              if (view !== "stock") params.set("view", view);
+              if (query.cafe_id) params.set("cafe_id", query.cafe_id);
+              return (
+                <Button key={view} asChild variant={view === inventoryView ? "secondary" : "outline"}
+                  className="min-h-11 px-1 text-xs sm:px-4 sm:text-sm">
+                  <Link aria-label={label} aria-current={view === inventoryView ? "page" : undefined}
+                    href={`/partner/inventory${params.size ? "?" + params : ""}`}>
+                    <span className="sm:hidden">{shortLabel}</span>
+                    <span className="hidden sm:inline">{label}</span>
+                  </Link>
+                </Button>
+              );
+            })}
+          </nav>
+          {inventoryView === "restock" ? (
+            <RestockPlanner data={data} cafeId={query.cafe_id} />
+          ) : (
+            <Inventory
+              key={`${query.cafe_id || ""}:${query.item_id || ""}`}
+              data={data}
+              cafeId={query.cafe_id}
+              itemId={query.item_id}
+            />
+          )}
+        </>
       ) : section === "recipes" ? (
         <Recipes data={data} />
       ) : section === "team" ? (
