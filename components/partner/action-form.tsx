@@ -4,9 +4,11 @@ import {
   useActionState,
   useEffect,
   useRef,
+  useState,
   type FormEvent,
   type ReactNode,
 } from "react";
+import { Copy } from "lucide-react";
 import { commandAction, type PortalActionState } from "@/app/partner/actions";
 import { Button } from "@/components/ui/button";
 interface Props {
@@ -20,6 +22,40 @@ interface Props {
     previous: PortalActionState,
     form: FormData,
   ) => Promise<PortalActionState>;
+}
+
+function InvitationLink({ href }: { href: string }) {
+  const [copyMessage, setCopyMessage] = useState("");
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(new URL(href, window.location.origin).href);
+      setCopyMessage("Invitation link copied.");
+    } catch {
+      setCopyMessage("Use the link’s context menu to copy its address.");
+    }
+  }
+
+  return (
+    <div className="space-y-3 rounded-xl border bg-background p-4 text-sm">
+      <div className="space-y-1">
+        <p className="font-medium">Invitation link ready</p>
+        <p className="text-xs text-muted-foreground">
+          Share this link with the invited manager. It expires in seven days.
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <Button type="button" variant="outline" className="min-h-11" onClick={copyLink}>
+          <Copy aria-hidden="true" />
+          Copy invitation link
+        </Button>
+        <a href={href} className="py-2 text-primary underline underline-offset-4">
+          Open invitation link
+        </a>
+      </div>
+      {copyMessage && <p role="status" className="text-xs">{copyMessage}</p>}
+    </div>
+  );
 }
 export function ActionForm({
   operation,
@@ -102,19 +138,7 @@ export function ActionForm({
           {state.error || state.message}
         </p>
       )}
-      {state.inviteLink && (
-        <div className="break-all rounded-xl border p-4 text-sm">
-          <p className="font-medium">
-            Invitation link — share with the invited manager
-          </p>
-          <a className="underline" href={state.inviteLink}>
-            {state.inviteLink}
-          </a>
-          <p className="mt-2 text-muted-foreground">
-            Only the invited email can accept. Expires in seven days.
-          </p>
-        </div>
-      )}
+      {state.inviteLink && <InvitationLink key={state.inviteLink} href={state.inviteLink} />}
     </form>
   );
 }

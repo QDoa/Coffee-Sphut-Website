@@ -22,6 +22,59 @@ test("all partner screens render without sign-in in the loopback preview", async
     ).toHaveCount(0);
   }
 });
+test("team invitations explain access, can be copied, and can be revoked", async ({
+  page,
+  context,
+}) => {
+  const email = `team-${randomUUID()}@example.test`;
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/partner/team");
+  const form = page.getByRole("region", { name: "Invite a manager" });
+  await expect(form.getByRole("group", { name: "Assign cafés" })).toHaveCount(0);
+  await form.getByLabel("Manager email").fill(email);
+  await form.getByRole("radio", { name: /Café Manager/ }).check();
+  const create = form.getByRole("button", { name: "Create invitation link" });
+  await expect(create).toBeDisabled();
+  await form.getByRole("checkbox", { name: /North Star • Riverside/ }).check();
+  await create.click();
+  await form.getByRole("button", { name: "Copy invitation link" }).click();
+  await expect(form.getByText("Invitation link copied.")).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(
+    /^http:\/\/127\.0\.0\.1:3100\/partner\/accept\?token=/,
+  );
+
+  const invitations = page.getByRole("region", { name: "Invitations" });
+  const row = invitations.getByRole("listitem").filter({ hasText: email });
+  await expect(row).toContainText("Pending");
+  await expect(row).toContainText("North Star • Riverside");
+  await row.getByRole("button", { name: /Revoke invitation for/ }).click();
+  const dialog = page.getByRole("alertdialog");
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: /Revoke invitation for/ }).click();
+  await dialog.getByRole("button", { name: "Revoke invitation" }).click();
+  await expect(dialog).toHaveCount(0);
+  await invitations.getByText(/Invitation history/).click();
+  await expect(row).toContainText("Revoked");
+  await expect(row.getByRole("button")).toHaveCount(0);
+});
+
+test("Paid plan settings show plan features and the reporting timezone", async ({
+  page,
+}) => {
+  await page.goto("/partner/billing");
+  await expect(page.getByRole("heading", { name: "Paid plan" })).toBeVisible();
+  const comparison = page.getByRole("table", { name: "Compare plans" });
+  await expect(comparison.getByRole("row", { name: /Active cafés/ })).toContainText(
+    "Unlimited",
+  );
+  await expect(page.getByRole("heading", { name: "Café access on Free" })).toHaveCount(0);
+  const settings = page.getByRole("region", { name: "Reporting timezone" });
+  await expect(settings.getByLabel("Timezone", { exact: true })).not.toHaveValue("");
+  await settings.getByRole("button", { name: "Save timezone" }).click();
+  await expect(settings.getByRole("status")).toContainText("Saved");
+});
+
 test("cafe edit stays pending until an independent reviewer publishes it", async ({
   page,
 }) => {
@@ -383,6 +436,15 @@ test("responsive layouts fit mobile, intermediate and desktop widths", async ({
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
+    for (const [route, title] of [["team", "Team"], ["billing", "Plan & settings"]]) {
+      await page.goto(`/partner/${route}`);
+      await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
   }
 });
 

@@ -1,6 +1,8 @@
 import { Dashboard } from "@/components/partner/dashboard";
 import { Inventory } from "@/components/partner/inventory";
+import { PlanSettings } from "@/components/partner/plan-settings";
 import { Recipes } from "@/components/partner/recipes";
+import { Team } from "@/components/partner/team";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { randomUUID } from "node:crypto";
@@ -11,8 +13,6 @@ import {
   Cafes,
   CafeEditor,
   Rewards,
-  Team,
-  Billing,
   StaffReviews,
   Panel,
   Field,
@@ -23,6 +23,31 @@ import { DiscardCafeChangeButton } from "@/components/partner/discard-cafe-chang
 import { RemoveCafeButton } from "@/components/partner/remove-cafe-button";
 import { passwordAction } from "../actions";
 export const dynamic = "force-dynamic";
+async function loadWorkspace(
+  section: string,
+  query: Record<string, string | undefined>,
+) {
+  const source =
+    section === "preview-review"
+      ? "staff"
+      : section === "billing" || (section === "cafe" && !query.id)
+        ? "overview"
+        : section;
+  // Let Next.js redirects propagate; source failures render explicitly below.
+  return portalData(
+    source,
+    Object.fromEntries(
+      Object.entries(query).filter(([, v]) => v !== "" && v !== undefined),
+    ),
+    section === "preview-review",
+    ["overview", "inventory"].includes(section),
+  )
+    .then((data) => ({ data, error: null, loadedAt: Date.now() }))
+    .catch((error: Error) => {
+      if (error.message.startsWith("NEXT_REDIRECT")) throw error;
+      return { data: null, error: error.message };
+    });
+}
 export default async function WorkspacePage({
   params,
   searchParams,
@@ -90,28 +115,7 @@ export default async function WorkspacePage({
         </Panel>
       </main>
     );
-  const source =
-    section === "preview-review"
-      ? "staff"
-      : section === "billing"
-        ? "selection"
-        : section === "cafe" && !query.id
-          ? "overview"
-          : section;
-  // Let Next.js redirects propagate; source failures render explicitly below.
-  const result = await portalData(
-    source,
-    Object.fromEntries(
-      Object.entries(query).filter(([, v]) => v !== "" && v !== undefined),
-    ),
-    section === "preview-review",
-    ["overview", "inventory"].includes(section),
-  )
-    .then((data) => ({ data, error: null }))
-    .catch((error: Error) => {
-      if (error.message.startsWith("NEXT_REDIRECT")) throw error;
-      return { data: null, error: error.message };
-    });
+  const result = await loadWorkspace(section, query);
   if (!result.data)
     return (
       <main className="mx-auto max-w-3xl space-y-6 p-8">
@@ -134,6 +138,10 @@ export default async function WorkspacePage({
       </main>
     );
   const data = result.data;
+  const selection =
+    section === "billing" && data.plan === "free" && data.role === "owner"
+      ? await portalData("selection").catch(() => null)
+      : null;
   const approvedAmenities = data.cafe?.amenities;
   if (section === "cafe" && query.change) {
     const available = await portalData("cafes");
@@ -216,9 +224,9 @@ export default async function WorkspacePage({
       ) : section === "recipes" ? (
         <Recipes data={data} />
       ) : section === "team" ? (
-        <Team data={data} />
+        <Team data={data} loadedAt={result.loadedAt} />
       ) : section === "billing" ? (
-        <Billing data={data} />
+        <PlanSettings data={data} selectionCafes={selection?.cafes} />
       ) : (
         <StaffReviews data={data} />
       )}
