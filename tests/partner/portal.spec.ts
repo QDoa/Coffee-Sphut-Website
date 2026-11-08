@@ -150,6 +150,61 @@ test("Paid plan settings show plan features and the reporting timezone", async (
   await expect(settings.getByRole("status")).toContainText("Saved");
 });
 
+test("staff select named cafés and explicitly confirm an empty Free downgrade", async ({ page }) => {
+  const client = await db("postgres");
+  const chain = randomUUID();
+  const name = `Plan picker ${chain.slice(0, 8)}`;
+  try {
+    await client.query('insert into public."Chains"(id,name) values($1,$2)', [chain, name]);
+    await client.query("insert into public.partner_accounts(chain_id,plan) values($1,'paid')", [chain]);
+    await client.query(
+      'insert into public."Cafe"(chain_id,name,is_active) values($1,$2,true)',
+      [chain, `${name} Café`],
+    );
+    await page.goto("/partner/preview-review");
+    await page.getByRole("link", { name: "Jump to administrator tools" }).click();
+    await page.getByText("Record a plan change", { exact: true }).click();
+    await page.getByRole("combobox", { name: "Partner", exact: true }).selectOption(chain);
+    await page.getByRole("combobox", { name: "Plan", exact: true }).selectOption("free");
+    await page.getByLabel("Approval or subscription reference").fill("Synthetic pilot downgrade");
+    const save = page.getByRole("button", { name: "Record plan change" });
+    const cafe = page.getByRole("checkbox", { name: `${name} Café` });
+    const confirm = page.getByRole("checkbox", { name: /I confirm this Free plan/ });
+    await expect(cafe).toBeVisible();
+    await expect(save).toBeDisabled();
+    await confirm.check();
+    await expect(save).toBeEnabled();
+    await cafe.check();
+    await expect(confirm).toHaveCount(0);
+    await expect(save).toBeEnabled();
+    await cafe.uncheck();
+    await expect(confirm).not.toBeChecked();
+    await expect(save).toBeDisabled();
+    await confirm.check();
+    await save.click();
+    await expect(page.getByRole("region", { name: "Administrator tools" }).getByRole("status")
+      .filter({ hasText: "Saved successfully." })).toBeVisible();
+    const access = async () => (await client.query(
+      "select a.plan,c.restricted from public.partner_accounts a join public.partner_cafe_access c using (chain_id) where a.chain_id=$1",
+      [chain],
+    )).rows;
+    expect(await access()).toEqual([{ plan: "free", restricted: true }]);
+
+    await cafe.check();
+    await page.getByLabel("Approval or subscription reference").fill("Restore named café access");
+    await save.click();
+    await expect.poll(access).toEqual([{ plan: "free", restricted: false }]);
+  } finally {
+    await client.query("delete from public.partner_operations where input->>'chain_id'=$1", [chain]);
+    await client.query("delete from public.partner_audit where chain_id=$1", [chain]);
+    await client.query("delete from public.partner_cafe_access where chain_id=$1", [chain]);
+    await client.query('delete from public."Cafe" where chain_id=$1', [chain]);
+    await client.query("delete from public.partner_accounts where chain_id=$1", [chain]);
+    await client.query('delete from public."Chains" where id=$1', [chain]);
+    await client.end();
+  }
+});
+
 test("cafe edit stays pending until an independent reviewer publishes it", async ({
   page,
 }) => {

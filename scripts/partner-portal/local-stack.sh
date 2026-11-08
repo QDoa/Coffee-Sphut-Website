@@ -64,4 +64,8 @@ if [[ "$fixture_edit_manager" != 't' ]]; then
   docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261108010810_partner_edit_manager_access.sql
   docker exec coffee-partner-test psql -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema'" >/dev/null
 fi
+fixture_pilot_safety=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select to_regprocedure('public.partner_plan_cafes(uuid)') is not null")
+if [[ "$fixture_pilot_safety" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261108050805_partner_pilot_safety_fixes.sql
+fi
 echo 'Local fixtures ready. Run pnpm partner:preview and open http://127.0.0.1:3100/partner/overview'

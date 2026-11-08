@@ -4,7 +4,8 @@ import { CAFE_AMENITIES } from "@/lib/partner/amenities";
 import { EMPTY_MEDIA, type MediaSelection } from "@/lib/partner/media";
 import type { PortalData } from "@/lib/partner/portal";
 import { ActionForm } from "./action-form";
-import { Field, Select } from "./workspace";
+import { Field } from "./workspace";
+import { StaffPlanForm } from "./staff-plan-form";
 import { ReviewQueue, type ReviewRequest, type ReviewField } from "./review-queue";
 
 type Row = Record<string, unknown>;
@@ -194,23 +195,16 @@ function ReviewAdminTools({ data }: { data: PortalData }) {
           <div className="space-y-4 border-t p-4 sm:p-5">
             <p className="text-sm text-muted-foreground">
               Record an approved activation or downgrade. Payment collection is
-              handled separately. Free access changes take effect immediately
-              and require an explicit café selection.
+              handled separately. Free access changes take effect immediately.
+              Choose which cafés keep workspace access or confirm an empty selection.
             </p>
-            <ActionForm operation="activate_plan" context={{ request_id: randomUUID() }} label="Record plan change">
-              <Select name="chain_id" label="Partner" options={data.accounts.map((account) => ({
-                value: String(account.chain_id),
+            <StaffPlanForm
+              requestId={randomUUID()}
+              partners={data.accounts.map((account) => ({
+                id: String(account.chain_id),
                 label: `${account.name} · ${account.plan}`,
-              }))} />
-              <Select name="plan" label="Plan" options={[
-                { value: "paid", label: "Paid" },
-                { value: "free", label: "Free" },
-              ]} />
-              <Field name="reason" label="Approval or subscription reference" required />
-              <Field name="cafe_ids" label="For Free: selected café ID 1" type="number" />
-              <Field name="cafe_ids" label="For Free: selected café ID 2" type="number" />
-              <Field name="cafe_ids" label="For Free: selected café ID 3" type="number" />
-            </ActionForm>
+              }))}
+            />
           </div>
         </details>
       </div>

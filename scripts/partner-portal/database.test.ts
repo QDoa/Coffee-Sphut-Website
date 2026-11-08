@@ -650,6 +650,39 @@ test("downgrade retains private data, limits selection and restores access only 
     assert.equal((await snapshot(c, "overview")).cafes.length, 3);
   }));
 
+test("a staff Free downgrade requires explicit confirmation to remove all café access", () =>
+  transaction(async (c) => {
+    await actor(c, 4);
+    const input = { plan: "free", reason: "Pilot downgrade test" };
+    await denied(c, () => command(c, "activate_plan", input), /confirm.*no café access/);
+    await denied(
+      c,
+      () => c.query("select partner_internal.partner_command('activate_plan','{}'::jsonb)"),
+      /permission denied/,
+    );
+    await denied(
+      c,
+      () => command(c, "activate_plan", { ...input, cafe_ids: [], confirm_empty_free: "true" }),
+      /confirm.*no café access/,
+    );
+    const choices = (await c.query("select public.partner_plan_cafes($1) as result", [A])).rows[0].result;
+    assert.ok(choices.some((cafe: { id: number; name: string }) => cafe.id === 101 && cafe.name));
+
+    await actor(c, 1);
+    assert.equal((await snapshot(c, "overview")).plan, "paid");
+    assert.deepEqual(
+      (await c.query("select public.partner_plan_cafes($1) as result", [A])).rows[0].result,
+      [],
+    );
+    await actor(c, 4);
+    await command(c, "activate_plan", { ...input, cafe_ids: [], confirm_empty_free: true });
+    await actor(c, 1);
+    const result = await snapshot(c, "overview");
+    assert.equal(result.plan, "free");
+    assert.deepEqual(result.cafes, []);
+    assert.equal(result.selection_required, false);
+  }));
+
 test("invitation acceptance is bound to email, role, cafe scope and single active membership", () =>
   transaction(async (c) => {
     await actor(c, 1);
@@ -770,6 +803,25 @@ test("public replacement hides archived cafes and secrets; anonymous cannot call
       ),
     );
     await denied(c, () => snapshot(c, "overview"), /permission denied/);
+  }));
+
+test("nearby search excludes archived cafés before taking the nearest matches", () =>
+  transaction(async (c) => {
+    const chain = (await c.query("insert into public.\"Chains\"(name) values ('Nearby pilot fixture') returning id")).rows[0].id;
+    await c.query(
+      `insert into public."Cafe"(chain_id,name,is_active,latitude,longitude,reward_code,amenities)
+       values ($1,'Pilotretail archived',false,47.01,-53.01,$2,array['wifi']),
+              ($1,'Pilotretail open',true,47.0101,-53.0101,$3,array['wifi']),
+              ($1,'Pilotretail other',true,47.0102,-53.0102,null,array['work_station'])`,
+      [chain, randomUUID(), randomUUID()],
+    );
+    await c.query("SET LOCAL ROLE anon");
+    const { result } = (await c.query(
+      "select public.get_closest_cafes_v2(47.01,-53.01,'Pilotretail',1,true,array['wifi']) as result",
+    )).rows[0];
+    assert.deepEqual(result.map((cafe: { name: string }) => cafe.name), ["Pilotretail open"]);
+    assert.equal(result[0].has_reward, true);
+    assert.equal("reward_code" in result[0], false);
   }));
 
 test("concurrent approvals serialize the last Free slot", async () => {

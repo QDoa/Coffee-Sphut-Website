@@ -102,6 +102,25 @@ export async function editManagerAccess(
   return { message: "Manager access updated." };
 }
 
+const planCafesSchema = z.array(z.object({
+  id: z.number().int().positive(),
+  name: z.string().nullable(),
+  address: z.string().nullable(),
+  active: z.boolean(),
+}));
+
+export async function getPlanCafes(chainId: string) {
+  if (!z.uuid().safeParse(chainId).success)
+    return { error: "Choose a partner chain." };
+  const preview = isLocalPartnerPreview();
+  if (!preview) await requireStaff("admin", { redirectOnFailure: false });
+  const client = await portalClient(preview);
+  const { data, error } = await client.rpc("partner_plan_cafes", { p_chain: chainId });
+  const parsed = planCafesSchema.safeParse(data);
+  if (error || !parsed.success) return { error: "Could not load cafés. Try again." };
+  return { cafes: parsed.data };
+}
+
 export async function commandAction(
   _previous: PortalActionState,
   form: FormData,
@@ -156,6 +175,11 @@ export async function commandAction(
         .getAll("cafe_ids")
         .filter((x) => String(x).trim() !== "")
         .map(Number);
+    if (action === "activate_plan") {
+      delete input.confirm_empty_free;
+      if (input.plan === "free" && form.get("confirm_empty_free") === "on")
+        input.confirm_empty_free = true;
+    }
     const client = await portalClient(staff && isLocalPartnerPreview());
     if (action === "review" && input.decision === "approve") {
       await publishReviewedMedia(client, input);
