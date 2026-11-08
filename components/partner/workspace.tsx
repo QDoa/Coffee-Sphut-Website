@@ -427,6 +427,10 @@ export function Rewards({
       : dateFormat.format(date);
   }
   const range = params.from || params.to ? "" : params.range === "week" ? "week" : "month";
+  const exportParams = new URLSearchParams();
+  if (data.reward_from) exportParams.set("from", data.reward_from);
+  if (data.reward_to) exportParams.set("to", data.reward_to);
+  if (params.cafe_id) exportParams.set("cafe_id", params.cafe_id);
   return (
     <>
       <Panel title="Reward usage">
@@ -460,16 +464,25 @@ export function Rewards({
           <p role="alert" className="mt-3 text-sm text-destructive">{data.reward_error}</p>
         ) : (
           <>
-        <p className="mt-6 font-serif text-4xl">
-          {data.total || 0}{" "}
-          <span className="font-sans text-sm text-muted-foreground">
-            completed redemptions
-          </span>
-        </p>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Reporting period {data.reward_from} to {data.reward_to}.
-          {data.coverage_at && <> Tracking began {formatTime(data.coverage_at)}.</>}
-        </p>
+            <p className="mt-6 font-serif text-4xl">
+              {data.total || 0}{" "}
+              <span className="font-sans text-sm text-muted-foreground">
+                completed redemptions
+              </span>
+            </p>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Reporting period {data.reward_from} to {data.reward_to}.
+              {data.coverage_at && <> Tracking began {formatTime(data.coverage_at)}.</>}
+            </p>
+            {data.reward_export_limit !== undefined && (data.total ?? 0) > data.reward_export_limit ? (
+              <p className="mt-4 text-sm text-muted-foreground">
+                To export this report, choose a shorter date range or a single café.
+              </p>
+            ) : (
+              <Button asChild variant="outline" className="mt-4 min-h-11">
+                <a href={`/partner/rewards/export?${exportParams}`} download>Download CSV</a>
+              </Button>
+            )}
           </>
         )}
       </Panel>

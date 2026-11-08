@@ -84,4 +84,8 @@ fixture_review_notifications=$(docker exec coffee-partner-test psql -U postgres 
 if [[ "$fixture_review_notifications" != 't' ]]; then
   docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261108221342_partner_cafe_review_notifications.sql
 fi
+fixture_reward_export=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select strpos(pg_get_functiondef('public.partner_snapshot(text,jsonb)'::regprocedure),'reward_export_limit') > 0")
+if [[ "$fixture_reward_export" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261108221833_partner_reward_reconciliation_export.sql
+fi
 echo 'Local fixtures ready. Run pnpm partner:preview and open http://127.0.0.1:3100/partner/overview'

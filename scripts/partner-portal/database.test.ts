@@ -875,6 +875,11 @@ test("reward capture attributes redemption to B even when earned at A; reports u
     await c.query("select public.redeem_reward($1,$2)", [id, "local-only-102"]);
     const report = await snapshot(c, "rewards", { cafe_id: 102 });
     assert.equal(report.total, 1);
+    const exported = await snapshot(c, "rewards", { cafe_id: 102, export: "csv", offset: 50 });
+    assert.equal(exported.total, report.total);
+    assert.equal(exported.events[0].id, id);
+    assert.match(exported.events[0].occurred_local, /^\d{4}-\d{2}-\d{2} /);
+    assert.match(exported.events[0].occurred_utc, /Z$/);
     const week = await snapshot(c, "rewards", { range: "week" });
     const insights = (await c.query("select public.partner_insights() as result")).rows[0].result;
     assert.equal(week.total, insights.weekly_rewards.at(-1).total);
@@ -889,6 +894,31 @@ test("reward capture attributes redemption to B even when earned at A; reports u
         c.query("select public.redeem_reward($1,$2)", [id, "local-only-102"]),
       /unavailable/,
     );
+    await actor(c, 2);
+    assert.deepEqual((await snapshot(c, "rewards", { cafe_id: 102, export: "csv" })).events, []);
+  }));
+
+test("oversized reward exports keep the report total and return no partial CSV rows", () =>
+  transaction(async (c) => {
+    await c.query("update public.partner_accounts set reward_coverage_at=now()-interval '1 minute' where chain_id=$1", [A]);
+    await actor(c, 1);
+    const initial = await snapshot(c, "rewards", { cafe_id: 102, export: "csv" });
+    const limit = initial.reward_export_limit;
+    assert.equal(limit, 10_000);
+    await c.query("RESET ROLE");
+    await c.query(
+      `insert into public."Rewards"(id,user_id,chain_id,earned_store,redeemed_cafe_id,status,redeemed_at)
+       select gen_random_uuid(),$1,$2,101,102,'redeemed',now()
+       from generate_series(1,$3::integer)`,
+      [uid(1), A, limit + 1],
+    );
+    await actor(c, 1);
+    const report = await snapshot(c, "rewards", { cafe_id: 102 });
+    const exported = await snapshot(c, "rewards", { cafe_id: 102, export: "csv" });
+    assert.equal(report.events.length, 50);
+    assert.equal(exported.total, initial.total + limit + 1);
+    assert.equal(exported.total, report.total);
+    assert.deepEqual(exported.events, []);
   }));
 
 test("public replacement hides archived cafes and secrets; anonymous cannot call operational RPC", () =>

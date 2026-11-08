@@ -900,6 +900,45 @@ test("reward presets show their dates and invalid ranges keep the filters availa
   await expect(page.getByText(/Reporting period \d{4}-\d{2}-\d{2} to/)).toBeVisible();
 });
 
+test("reward CSV includes every matching redemption across report pages", async ({ page }) => {
+  const references = Array.from({ length: 55 }, () => randomUUID());
+  const otherCafe = randomUUID();
+  const client = await db("postgres");
+  try {
+    await client.query(
+      `insert into public."Rewards"(id,user_id,chain_id,earned_store,redeemed_cafe_id,status,redeemed_at)
+       select id,'10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001',
+              101,case when id=$2 then 101 else 102 end,'redeemed',now()
+       from unnest($1::uuid[]) as ids(id)`,
+      [[...references, otherCafe], otherCafe],
+    );
+    await page.goto("/partner/rewards?cafe_id=102&range=month&offset=50");
+    const from = await page.getByLabel("From", { exact: true }).inputValue();
+    const to = await page.getByLabel("Through", { exact: true }).inputValue();
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("link", { name: "Download CSV" }).click(),
+    ]);
+    expect(download.suggestedFilename()).toBe(`reward-redemptions-${from}-${to}.csv`);
+    const chunks: Buffer[] = [];
+    for await (const chunk of await download.createReadStream()) chunks.push(chunk);
+    const csv = Buffer.concat(chunks).toString("utf8");
+    expect(csv).toContain('"Redemption timestamp (UTC)"');
+    expect(csv).toContain('"North Star • Riverside","102"');
+    for (const reference of references) expect(csv).toContain(reference);
+    expect(csv).not.toContain(otherCafe);
+
+    const invalid = await page.request.get("/partner/rewards/export?from=2026-12-02&to=2026-12-01");
+    expect(invalid.status()).toBe(400);
+    expect(invalid.headers()["cache-control"]).toBe("private, no-store");
+    const inaccessible = await page.request.get("/partner/rewards/export?cafe_id=9007199254740991");
+    expect(inaccessible.status()).toBe(403);
+  } finally {
+    await client.query('delete from public."Rewards" where id=any($1::uuid[])', [[...references, otherCafe]]);
+    await client.end();
+  }
+});
+
 test("stock watch explains threshold alerts and opens the exact café item", async ({ page }) => {
   const client = await db("postgres");
   const id = randomUUID();

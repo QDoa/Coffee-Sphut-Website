@@ -22,6 +22,7 @@ export const portalSchema = z.object({
   reward_from: z.string().optional(),
   reward_to: z.string().optional(),
   reward_error: z.string().optional(),
+  reward_export_limit: z.number().int().positive().optional(),
   cafes: rows,
   changes: rows,
   request_total: z.number().int().nonnegative().default(0),
