@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { ArrowUpRight, Gift, Store, TriangleAlert } from "lucide-react";
-import type { PortalData } from "@/lib/partner/portal";
+import type { PartnerOnboardingData, PortalData } from "@/lib/partner/portal";
 import { stockView, amount } from "@/lib/partner/stock";
 import { Button } from "@/components/ui/button";
-export function Dashboard({ data }: { data: PortalData }) {
+import { OnboardingChecklist } from "./onboarding-checklist";
+export function Dashboard({ data, setup }: { data: PortalData; setup: PartnerOnboardingData | null }) {
   const weeks = data.weekly_rewards;
   const total = weeks.reduce((s, w) => s + Number(w.total), 0);
   const max = Math.max(1, ...weeks.map((w) => Number(w.total)));
@@ -32,6 +33,7 @@ export function Dashboard({ data }: { data: PortalData }) {
           </Link>
         </Button>
       </div>
+      {setup && <OnboardingChecklist data={data} setup={setup} />}
       <div className="grid gap-4 sm:grid-cols-3">
         {[
           {
@@ -197,7 +199,7 @@ export function Dashboard({ data }: { data: PortalData }) {
           </p>
         </section>
       </div>
-      {data.selection_required && (
+      {data.selection_required && (!setup || data.role !== "owner") && (
         <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5">
           <p className="font-medium">Choose your Free cafés</p>
           <p className="my-2 text-sm">

@@ -1033,6 +1033,36 @@ test("stocktake preserves entered counts on a conflict and then saves reviewed v
   }
 });
 
+test("onboarding tracks workspace progress and links to the next setup task", async ({ page }) => {
+  const client = await db("postgres");
+  const chain = "20000000-0000-4000-8000-000000000001";
+  const fixture = randomUUID();
+  const recipes = await client.query("update public.partner_recipes set active=false where chain_id=$1 and active returning id", [chain]);
+  try {
+    await page.goto("/partner/overview");
+    const checklist = page.getByRole("region", { name: "Onboarding checklist" });
+    const progress = checklist.getByRole("progressbar", { name: "Onboarding progress" });
+    const before = Number(await progress.getAttribute("value"));
+    await expect(checklist.getByText("Save your first chain recipe")).toBeVisible();
+    await checklist.getByRole("link", { name: "Open recipes" }).click();
+    await expect(page).toHaveURL(/\/partner\/recipes$/);
+    await client.query(
+      `insert into public.partner_recipes(id,chain_id,name,yield,ingredients)
+       select $1,$2,'Onboarding fixture',1,jsonb_build_array(jsonb_build_object('item_id',id,'quantity',1,'unit',unit))
+       from public.partner_items where chain_id=$2 and type='ingredient' and active limit 1`,
+      [fixture, chain],
+    );
+    await page.goto("/partner/overview");
+    if (!(await progress.isVisible())) await checklist.getByText("Onboarding checklist", { exact: true }).click();
+    await expect(progress).toHaveAttribute("value", String(before + 1));
+    await expect(checklist.getByRole("link", { name: "Open recipes" })).toHaveCount(0);
+  } finally {
+    await client.query("delete from public.partner_recipes where id=$1", [fixture]);
+    await client.query("update public.partner_recipes set active=true where id=any($1)", [recipes.rows.map(({ id }) => id)]);
+    await client.end();
+  }
+});
+
 test("stock watch explains threshold alerts and opens the exact café item", async ({ page }) => {
   const client = await db("postgres");
   const id = randomUUID();

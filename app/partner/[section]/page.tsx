@@ -13,6 +13,7 @@ import { randomUUID } from "node:crypto";
 import {
   portalCafeRequest,
   portalData,
+  portalOnboarding,
   portalReviewNotifications,
   portalStocktakeItems,
 } from "@/lib/partner/portal";
@@ -150,8 +151,11 @@ export default async function WorkspacePage({
     );
   let data = result.data;
   const inventoryView = query.view === "restock" || query.view === "stocktake" ? query.view : "stock";
-  const stocktakeItems = section === "inventory" && inventoryView === "stocktake" && data.chain_id
-    ? await portalStocktakeItems(data.chain_id).catch(() => null) : null;
+  const [setup, stocktakeItems] = await Promise.all([
+    section === "overview" ? portalOnboarding(data).catch(() => null) : null,
+    section === "inventory" && inventoryView === "stocktake" && data.chain_id
+      ? portalStocktakeItems(data.chain_id).catch(() => null) : null,
+  ]);
   const requestedPage = Number(query.page);
   const notificationPage = section === "notifications"
     ? Number.isInteger(requestedPage) && requestedPage > 0 && requestedPage <= 2_147_483_647
@@ -214,7 +218,7 @@ export default async function WorkspacePage({
   return (
     <PartnerShell data={data} preview={preview} reviewUnread={notifications?.unread}>
       {section === "overview" ? (
-        <Dashboard data={data} />
+        <Dashboard data={data} setup={setup} />
       ) : section === "cafes" ? (
         <Cafes
           data={data}

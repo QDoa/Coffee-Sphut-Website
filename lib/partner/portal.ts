@@ -70,6 +70,32 @@ export async function portalStocktakeItems(chainId: string): Promise<StocktakeIt
   return stocktakeItemsSchema.parse(data);
 }
 
+export async function portalOnboarding({ chain_id: chainId, role, plan, cafes }: PortalData) {
+  if (!chainId || !role) return null;
+  const activeCafe = cafes.some((cafe) => cafe.is_active === true);
+  const client = await portalClient();
+  const paid = plan === "paid";
+  const canManageChain = role !== "cafe_manager";
+  const results = await Promise.all([
+    !activeCafe && canManageChain ? client.from("partner_changes").select("id")
+      .eq("chain_id", chainId).is("cafe_id", null).eq("status", "pending").limit(1) : null,
+    role === "owner" ? client.from("partner_memberships").select("id")
+      .eq("chain_id", chainId).neq("role", "owner").is("revoked_at", null).limit(1) : null,
+    role === "owner" ? client.from("partner_invitations").select("id")
+      .eq("chain_id", chainId).is("accepted_at", null).is("revoked_at", null)
+      .gt("expires_at", new Date().toISOString()).limit(1) : null,
+    paid ? client.from("partner_movements").select("id").eq("chain_id", chainId).limit(1) : null,
+    paid && canManageChain ? client.from("partner_recipes").select("id")
+      .eq("chain_id", chainId).eq("active", true).limit(1) : null,
+  ]);
+  const error = results.find((result) => result?.error)?.error;
+  if (error) throw new Error(error.message);
+  const [cafePending, manager, invitation, movement, recipe] = results.map((result) => Boolean(result?.data?.length));
+  return { activeCafe, cafePending, hasTeam: manager || invitation, movement, recipe };
+}
+
+export type PartnerOnboardingData = NonNullable<Awaited<ReturnType<typeof portalOnboarding>>>;
+
 export async function portalClient(reviewer = false) {
   if (!isPartnerPortalEnabled())
     throw new Error(
