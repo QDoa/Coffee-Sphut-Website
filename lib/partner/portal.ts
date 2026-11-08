@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { isLocalPartnerPreview, isPartnerPortalEnabled } from "./preview";
+import { requestQueueQuery } from "./request-queue";
 import type { Database, Json } from "@/types/database";
 const rows = z.array(z.record(z.string(), z.unknown())).default([]);
 export const portalSchema = z.object({
@@ -20,6 +21,14 @@ export const portalSchema = z.object({
   total: z.number().optional(),
   cafes: rows,
   changes: rows,
+  request_total: z.number().int().nonnegative().default(0),
+  request_page: z.number().int().positive().default(1),
+  request_page_size: z.number().int().positive().default(20),
+  pending_request_count: z.number().int().nonnegative().default(0),
+  pending_requests: z.array(z.object({
+    id: z.string(),
+    cafe_id: z.number(),
+  })).default([]),
   items: rows,
   movements: rows,
   recipes: rows,
@@ -75,12 +84,36 @@ export async function portalData(
   withInsights = false,
 ): Promise<PortalData> {
   const client = await portalClient(reviewer);
-  const { data, error } = await client.rpc("partner_snapshot", {
-    p_section: section,
-    p_input: input,
+  const staff = section === "staff";
+  const cafes = section === "cafes";
+  const query = requestQueueQuery(input, staff);
+  const fetchQueue = () => client.rpc("partner_request_queue", {
+    p_staff: staff,
+    p_search: query.search,
+    p_filter: query.filter,
+    p_page: query.page,
   });
+  const [snapshot, cafeQueue] = await Promise.all([
+    staff ? fetchQueue() : client.rpc("partner_snapshot", {
+      p_section: cafes ? "overview" : section,
+      p_input: input,
+    }),
+    cafes ? fetchQueue() : null,
+  ]);
+  const { data, error } = snapshot;
   if (error) throw new Error(error.message);
   const parsed = portalSchema.parse(data);
+  if (cafeQueue) {
+    if (cafeQueue.error) throw new Error(cafeQueue.error.message);
+    Object.assign(parsed, portalSchema.pick({
+      changes: true,
+      request_total: true,
+      request_page: true,
+      request_page_size: true,
+      pending_request_count: true,
+      pending_requests: true,
+    }).parse(cafeQueue.data));
+  }
   if (section === "team" && parsed.role === "owner" && parsed.chain_id) {
     const assignments = await client.rpc("partner_team_assignments", {
       p_chain: parsed.chain_id,
@@ -129,4 +162,15 @@ export async function portalData(
     );
   }
   return parsed;
+}
+
+export async function portalCafeRequest(id: string, chainId: string | undefined) {
+  if (!chainId || !z.uuid().safeParse(id).success) return null;
+  const client = await portalClient();
+  const { data, error } = await client.rpc("partner_cafe_request", {
+    p_id: id,
+    p_chain: chainId,
+  });
+  if (error) throw new Error(error.message);
+  return data === null ? null : z.record(z.string(), z.unknown()).parse(data);
 }

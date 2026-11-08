@@ -2,11 +2,12 @@
 
 import { useActionState, useId, useState } from "react";
 import Image from "next/image";
-import { ChevronDown, ClipboardCheck, Search } from "lucide-react";
+import { ChevronDown, ClipboardCheck } from "lucide-react";
 import { commandAction, type PortalActionState } from "@/app/partner/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import type { RequestQueuePage } from "@/lib/partner/request-queue";
+import { RequestQueueCount, RequestQueueFilters, RequestQueuePagination } from "./request-queue-controls";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -50,23 +51,20 @@ export interface ReviewRequest {
 export function ReviewQueue({
   requests,
   showAdminTools,
+  path,
+  queue,
 }: {
   requests: ReviewRequest[];
   showAdminTools: boolean;
+  path: string;
+  queue: RequestQueuePage;
 }) {
-  const [search, setSearch] = useState("");
-  const [kind, setKind] = useState("all");
   const [expanded, setExpanded] = useState("");
   const [notice, setNotice] = useState("");
-  const query = search.trim().toLowerCase();
-  const visible = requests.filter((request) =>
-    (kind === "all" || request.kind === kind) &&
-    [request.name, request.chain, request.fields.find((field) => field.key === "name")?.proposed]
-      .some((value) => value?.toLowerCase().includes(query)),
-  );
+  const location = { path, anchor: "#staff-review-queue" };
 
   return (
-    <div className="space-y-4">
+    <div id="staff-review-queue" className="scroll-mt-4 space-y-4">
       <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
@@ -86,39 +84,24 @@ export function ReviewQueue({
             </a>
           )}
         </div>
-        {requests.length > 0 && (
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <label className="relative min-w-0">
-              <span className="sr-only">Search review requests</span>
-              <Search className="pointer-events-none absolute left-3 top-3.5 size-4 text-muted-foreground" aria-hidden="true" />
-              <Input
-                type="search"
-                className="min-h-11 pl-9"
-                placeholder="Search by café or partner"
-                value={search}
-                onChange={(event) => setSearch(event.currentTarget.value)}
-              />
-            </label>
-            <select
-              aria-label="Filter by request type"
-              className="min-h-11 w-full rounded-xl border bg-background px-3 text-sm"
-              value={kind}
-              onChange={(event) => setKind(event.currentTarget.value)}
-            >
-              <option value="all">All request types</option>
-              {Object.entries(REQUEST_TYPES).map(([value, { label }]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-          </div>
-        )}
+        <RequestQueueFilters
+          location={location}
+          query={queue.query}
+          searchLabel="Search review requests"
+          placeholder="Search by café, partner, or request reference"
+          filterLabel="Filter by request type"
+          options={[
+            { value: "all", label: "All request types" },
+            ...Object.entries(REQUEST_TYPES).map(([value, { label }]) => ({ value, label })),
+          ]}
+        />
         <div role="status" className="space-y-1 text-sm text-muted-foreground">
           {notice && <p className="font-medium text-primary">{notice}</p>}
-          <p>{requests.length ? `Showing ${visible.length} of ${requests.length} awaiting review` : "No requests awaiting review."}</p>
+          <p><RequestQueueCount queue={queue} /></p>
         </div>
       </div>
 
-      {visible.map((request) => {
+      {requests.map((request) => {
         const open = expanded === request.id;
         const type = REQUEST_TYPES[request.kind];
         return (
@@ -163,17 +146,7 @@ export function ReviewQueue({
         );
       })}
 
-      {!visible.length && requests.length > 0 && (
-        <div className="space-y-3 rounded-2xl border bg-card p-4 sm:p-5">
-          <p className="text-sm text-muted-foreground">No requests match these filters.</p>
-          <Button type="button" variant="outline" className="min-h-11" onClick={() => {
-            setSearch("");
-            setKind("all");
-          }}>
-            Clear filters
-          </Button>
-        </div>
-      )}
+      <RequestQueuePagination location={location} queue={queue} />
     </div>
   );
 }

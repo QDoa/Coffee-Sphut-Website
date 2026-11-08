@@ -6,6 +6,7 @@ import { CAFE_AMENITIES } from "@/lib/partner/amenities";
 import { randomUUID } from "node:crypto";
 import { ActionForm } from "./action-form";
 import type { PortalData } from "@/lib/partner/portal";
+import type { RequestQueueQuery } from "@/lib/partner/request-queue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -146,10 +147,12 @@ export function Cafes({
   data,
   q,
   removed,
+  queueQuery,
 }: {
   data: PortalData;
   q?: string;
   removed?: string;
+  queueQuery: RequestQueueQuery;
 }) {
   const initialSearch = typeof q === "string" ? q : "";
   const cafes = data.cafes.map((cafe) => ({
@@ -181,7 +184,6 @@ export function Cafes({
     if (cafeId) query.set("id", cafeId);
     return {
       id: str(change.id),
-      cafeId,
       name: str(payload?.name) || cafeNames.get(cafeId) || "Café request",
       status,
       reason: status === "rejected" ? str(change.reason) : "",
@@ -208,6 +210,14 @@ export function Cafes({
       }
       cafes={cafes}
       requests={requests}
+      pending={data.pending_requests}
+      pendingCount={data.pending_request_count}
+      queue={{
+        query: queueQuery,
+        total: data.request_total,
+        page: data.request_page,
+        pageSize: data.request_page_size,
+      }}
       canAdd={data.role === "owner" || data.role === "chain_manager"}
     />
   );

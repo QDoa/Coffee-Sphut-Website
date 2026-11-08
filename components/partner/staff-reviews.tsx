@@ -3,6 +3,7 @@ import { cleanupImageAction } from "@/app/partner/media-actions";
 import { CAFE_AMENITIES } from "@/lib/partner/amenities";
 import { EMPTY_MEDIA, type MediaSelection } from "@/lib/partner/media";
 import type { PortalData } from "@/lib/partner/portal";
+import type { RequestQueueQuery } from "@/lib/partner/request-queue";
 import { ActionForm } from "./action-form";
 import { Field } from "./workspace";
 import { StaffPlanForm } from "./staff-plan-form";
@@ -74,13 +75,7 @@ function reviewRequest(change: Row, accounts: Map<string, string>): ReviewReques
   const id = String(change.id);
   const chainId = String(change.chain_id);
   const created = String(change.created_at);
-  const kind = !change.cafe_id
-    ? "new"
-    : payload.is_active === false && current.is_active === true
-      ? "removal"
-      : payload.is_active === true && current.is_active === false
-        ? "reactivation"
-        : "edit";
+  const kind = change.kind as ReviewRequest["kind"];
   const fields: ReviewField[] = Object.entries(payload).map(([key, value]) => {
     const comparable = Object.hasOwn(current, key);
     const uploadedCover = key === "image_url" && media.cover;
@@ -121,12 +116,23 @@ function reviewRequest(change: Row, accounts: Map<string, string>): ReviewReques
   };
 }
 
-export function StaffReviews({ data }: { data: PortalData }) {
+export function StaffReviews({ data, query, path }: {
+  data: PortalData;
+  query: RequestQueueQuery;
+  path: string;
+}) {
   const accounts = new Map(data.accounts.map((account) => [String(account.chain_id), String(account.name)]));
   return (
     <div className="space-y-8">
       <ReviewQueue
         requests={data.changes.map((change) => reviewRequest(change, accounts))}
+        path={path}
+        queue={{
+          query,
+          page: data.request_page,
+          pageSize: data.request_page_size,
+          total: data.request_total,
+        }}
         showAdminTools={data.staff_admin}
       />
       {data.staff_admin && <ReviewAdminTools data={data} />}

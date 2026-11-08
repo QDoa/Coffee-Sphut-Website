@@ -8,8 +8,14 @@ function reviewCard(page: Page, name: string): Locator {
 }
 
 async function openReview(page: Page, name: string): Promise<Locator> {
+  const search = page.getByLabel("Search review requests");
+  await search.fill(name);
+  await page.getByRole("button", { name: "Search requests" }).click();
+  await expect(page.getByRole("status")).toContainText("of 1 request");
   const card = reviewCard(page, name);
-  await card.getByRole("heading").getByRole("button").click();
+  const expand = card.getByRole("heading").getByRole("button");
+  await expand.click();
+  await expect(expand).toHaveAttribute("aria-expanded", "true");
   return card;
 }
 
@@ -242,9 +248,9 @@ test("staff can filter the review queue and reject a request with feedback", asy
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/partner/preview-review");
   await page.getByLabel("Search review requests").fill(name);
-  await expect(page.getByRole("status")).toContainText("Showing 1 of");
   const filter = page.getByLabel("Filter by request type");
   await filter.selectOption("removal");
+  await page.getByRole("button", { name: "Search requests" }).click();
   await expect(page.getByText("No requests match these filters.")).toBeVisible();
   await filter.selectOption("new");
   const card = await openReview(page, name);
@@ -262,6 +268,72 @@ test("staff can filter the review queue and reject a request with feedback", asy
     .getByRole("listitem").filter({ hasText: name });
   await expect(request).toContainText("Changes requested");
   await expect(request).toContainText(feedback);
+});
+
+test("older drafts open directly and both queues search and paginate on the server", async ({ page }) => {
+  const client = await db("postgres");
+  const chain = "20000000-0000-4000-8000-000000000001";
+  const owner = "10000000-0000-4000-8000-000000000001";
+  const prefix = `Queue fixture ${randomUUID().slice(0, 8)}`;
+  const draftName = `${prefix} draft 1`;
+  try {
+    const { rows } = await client.query(
+      `insert into public.partner_changes(chain_id,submitter,payload,status,created_at)
+       select $1,$2,jsonb_build_object('name',$3 || ' draft ' || n),'draft',
+         now()-interval '1 hour'+n*interval '1 second'
+       from generate_series(1,105) n returning id,payload->>'name' as name`,
+      [chain, owner, prefix],
+    );
+    const draft = rows.find((row) => row.name === draftName);
+    await client.query(
+      `insert into public.partner_changes(chain_id,submitter,payload,status,created_at)
+       select $1,$2,jsonb_build_object('name',$3 || ' pending ' || n),'pending',
+         now()-interval '2 hours'+n*interval '1 second'
+       from generate_series(1,25) n`,
+      [chain, owner, prefix],
+    );
+
+    await page.goto(`/partner/cafe?change=${draft.id}`);
+    await expect(page.getByLabel("Café name", { exact: true })).toHaveValue(draftName);
+    const mismatched = await page.request.get(`/partner/cafe?change=${draft.id}&id=101`);
+    expect(mismatched.status()).toBe(404);
+
+    const existingDraft = (await client.query(
+      `insert into public.partner_changes(chain_id,cafe_id,submitter,payload,status,created_at)
+       values($1,101,$2,jsonb_build_object('name',$3::text),'draft',now()-interval '3 hours')
+       returning id`,
+      [chain, owner, `${prefix} existing café`],
+    )).rows[0].id;
+    await page.goto(`/partner/cafe?change=${existingDraft}&id=101`);
+    await expect(page.getByLabel("Café name", { exact: true })).toHaveValue(`${prefix} existing café`);
+
+    await page.goto("/partner/cafes");
+    const requests = page.getByRole("region", { name: "Change requests" });
+    await requests.getByLabel("Search change requests").fill(`${prefix} draft`);
+    await requests.getByLabel("Filter change requests by status").selectOption("draft");
+    await requests.getByRole("button", { name: "Search requests" }).click();
+    await expect(requests.getByText("Showing 1–20 of 105 requests")).toBeVisible();
+    await expect(requests.getByRole("listitem")).toHaveCount(20);
+    await requests.getByRole("link", { name: "Next page" }).click();
+    await expect(requests.getByText("Showing 21–40 of 105 requests")).toBeVisible();
+    await requests.getByLabel("Search change requests").fill(draft.id);
+    await requests.getByRole("button", { name: "Search requests" }).click();
+    await expect(requests.getByText("Showing 1–1 of 1 request")).toBeVisible();
+    await expect(requests.getByRole("link", { name: `Resume draft: ${draftName}` })).toBeVisible();
+
+    await page.goto("/partner/preview-review");
+    await page.getByLabel("Search review requests").fill(prefix);
+    await page.getByLabel("Filter by request type").selectOption("new");
+    await page.getByRole("button", { name: "Search requests" }).click();
+    await expect(page.getByRole("status")).toContainText("Showing 1–20 of 25 requests");
+    await page.getByRole("link", { name: "Next page" }).click();
+    await expect(page.getByRole("status")).toContainText("Showing 21–25 of 25 requests");
+    await expect(reviewCard(page, `${prefix} pending 25`)).toBeVisible();
+    await expect(page.getByRole("link", { name: "Next page" })).toHaveCount(0);
+  } finally {
+    await client.query("delete from public.partner_changes where chain_id=$1 and payload->>'name' like $2", [chain, `${prefix}%`]);
+    await client.end();
+  }
 });
 
 test("removal archives an existing café after approval without submitting unsaved edits", async ({
@@ -337,6 +409,8 @@ test("removal archives an existing café after approval without submitting unsav
   await requests
     .getByLabel("Filter change requests by status")
     .selectOption("approved");
+  await requests.getByLabel("Search change requests").fill(name);
+  await requests.getByRole("button", { name: "Search requests" }).click();
   const approvedRequests = requests.getByRole("listitem").filter({
     has: page.getByRole("heading", { name, exact: true }),
   });

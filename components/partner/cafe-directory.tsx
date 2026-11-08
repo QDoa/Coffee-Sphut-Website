@@ -14,12 +14,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { RequestQueuePage } from "@/lib/partner/request-queue";
+import { RequestQueueCount, RequestQueueFilters, RequestQueuePagination } from "./request-queue-controls";
 import { DiscardCafeChangeButton } from "./discard-cafe-change-button";
 
 interface CafeDirectoryProps {
   initialSearch: string;
   notice?: string;
   canAdd: boolean;
+  queue: RequestQueuePage;
+  pending: { id: string; cafe_id: number }[];
+  pendingCount: number;
   cafes: {
     id: string;
     name: string;
@@ -29,7 +34,6 @@ interface CafeDirectoryProps {
   }[];
   requests: {
     id: string;
-    cafeId: string;
     name: string;
     status: string;
     reason: string;
@@ -73,15 +77,16 @@ export function CafeDirectory({
   canAdd,
   cafes,
   requests,
+  queue,
+  pending,
+  pendingCount,
 }: CafeDirectoryProps) {
   const [search, setSearch] = useState(initialSearch);
   const [cafeStatus, setCafeStatus] = useState("all");
-  const [requestStatus, setRequestStatus] = useState("all");
   const searchInput = useRef<HTMLInputElement>(null);
   const activeCount = cafes.filter((cafe) => cafe.active).length;
-  const pending = requests.filter((request) => request.status === "pending");
   const pendingByCafe = new Map(
-    pending.map((request) => [request.cafeId, request]),
+    pending.map((request) => [String(request.cafe_id), request.id]),
   );
   const query = search.trim().toLowerCase();
   const visibleCafes = cafes.filter(
@@ -91,9 +96,11 @@ export function CafeDirectory({
         field.toLowerCase().includes(query),
       ),
   );
-  const visibleRequests = requests.filter(
-    (request) => requestStatus === "all" || request.status === requestStatus,
-  );
+  const queueLocation = {
+    path: "/partner/cafes",
+    anchor: "#cafe-change-requests",
+    directorySearch: search,
+  };
 
   return (
     <>
@@ -119,7 +126,7 @@ export function CafeDirectory({
             count: cafes.length - activeCount,
             Icon: Archive,
           },
-          { label: "Awaiting review", count: pending.length, Icon: Clock3 },
+          { label: "Awaiting review", count: pendingCount, Icon: Clock3 },
         ].map(({ label, count, Icon }) => (
           <div
             key={label}
@@ -226,7 +233,7 @@ export function CafeDirectory({
                       )}
                       {pendingRequest && (
                         <Link
-                          href={pendingRequest.href}
+                          href={`/partner/cafe?id=${cafe.id}&change=${pendingRequest}`}
                           aria-label={`View pending request for ${cafe.name}`}
                           className="inline-flex min-h-8 items-center gap-1.5 text-sm font-medium text-amber-900 underline underline-offset-4"
                         >
@@ -292,21 +299,22 @@ export function CafeDirectory({
               Track reviews, resume drafts, and see feedback from Coffee Sphut.
             </p>
           </div>
-          <label className="w-full sm:w-auto">
-            <span className="sr-only">Filter change requests by status</span>
-            <select
-              className={FILTER_CLASS}
-              value={requestStatus}
-              onChange={(event) => setRequestStatus(event.currentTarget.value)}
-            >
-              <option value="all">All requests</option>
-              {Object.entries(REQUEST_STATUSES).map(([value, { label }]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
+        </div>
+        <div className="space-y-3 border-b p-4 sm:p-5">
+          <RequestQueueFilters
+            location={queueLocation}
+            query={queue.query}
+            searchLabel="Search change requests"
+            placeholder="Search by café or request reference"
+            filterLabel="Filter change requests by status"
+            options={[
+              { value: "all", label: "All requests" },
+              ...Object.entries(REQUEST_STATUSES).map(([value, { label }]) => ({ value, label })),
+            ]}
+          />
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            <RequestQueueCount queue={queue} />
+          </p>
         </div>
 
         {notice && (
@@ -314,9 +322,9 @@ export function CafeDirectory({
             {notice}
           </p>
         )}
-        {visibleRequests.length ? (
+        {requests.length > 0 && (
           <ul className="divide-y">
-            {visibleRequests.map((request) => {
+            {requests.map((request) => {
               const status = REQUEST_STATUSES[request.status];
               const action = status?.action ?? "View request";
 
@@ -375,12 +383,11 @@ export function CafeDirectory({
               );
             })}
           </ul>
-        ) : (
-          <p role="status" className="p-5 text-sm text-muted-foreground">
-            {requests.length
-              ? "No requests with this status."
-              : "Your café requests will appear here."}
-          </p>
+        )}
+        {queue.total > queue.pageSize && (
+          <div className="border-t p-4 sm:p-5">
+            <RequestQueuePagination location={queueLocation} queue={queue} />
+          </div>
         )}
       </section>
     </>

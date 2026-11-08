@@ -7,8 +7,9 @@ import { Team } from "@/components/partner/team";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { randomUUID } from "node:crypto";
-import { portalData } from "@/lib/partner/portal";
+import { portalCafeRequest, portalData } from "@/lib/partner/portal";
 import { isLocalPartnerPreview } from "@/lib/partner/preview";
+import { requestQueueQuery } from "@/lib/partner/request-queue";
 import { PartnerShell } from "@/components/partner/shell";
 import {
   Cafes,
@@ -30,7 +31,7 @@ async function loadWorkspace(
   const source =
     section === "preview-review"
       ? "staff"
-      : section === "billing" || (section === "cafe" && !query.id)
+      : section === "billing" || (section === "cafe" && (!query.id || query.change))
         ? "overview"
         : section;
   // Let Next.js redirects propagate; source failures render explicitly below.
@@ -137,16 +138,15 @@ export default async function WorkspacePage({
         </div>
       </main>
     );
-  const data = result.data;
+  let data = result.data;
   const selection =
     section === "billing" && data.plan === "free" && data.role === "owner"
       ? await portalData("selection").catch(() => null)
       : null;
-  const approvedAmenities = data.cafe?.amenities;
+  let approvedAmenities = data.cafe?.amenities;
   if (section === "cafe" && query.change) {
-    const available = await portalData("cafes");
-    const draft = available.changes.find((ch) => ch.id === query.change);
-    if (!draft) notFound();
+    const draft = await portalCafeRequest(query.change, data.chain_id);
+    if (!draft || (query.id && query.id !== String(draft.cafe_id))) notFound();
     const payload = draft.payload as Record<string, unknown>;
     const removableStatus = removableCafeChange(draft, data.actor);
     if (!["draft", "rejected"].includes(String(draft.status)))
@@ -171,7 +171,8 @@ export default async function WorkspacePage({
               {removableStatus && (
                 <DiscardCafeChangeButton
                   id={query.change}
-                  name={String(payload.name || data.cafe?.name || "this café")}
+                  name={String(payload.name ||
+                    data.cafes.find((cafe) => cafe.id === draft.cafe_id)?.name || "this café")}
                   status={removableStatus}
                 />
               )}
@@ -179,6 +180,8 @@ export default async function WorkspacePage({
           </Panel>
         </PartnerShell>
       );
+    if (draft.cafe_id) data = await portalData("cafe", { id: Number(draft.cafe_id) });
+    approvedAmenities = data.cafe?.amenities;
     data.cafe = {
       ...(data.cafe || {}),
       ...(draft.payload as Record<string, unknown>),
@@ -192,7 +195,7 @@ export default async function WorkspacePage({
       {section === "overview" ? (
         <Dashboard data={data} />
       ) : section === "cafes" ? (
-        <Cafes data={data} q={query.q} removed={query.removed} />
+        <Cafes data={data} q={query.q} removed={query.removed} queueQuery={requestQueueQuery(query)} />
       ) : section === "cafe" ? (
         <>
           {query.change &&
@@ -228,7 +231,7 @@ export default async function WorkspacePage({
       ) : section === "billing" ? (
         <PlanSettings data={data} selectionCafes={selection?.cafes} />
       ) : (
-        <StaffReviews data={data} />
+        <StaffReviews data={data} query={requestQueueQuery(query, true)} path="/partner/preview-review" />
       )}
     </PartnerShell>
   );

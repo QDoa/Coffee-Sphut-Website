@@ -650,6 +650,36 @@ test("downgrade retains private data, limits selection and restores access only 
     assert.equal((await snapshot(c, "overview")).cafes.length, 3);
   }));
 
+test("request lookup and queue results respect current partner and staff scope", () =>
+  transaction(async (c) => {
+    const drafts = (await c.query(
+      `insert into public.partner_changes(chain_id,cafe_id,submitter,payload,status)
+       values($1,101,$3,'{"name":"Queue scope assigned"}','draft'),
+             ($1,102,$3,'{"name":"Queue scope unassigned"}','draft'),
+             ($2,201,$4,'{"name":"Queue scope other tenant"}','draft')
+       returning id`,
+      [A, B, uid(1), uid(3)],
+    )).rows;
+    const lookup = async (id: string, chain: string) =>
+      (await c.query("select public.partner_cafe_request($1,$2) as result", [id, chain])).rows[0].result;
+    const queue = async (staff: boolean, page = 1) =>
+      (await c.query("select public.partner_request_queue($1,'Queue scope','all',$2) as result", [staff, page])).rows[0].result;
+
+    await actor(c, 1);
+    assert.equal((await lookup(drafts[0].id, A)).id, drafts[0].id);
+    assert.equal(await lookup(drafts[2].id, B), null);
+    assert.equal((await queue(false, 999)).request_page, 1);
+    assert.equal((await queue(false)).request_total, 2);
+    await denied(c, () => queue(true), /Staff required/);
+
+    await c.query("RESET ROLE");
+    await c.query('insert into public."AdminUser"(user_id,role) values($1,\'editor\')', [uid(2)]);
+    await actor(c, 2);
+    assert.equal(await lookup(drafts[1].id, A), null);
+    assert.equal((await queue(false)).request_total, 1);
+    assert.equal((await queue(true)).request_total, 0);
+  }));
+
 test("a staff Free downgrade requires explicit confirmation to remove all café access", () =>
   transaction(async (c) => {
     await actor(c, 4);

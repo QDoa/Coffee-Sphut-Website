@@ -68,4 +68,8 @@ fixture_pilot_safety=$(docker exec coffee-partner-test psql -U postgres -d postg
 if [[ "$fixture_pilot_safety" != 't' ]]; then
   docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261108050805_partner_pilot_safety_fixes.sql
 fi
+fixture_request_queue=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select to_regprocedure('public.partner_cafe_request(uuid,uuid)') is not null")
+if [[ "$fixture_request_queue" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261108051954_partner_request_queues.sql
+fi
 echo 'Local fixtures ready. Run pnpm partner:preview and open http://127.0.0.1:3100/partner/overview'

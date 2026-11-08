@@ -1428,6 +1428,10 @@ export type Database = {
       is_staff: { Args: never; Returns: boolean }
       log_staff_login: { Args: { p_method: string }; Returns: undefined }
       partner_can_cafe: { Args: { p_cafe: number }; Returns: boolean }
+      partner_cafe_request: {
+        Args: { p_id: string; p_chain: string }
+        Returns: Json
+      }
       partner_command: {
         Args: { p_action: string; p_input: Json }
         Returns: Json
@@ -1542,6 +1546,10 @@ export type Database = {
       partner_role: { Args: { p_chain: string }; Returns: string }
       partner_team_assignments: {
         Args: { p_chain: string }
+        Returns: Json
+      }
+      partner_request_queue: {
+        Args: { p_staff: boolean; p_search: string; p_filter: string; p_page: number }
         Returns: Json
       }
       partner_snapshot: {
