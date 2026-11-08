@@ -223,7 +223,12 @@ export default async function WorkspacePage({
       ) : section === "rewards" ? (
         <Rewards data={data} params={query} />
       ) : section === "inventory" ? (
-        <Inventory data={data} />
+        <Inventory
+          key={`${query.cafe_id || ""}:${query.item_id || ""}`}
+          data={data}
+          cafeId={query.cafe_id}
+          itemId={query.item_id}
+        />
       ) : section === "recipes" ? (
         <Recipes data={data} />
       ) : section === "team" ? (

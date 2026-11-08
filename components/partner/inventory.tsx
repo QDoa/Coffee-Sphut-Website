@@ -266,10 +266,20 @@ function StockMovementFields({
   );
 }
 
-export function Inventory({ data }: { data: PortalData }) {
+export function Inventory({ data, cafeId, itemId }: {
+  data: PortalData;
+  cafeId?: string;
+  itemId?: string;
+}) {
+  const target = data.items.find((item) => item.id === itemId && item.active);
+  const initialCafe = target
+    ? String(target.cafe_id)
+    : data.cafes.some((cafe) => String(cafe.id) === cafeId) ? cafeId ?? "" : "";
   const [search, setSearch] = useState(""),
-    [cafe, setCafe] = useState(""),
-    [filter, setFilter] = useState("all");
+    [cafe, setCafe] = useState(initialCafe),
+    [filter, setFilter] = useState("all"),
+    [focusedItem, setFocusedItem] = useState(target?.id);
+  const focusId = target?.id === focusedItem ? focusedItem : undefined;
   const [drawer, setDrawer] = useState<{
     kind: "add" | "movement" | "manage";
     id?: string;
@@ -304,6 +314,7 @@ export function Inventory({ data }: { data: PortalData }) {
     );
   const visible = scoped.filter(
     (i) =>
+      (!focusId || i.id === focusId) &&
       `${i.name} ${i.code}`.toLowerCase().includes(search.toLowerCase()) &&
       (filter === "inactive"
         ? !i.active
@@ -379,7 +390,7 @@ export function Inventory({ data }: { data: PortalData }) {
         ))}
       </div>
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_18rem]">
-        <section className="min-w-0 overflow-hidden rounded-2xl border bg-card">
+        <section id="stock-list" className="min-w-0 scroll-mt-4 overflow-hidden rounded-2xl border bg-card">
           <Tabs defaultValue="stock">
             <div className="space-y-3 border-b p-4 sm:space-y-5 sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -395,6 +406,14 @@ export function Inventory({ data }: { data: PortalData }) {
                   <TabsTrigger value="history">Activity</TabsTrigger>
                 </TabsList>
               </div>
+              {!!focusId && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-primary/5 px-3 py-2">
+                  <p className="text-sm">Showing {String(target?.name)}</p>
+                  <Button type="button" variant="ghost" className="min-h-11" onClick={() => setFocusedItem(undefined)}>
+                    Show all café items
+                  </Button>
+                </div>
+              )}
               <div className="flex flex-wrap gap-3">
                 <label className="relative min-w-0 flex-1 basis-48">
                   <span className="sr-only">Search inventory</span>
@@ -403,7 +422,10 @@ export function Inventory({ data }: { data: PortalData }) {
                     className="min-h-11 pl-9"
                     placeholder="Search items or codes…"
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setFocusedItem(undefined);
+                    }}
                   />
                 </label>
                 <label className="min-w-0 flex-1 basis-40">
@@ -411,7 +433,10 @@ export function Inventory({ data }: { data: PortalData }) {
                   <select
                     className="min-h-11 w-full rounded-xl border bg-card px-3 text-sm"
                     value={cafe}
-                    onChange={(e) => setCafe(e.target.value)}
+                    onChange={(e) => {
+                      setCafe(e.target.value);
+                      setFocusedItem(undefined);
+                    }}
                   >
                     <option value="">All cafés</option>
                     {data.cafes.map((c) => (
@@ -426,7 +451,10 @@ export function Inventory({ data }: { data: PortalData }) {
                   <select
                     className="min-h-11 w-full rounded-xl border bg-card px-3 text-sm"
                     value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
+                    onChange={(e) => {
+                      setFilter(e.target.value);
+                      setFocusedItem(undefined);
+                    }}
                   >
                     {[
                       ["all", "All active items"],

@@ -872,6 +872,33 @@ test("reward presets show their dates and invalid ranges keep the filters availa
   await expect(page.getByText(/Reporting period \d{4}-\d{2}-\d{2} to/)).toBeVisible();
 });
 
+test("stock watch explains threshold alerts and opens the exact café item", async ({ page }) => {
+  const client = await db("postgres");
+  const id = randomUUID();
+  const name = `Stock watch fixture ${id.slice(0, 8)}`;
+  try {
+    await client.query(
+      `insert into public.partner_items(id,chain_id,cafe_id,name,code,type,unit,balance,threshold)
+       values($1,'20000000-0000-4000-8000-000000000001',101,$2,$3,'ingredient','g',1,2)`,
+      [id, name, `test-${id}`],
+    );
+    await page.goto("/partner/overview");
+    const alert = page.getByRole("link", { name: new RegExp(`View ${name}`) });
+    await expect(alert.locator("../..")).toContainText("Alert threshold 2 g");
+    await alert.click();
+    await expect(page).toHaveURL(new RegExp(`item_id=${id}`));
+    await expect(page.getByLabel("Filter by café")).toHaveValue("101");
+    await expect(page.getByText(`Showing ${name}`, { exact: true })).toBeVisible();
+    await expect(page.getByText("1 items shown", { exact: false })).toBeVisible();
+    await page.getByRole("button", { name: "Show all café items" }).click();
+    await expect(page.getByText(`Showing ${name}`, { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Manage House espresso beans" })).toBeVisible();
+  } finally {
+    await client.query("delete from public.partner_items where id=$1", [id]);
+    await client.end();
+  }
+});
+
 test("dashboard chart and inventory filters are usable at mobile and desktop widths", async ({
   page,
 }) => {

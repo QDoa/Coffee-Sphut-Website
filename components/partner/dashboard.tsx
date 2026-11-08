@@ -143,25 +143,38 @@ export function Dashboard({ data }: { data: PortalData }) {
           ) : (
             <>
               <div className="mt-5 divide-y">
-                {stock.slice(0, 5).map((s) => (
+                {stock.slice(0, 5).map((s) => {
+                  const cafe = String(data.cafes.find((c) => c.id === s.item.cafe_id)?.name || "Café");
+                  const target = new URLSearchParams({
+                    cafe_id: String(s.item.cafe_id),
+                    item_id: String(s.item.id),
+                  });
+                  const reason = s.status === "Running low" ? s.runway : s.status;
+                  return (
                   <div key={String(s.item.id)} className="py-4">
                     <div className="flex justify-between gap-3">
-                      <p className="text-sm font-medium">
+                      <Link
+                        href={`/partner/inventory?${target}#stock-list`}
+                        className="text-sm font-medium text-primary underline underline-offset-4"
+                        aria-label={`View ${s.item.name} at ${cafe} in inventory`}
+                      >
                         {String(s.item.name)}
-                      </p>
+                      </Link>
                       <span className="text-xs font-medium text-amber-800">
-                        {s.runway}
+                        {reason}
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {String(
-                        data.cafes.find((c) => c.id === s.item.cafe_id)?.name ||
-                          "Café",
-                      )}{" "}
-                      · {amount(s.balance)} {String(s.item.unit)} remaining
+                      {cafe} · {amount(s.balance)} {String(s.item.unit)} remaining
                     </p>
+                    {s.status === "Low stock" && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Alert threshold {amount(s.threshold)} {String(s.item.unit)}
+                      </p>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
                 {!stock.length && (
                   <p className="py-7 text-sm text-muted-foreground">
                     No active items need attention. Estimates appear as you
