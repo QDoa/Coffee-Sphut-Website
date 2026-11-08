@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { CafeDirectory } from "./cafe-directory";
 import { ImageUploader } from "./image-uploader";
 import { type MediaSelection, EMPTY_MEDIA } from "@/lib/partner/media";
 import { cleanupImageAction } from "@/app/partner/media-actions";
@@ -176,74 +177,58 @@ function Records({ rows, columns }: { rows: Row[]; columns: string[] }) {
 }
 const cafeOptions = (d: PortalData) =>
   d.cafes.map((c) => ({ value: str(c.id), label: str(c.name) }));
-export function Cafes({ data, q = "" }: { data: PortalData; q?: string }) {
-  const rows = data.cafes.filter((c) =>
-    str(c.name).toLowerCase().includes(q.toLowerCase()),
-  );
+export function Cafes({ data, q }: { data: PortalData; q?: string }) {
+  const initialSearch = typeof q === "string" ? q : "";
+  const cafes = data.cafes.map((cafe) => ({
+    id: str(cafe.id),
+    name: str(cafe.name) || "Unnamed café",
+    address: str(cafe.address),
+    postcode: str(cafe.postcode),
+    active: cafe.is_active === true,
+  }));
+  const cafeNames = new Map(cafes.map((cafe) => [cafe.id, cafe.name]));
+  let dateFormat: Intl.DateTimeFormat;
+  try {
+    dateFormat = new Intl.DateTimeFormat("en-CA", {
+      dateStyle: "medium",
+      timeZone: data.timezone || "UTC",
+    });
+  } catch {
+    dateFormat = new Intl.DateTimeFormat("en-CA", {
+      dateStyle: "medium",
+      timeZone: "UTC",
+    });
+  }
+  const requests = data.changes.map((change) => {
+    const cafeId = str(change.cafe_id);
+    const status = str(change.status);
+    const date = str(change.reviewed_at || change.created_at);
+    const payload = change.payload as Row | null;
+    const query = new URLSearchParams({ change: str(change.id) });
+    if (cafeId) query.set("id", cafeId);
+    return {
+      id: str(change.id),
+      cafeId,
+      name: str(payload?.name) || cafeNames.get(cafeId) || "Café request",
+      status,
+      reason: status === "rejected" ? str(change.reason) : "",
+      date,
+      dateLabel: date ? dateFormat.format(new Date(date)) : "",
+      reviewed: Boolean(change.reviewed_at),
+      href:
+        status === "draft" && change.submitter !== data.actor
+          ? ""
+          : `/partner/cafe?${query}`,
+    };
+  });
   return (
-    <>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <form className="flex flex-wrap items-end gap-2">
-          <Field name="q" label="Search cafés" value={q} />
-          <Button className="min-h-11" variant="outline">
-            Search
-          </Button>
-        </form>
-        {data.role !== "cafe_manager" && (
-          <Button asChild>
-            <Link href="/partner/cafe">Request a new café</Link>
-          </Button>
-        )}
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        {rows.map((c) => (
-          <Panel key={str(c.id)} title={str(c.name)}>
-            <p className="text-sm text-muted-foreground">{str(c.address)}</p>
-            <p className="my-4 text-xs font-medium">
-              {c.is_active ? "Active" : "Archived · history preserved"}
-            </p>
-            <Button asChild variant="outline">
-              <Link href={`/partner/cafe?id=${c.id}`}>
-                Details & edit request
-              </Link>
-            </Button>
-          </Panel>
-        ))}
-      </div>
-      {!rows.length && (
-        <Panel title="No cafés to show">
-          <p className="text-sm text-muted-foreground">
-            Try another search, or ask your Owner to check assignments and
-            subscription access.
-          </p>
-        </Panel>
-      )}
-      <Panel title="Your change requests">
-        <Records
-          rows={data.changes}
-          columns={["status", "cafe_id", "reason", "created_at"]}
-        />
-        <div className="mt-4 flex flex-wrap gap-3">
-          {data.changes
-            .filter((ch) => ["draft", "rejected"].includes(str(ch.status)))
-            .map((ch) => (
-              <Link
-                key={str(ch.id)}
-                className="text-sm underline"
-                href={`/partner/cafe?${ch.cafe_id ? `id=${ch.cafe_id}&` : ""}change=${ch.id}`}
-              >
-                {ch.status === "draft"
-                  ? "Resume draft"
-                  : "Revise rejected request"}
-                {": "}
-                {str((ch.payload as Row)?.name) ||
-                  str(data.cafes.find((cafe) => cafe.id === ch.cafe_id)?.name) ||
-                  "Café request"}
-              </Link>
-            ))}
-        </div>
-      </Panel>
-    </>
+    <CafeDirectory
+      key={initialSearch}
+      initialSearch={initialSearch}
+      cafes={cafes}
+      requests={requests}
+      canAdd={data.role === "owner" || data.role === "chain_manager"}
+    />
   );
 }
 export function CafeEditor({

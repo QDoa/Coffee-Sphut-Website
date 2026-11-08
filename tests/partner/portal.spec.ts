@@ -64,6 +64,9 @@ test("removal archives an existing café after approval without submitting unsav
 
   const list = `/partner/cafes?q=${encodeURIComponent(name)}`;
   await page.goto(list);
+  const directory = page.getByRole("region", { name: "Café directory" });
+  await expect(directory.getByLabel("Search cafés")).toHaveValue(name);
+  await expect(directory.getByRole("status")).toContainText("Showing 1 of");
   await page.getByRole("link", { name: "Details & edit request" }).click();
   await expect(page).toHaveURL(/\/partner\/cafe\?id=\d+$/);
   const cafeUrl = page.url();
@@ -79,7 +82,11 @@ test("removal archives an existing café after approval without submitting unsav
   await expect(
     page.getByText("Café removal request", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("status")).toContainText("pending");
+  await expect(page.getByRole("status")).toContainText("awaiting review");
+
+  await page.goto(list);
+  await directory.getByRole("link", { name: "View pending request" }).click();
+  await expect(page.getByRole("status")).toContainText("awaiting review");
 
   await page.goto(cafeUrl);
   await expect(page.getByLabel("Active café")).toBeChecked();
@@ -104,6 +111,31 @@ test("removal archives an existing café after approval without submitting unsav
   await expect(remove).toHaveCount(0);
   await page.goto(list);
   await expect(page.getByText("Archived · history preserved")).toBeVisible();
+  const cafeFilter = directory.getByLabel("Filter cafés by status");
+  await cafeFilter.selectOption("active");
+  await expect(directory.getByText("No cafés match these filters")).toBeVisible();
+  await directory.getByRole("button", { name: "Clear café filters" }).click();
+  await expect(cafeFilter).toHaveValue("all");
+  await directory.getByLabel("Search cafés").fill(address);
+  await cafeFilter.selectOption("archived");
+  await expect(directory.getByRole("heading", { name, exact: true })).toBeVisible();
+
+  const requests = page.getByRole("region", { name: "Change requests" });
+  await requests
+    .getByLabel("Filter change requests by status")
+    .selectOption("approved");
+  const approvedRequests = requests.getByRole("listitem").filter({
+    has: page.getByRole("heading", { name, exact: true }),
+  });
+  await expect(approvedRequests).toHaveCount(2);
+  await expect(
+    approvedRequests.first().getByText("Approved", { exact: true }),
+  ).toBeVisible();
+  await approvedRequests
+    .first()
+    .getByRole("link", { name: `View request: ${name}` })
+    .click();
+  await expect(page.getByRole("status")).toContainText("approved this request");
 });
 
 test("stock movements preview balances in the selected item's unit before saving", async ({
@@ -283,6 +315,17 @@ test("responsive layouts fit mobile, intermediate and desktop widths", async ({
       path: `.partner-portal/inventory-${width}.png`,
       fullPage: true,
     });
+    await page.goto("/partner/cafes");
+    await expect(
+      page.getByRole("region", { name: "Café directory" }),
+    ).toBeVisible();
+    await page.getByRole("link", { name: "Jump to change requests" }).click();
+    await expect(page).toHaveURL(/#cafe-change-requests$/);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
   }
 });
 

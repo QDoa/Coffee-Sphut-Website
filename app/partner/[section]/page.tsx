@@ -149,7 +149,9 @@ export default async function WorkspacePage({
             }
           >
             <p role="status">
-              Submitted for review. Current status: {String(draft.status)}.
+              {draft.status === "approved"
+                ? "Coffee Sphut approved this request."
+                : "Submitted to Coffee Sphut and awaiting review."}
             </p>
             <Link className="underline" href="/partner/cafes">
               Return to cafés
