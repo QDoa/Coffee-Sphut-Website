@@ -842,6 +842,20 @@ test("an administrator can clean up a detached upload through the real Storage A
   expect(response.status()).toBe(404);
 });
 
+test("reward presets show their dates and invalid ranges keep the filters available", async ({ page }) => {
+  await page.goto("/partner/rewards");
+  await page.getByRole("link", { name: "This week" }).click();
+  await expect(page.getByText(/Reporting period \d{4}-\d{2}-\d{2} to/)).toBeVisible();
+  await expect(page.getByLabel("From", { exact: true })).not.toHaveValue("");
+  await page.getByLabel("From", { exact: true }).fill("2026-12-02");
+  await page.getByLabel("Through", { exact: true }).fill("2026-12-01");
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect(page.getByText("Choose an end date on or after the start date.")).toBeVisible();
+  await expect(page.getByLabel("From", { exact: true })).toHaveValue("2026-12-02");
+  await page.getByRole("link", { name: "Last 30 days" }).click();
+  await expect(page.getByText(/Reporting period \d{4}-\d{2}-\d{2} to/)).toBeVisible();
+});
+
 test("dashboard chart and inventory filters are usable at mobile and desktop widths", async ({
   page,
 }) => {

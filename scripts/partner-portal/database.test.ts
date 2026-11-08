@@ -802,6 +802,7 @@ test("only Owners can edit a manager in place and concurrent edits preserve curr
 test("reward capture attributes redemption to B even when earned at A; reports use explicit status", () =>
   transaction(async (c) => {
     const id = randomUUID();
+    await c.query("update public.partner_accounts set reward_coverage_at=now()-interval '1 minute' where chain_id=$1", [A]);
     await c.query(
       'insert into public."Rewards"(id,user_id,chain_id,earned_store) values($1,$2,$3,101)',
       [id, uid(1), A],
@@ -809,7 +810,12 @@ test("reward capture attributes redemption to B even when earned at A; reports u
     await actor(c, 1);
     await c.query("select public.redeem_reward($1,$2)", [id, "local-only-102"]);
     const report = await snapshot(c, "rewards", { cafe_id: 102 });
-    assert.equal(report.total, 5);
+    assert.equal(report.total, 1);
+    const week = await snapshot(c, "rewards", { range: "week" });
+    const insights = (await c.query("select public.partner_insights() as result")).rows[0].result;
+    assert.equal(week.total, insights.weekly_rewards.at(-1).total);
+    assert.ok(week.reward_from <= week.reward_to);
+    assert.match((await snapshot(c, "rewards", { from: "2026-12-02", to: "2026-12-01" })).reward_error, /end date/);
     assert.ok(
       report.events.every((x: { cafe_id: number }) => x.cafe_id === 102),
     );

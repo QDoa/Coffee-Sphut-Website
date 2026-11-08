@@ -423,9 +423,22 @@ export function Rewards({
       ? "Time unavailable"
       : dateFormat.format(date);
   }
+  const range = params.from || params.to ? "" : params.range === "week" ? "week" : "month";
   return (
     <>
       <Panel title="Reward usage">
+        <div className="mb-4 flex flex-wrap gap-2" aria-label="Date presets">
+          {[["week", "This week"], ["month", "Last 30 days"]].map(([key, label]) => (
+            <Button key={key} asChild variant={range === key ? "secondary" : "outline"} className="min-h-11">
+              <Link
+                href={`?${new URLSearchParams({ range: key, ...(params.cafe_id ? { cafe_id: params.cafe_id } : {}) })}`}
+                aria-current={range === key ? "true" : undefined}
+              >
+                {label}
+              </Link>
+            </Button>
+          ))}
+        </div>
         <form className="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Select
             name="cafe_id"
@@ -436,10 +449,14 @@ export function Rewards({
               ...cafeOptions(data),
             ]}
           />
-          <Field name="from" label="From" type="date" value={params.from} />
-          <Field name="to" label="Through" type="date" value={params.to} />
+          <Field name="from" label="From" type="date" value={params.from ?? data.reward_from} />
+          <Field name="to" label="Through" type="date" value={params.to ?? data.reward_to} />
           <Button className="min-h-11">Apply filters</Button>
         </form>
+        {data.reward_error ? (
+          <p role="alert" className="mt-3 text-sm text-destructive">{data.reward_error}</p>
+        ) : (
+          <>
         <p className="mt-6 font-serif text-4xl">
           {data.total || 0}{" "}
           <span className="font-sans text-sm text-muted-foreground">
@@ -447,12 +464,13 @@ export function Rewards({
           </span>
         </p>
         <p className="mt-3 text-xs text-muted-foreground">
-          Workspace activated {data.coverage_at?.slice(0, 10)}. Earlier
-          unattributed records are excluded.
-          {data.refreshed_at && <> Refreshed {formatTime(data.refreshed_at)}.</>}
+          Reporting period {data.reward_from} to {data.reward_to}.
+          {data.coverage_at && <> Tracking began {formatTime(data.coverage_at)}.</>}
         </p>
+          </>
+        )}
       </Panel>
-      <Panel title="Redemption events">
+      {!data.reward_error && <Panel title="Redemption events">
         <p className="text-sm text-muted-foreground">
           Times shown in{" "}
           {dateFormat.resolvedOptions().timeZone.replaceAll("_", " ")}.
@@ -513,7 +531,7 @@ export function Rewards({
             </Link>
           )}
         </div>
-      </Panel>
+      </Panel>}
     </>
   );
 }

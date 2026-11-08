@@ -72,4 +72,8 @@ fixture_request_queue=$(docker exec coffee-partner-test psql -U postgres -d post
 if [[ "$fixture_request_queue" != 't' ]]; then
   docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261108051954_partner_request_queues.sql
 fi
+fixture_reward_ranges=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select strpos(pg_get_functiondef('public.partner_snapshot(text,jsonb)'::regprocedure),'reward_from') > 0")
+if [[ "$fixture_reward_ranges" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261108055121_align_partner_reward_reporting.sql
+fi
 echo 'Local fixtures ready. Run pnpm partner:preview and open http://127.0.0.1:3100/partner/overview'

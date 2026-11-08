@@ -78,7 +78,7 @@ export function Dashboard({ data }: { data: PortalData }) {
               </p>
             </div>
             <Link
-              href="/partner/rewards"
+              href="/partner/rewards?range=week"
               className="text-sm font-medium text-primary underline underline-offset-4"
             >
               View activity
