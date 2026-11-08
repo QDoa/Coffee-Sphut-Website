@@ -25,6 +25,7 @@ export const portalSchema = z.object({
   recipes: rows,
   ingredients: rows,
   members: rows,
+  manager_assignments: z.record(z.string(), z.array(z.number())).default({}),
   invitations: rows,
   accounts: rows,
   events: rows,
@@ -80,6 +81,15 @@ export async function portalData(
   });
   if (error) throw new Error(error.message);
   const parsed = portalSchema.parse(data);
+  if (section === "team" && parsed.role === "owner" && parsed.chain_id) {
+    const assignments = await client.rpc("partner_team_assignments", {
+      p_chain: parsed.chain_id,
+    });
+    if (assignments.error) throw new Error(assignments.error.message);
+    parsed.manager_assignments = portalSchema.shape.manager_assignments.parse(
+      assignments.data,
+    );
+  }
   if (section === "staff") {
     const [media, admin] = await Promise.all([
       client

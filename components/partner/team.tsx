@@ -3,7 +3,7 @@ import { MailPlus, Users } from "lucide-react";
 import type { PortalData } from "@/lib/partner/portal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { InviteManagerForm, RevokeTeamAccess } from "./team-controls";
+import { EditManagerAccess, InviteManagerForm, RevokeTeamAccess } from "./team-controls";
 
 const ROLE_LABELS: Record<string, string> = {
   owner: "Owner",
@@ -55,23 +55,39 @@ export function Team({ data, loadedAt }: { data: PortalData; loadedAt: number })
   const history = invitations.filter((invitation) => invitation.status !== "Pending");
 
   function memberRows(rows: typeof members) {
-    return rows.map(({ id, email, role, you, active }) => (
-      <li key={id} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-4 py-3 sm:px-5">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="min-w-0 text-sm font-medium [overflow-wrap:anywhere]">{email}</p>
-            {you && <Badge variant="secondary">You</Badge>}
+    return rows.map(({ id, email, role, you, active }) => {
+      const assignedIds = data.manager_assignments[id] ?? [];
+      const assignedNames = assignedIds
+        .map((cafeId) => cafeNames.get(String(cafeId)))
+        .filter(Boolean);
+      const unavailable = assignedIds.length - assignedNames.length;
+      const scope = role === "cafe_manager" && active
+        ? [
+            ...assignedNames,
+            unavailable ? `${unavailable} unavailable ${unavailable === 1 ? "café" : "cafés"}` : "",
+          ].filter(Boolean).join(", ") || "No cafés assigned"
+        : ROLE_ACCESS[role];
+      return (
+        <li key={id} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-4 py-3 sm:px-5">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="min-w-0 text-sm font-medium [overflow-wrap:anywhere]">{email}</p>
+              {you && <Badge variant="secondary">You</Badge>}
+            </div>
+            <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
+              {ROLE_LABELS[role]} <span aria-hidden="true">·</span> {scope}
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {ROLE_LABELS[role]} <span aria-hidden="true">·</span> {ROLE_ACCESS[role]}
-          </p>
-        </div>
-        {active && role !== "owner" && (
-          <RevokeTeamAccess id={id} email={email} requestId={randomUUID()} />
-        )}
-        {!active && <Badge variant="outline">Access removed</Badge>}
-      </li>
-    ));
+          {active && (role === "chain_manager" || role === "cafe_manager") && (
+            <div className="flex flex-wrap items-start gap-1">
+              <EditManagerAccess id={id} email={email} role={role} assignedIds={assignedIds} cafes={cafes} />
+              <RevokeTeamAccess id={id} email={email} requestId={randomUUID()} />
+            </div>
+          )}
+          {!active && <Badge variant="outline">Access removed</Badge>}
+        </li>
+      );
+    });
   }
 
   function invitationRows(rows: typeof invitations) {

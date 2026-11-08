@@ -71,6 +71,37 @@ export async function discardCafeChange(
   redirect(`/partner/cafes?removed=${status}#cafe-change-requests`);
 }
 
+const managerAccessSchema = z.object({
+  p_member: z.uuid(),
+  p_expected_role: z.enum(["chain_manager", "cafe_manager"]),
+  p_expected_cafe_ids: z.array(z.number().int().positive()),
+  p_role: z.enum(["chain_manager", "cafe_manager"]),
+  p_cafe_ids: z.array(z.number().int().positive()),
+});
+
+export async function editManagerAccess(
+  memberId: string,
+  expectedRole: string,
+  expectedCafeIds: number[],
+  form: FormData,
+): Promise<PortalActionState> {
+  const input = managerAccessSchema.safeParse({
+    p_member: memberId,
+    p_expected_role: expectedRole,
+    p_expected_cafe_ids: expectedCafeIds,
+    p_role: form.get("role"),
+    p_cafe_ids: form.getAll("cafe_ids").map(Number),
+  });
+  if (!input.success) return { error: "Choose a manager role and valid cafés." };
+
+  const client = await portalClient();
+  const { error } = await client.rpc("partner_edit_manager_access", input.data);
+  if (error) return { error: error.message };
+
+  revalidatePath("/partner", "layout");
+  return { message: "Manager access updated." };
+}
+
 export async function commandAction(
   _previous: PortalActionState,
   form: FormData,

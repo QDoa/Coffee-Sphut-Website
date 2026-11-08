@@ -679,6 +679,63 @@ test("invitation acceptance is bound to email, role, cafe scope and single activ
     );
   }));
 
+test("only Owners can edit a manager in place and concurrent edits preserve current access", () =>
+  transaction(async (c) => {
+    const member = "30000000-0000-4000-8000-000000000002";
+    const owner = "30000000-0000-4000-8000-000000000001";
+    const edit = (id: string, priorRole: string, prior: number[], role: string, cafes: number[]) =>
+      c.query("select public.partner_edit_manager_access($1,$2,$3,$4,$5)", [
+        id, priorRole, prior, role, cafes,
+      ]);
+    const assignments = async () =>
+      (await c.query("select public.partner_team_assignments($1) as result", [A])).rows[0].result;
+    const assignRiverside = () => edit(member, "cafe_manager", [101], "cafe_manager", [102]);
+
+    for (const actorId of [2, 3, 4]) {
+      await actor(c, actorId);
+      await denied(c, assignRiverside, /Only the workspace Owner/);
+      assert.deepEqual(await assignments(), {});
+    }
+    await actor(c, 1);
+    assert.deepEqual((await assignments())[member], [101]);
+    await denied(c, () => edit(owner, "owner", [], "chain_manager", []), /no longer available/);
+    await denied(c, () => edit(member, "cafe_manager", [101], "owner", []), /Choose Chain Manager/);
+    await denied(c, () => edit(member, "cafe_manager", [101], "cafe_manager", []), /at least one/);
+    await denied(c, () => edit(member, "cafe_manager", [101], "cafe_manager", [201]), /unavailable/);
+    await assignRiverside();
+    await assignRiverside(); // An identical retry does not write another audit entry.
+    await denied(c, () => edit(member, "cafe_manager", [101], "chain_manager", []), /access changed/);
+    assert.deepEqual((await assignments())[member], [102]);
+    await actor(c, 2);
+    await denied(c, () => snapshot(c, "cafe", { id: 101 }), /access denied/);
+    assert.equal((await snapshot(c, "cafe", { id: 102 })).cafe.id, 102);
+
+    await c.query("RESET ROLE");
+    await c.query("update public.partner_cafe_access set restricted=true where cafe_id=102");
+    await actor(c, 1);
+    await edit(member, "cafe_manager", [102], "cafe_manager", [101, 102]);
+    assert.deepEqual((await assignments())[member], [101, 102]);
+    await denied(
+      c,
+      () => edit(member, "cafe_manager", [101, 102], "cafe_manager", [102]),
+      /at least one available café/,
+    );
+    await edit(member, "cafe_manager", [101, 102], "chain_manager", []);
+    assert.equal((await assignments())[member], undefined);
+    const { rows } = await c.query(
+      "select id, role, revoked_at from public.partner_memberships where id=$1",
+      [member],
+    );
+    assert.deepEqual(rows, [{ id: member, role: "chain_manager", revoked_at: null }]);
+    const audit = await c.query(
+      "select 1 from public.partner_audit where action='edit_manager_access' and target=$1",
+      [member],
+    );
+    assert.equal(audit.rowCount, 3);
+    await command(c, "revoke_member", { id: member });
+    await denied(c, () => edit(member, "chain_manager", [], "cafe_manager", [101]), /no longer available/);
+  }));
+
 test("reward capture attributes redemption to B even when earned at A; reports use explicit status", () =>
   transaction(async (c) => {
     const id = randomUUID();

@@ -1440,6 +1440,16 @@ export type Database = {
         Args: { p_change: string; p_status: string }
         Returns: boolean
       }
+      partner_edit_manager_access: {
+        Args: {
+          p_member: string
+          p_expected_role: string
+          p_expected_cafe_ids: number[]
+          p_role: string
+          p_cafe_ids: number[]
+        }
+        Returns: undefined
+      }
       partner_insights: { Args: never; Returns: Json }
       partner_media_cleanup: {
         Args: { p_id: string; p_result?: string }
@@ -1526,6 +1536,10 @@ export type Database = {
         Returns: Json
       }
       partner_role: { Args: { p_chain: string }; Returns: string }
+      partner_team_assignments: {
+        Args: { p_chain: string }
+        Returns: Json
+      }
       partner_snapshot: {
         Args: { p_input?: Json; p_section?: string }
         Returns: Json

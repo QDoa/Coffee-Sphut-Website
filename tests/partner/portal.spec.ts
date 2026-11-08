@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { randomUUID } from "node:crypto";
+import { db } from "../../scripts/partner-portal/database";
 test("all partner screens render without sign-in in the loopback preview", async ({
   page,
 }) => {
@@ -57,6 +58,62 @@ test("team invitations explain access, can be copied, and can be revoked", async
   await invitations.getByText(/Invitation history/).click();
   await expect(row).toContainText("Revoked");
   await expect(row.getByRole("button")).toHaveCount(0);
+});
+
+test("Owners can update a manager’s role and cafés without a new invitation", async ({
+  page,
+}) => {
+  const memberId = randomUUID();
+  const userId = randomUUID();
+  const email = `edit-manager-${userId}@example.test`;
+  const chain = "20000000-0000-4000-8000-000000000001";
+  const client = await db("postgres");
+  try {
+    await client.query("insert into auth.users(id,email) values($1,$2)", [userId, email]);
+    await client.query(
+      "insert into public.partner_memberships(id,chain_id,user_id,role) values($1,$2,$3,'cafe_manager')",
+      [memberId, chain, userId],
+    );
+    await client.query(
+      "insert into public.partner_assignments(membership_id,chain_id,cafe_id) values($1,$2,101)",
+      [memberId, chain],
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/partner/team");
+    const members = page.getByRole("region", { name: "Team members" });
+    const row = members.getByRole("listitem").filter({ hasText: email });
+    const edit = row.getByRole("button", { name: /Edit access/ });
+    const dialog = page.getByRole("dialog", { name: "Edit manager access" });
+    const save = dialog.getByRole("button", { name: "Save access" });
+    await expect(members.getByRole("button", { name: "Edit access for owner@example.test" })).toHaveCount(0);
+    await edit.click();
+    await expect(dialog).toBeInViewport();
+    await expect(dialog.getByRole("radio", { name: /Café Manager/ })).toBeChecked();
+    await expect(dialog.getByRole("checkbox", { name: /North Star • Downtown/ })).toBeChecked();
+    await expect(save).toBeDisabled();
+    await dialog.getByRole("radio", { name: /Chain Manager/ }).check();
+    await save.click();
+    await expect(dialog).toHaveCount(0);
+    await expect(row).toContainText("Chain Manager");
+
+    await edit.click();
+    await dialog.getByRole("radio", { name: /Café Manager/ }).check();
+    await expect(save).toBeDisabled();
+    await dialog.getByRole("checkbox", { name: /North Star • Riverside/ }).check();
+    await save.click();
+    await expect(row).toContainText("North Star • Riverside");
+    await expect(row.getByRole("status")).toHaveText("Manager access updated.");
+    await page.reload();
+    await expect(row).toContainText("Café Manager");
+    await edit.click();
+    await expect(dialog.getByRole("checkbox", { name: /North Star • Riverside/ })).toBeChecked();
+    await expect(dialog.getByRole("checkbox", { name: /North Star • Downtown/ })).not.toBeChecked();
+  } finally {
+    await client.query("delete from public.partner_assignments where membership_id=$1", [memberId]);
+    await client.query("delete from public.partner_memberships where id=$1", [memberId]);
+    await client.query("delete from auth.users where id=$1", [userId]);
+    await client.end();
+  }
 });
 
 test("Paid plan settings show plan features and the reporting timezone", async ({
