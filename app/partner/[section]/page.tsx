@@ -1,3 +1,4 @@
+import { StaffReviews } from "@/components/partner/staff-reviews";
 import { Dashboard } from "@/components/partner/dashboard";
 import { Inventory } from "@/components/partner/inventory";
 import { PlanSettings } from "@/components/partner/plan-settings";
@@ -13,7 +14,6 @@ import {
   Cafes,
   CafeEditor,
   Rewards,
-  StaffReviews,
   Panel,
   Field,
   removableCafeChange,

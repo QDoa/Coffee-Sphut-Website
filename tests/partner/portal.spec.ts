@@ -1,6 +1,24 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { db } from "../../scripts/partner-portal/database";
+function reviewCard(page: Page, name: string): Locator {
+  return page.locator("section").filter({
+    has: page.getByText(name, { exact: true }),
+  });
+}
+
+async function openReview(page: Page, name: string): Promise<Locator> {
+  const card = reviewCard(page, name);
+  await card.getByRole("heading").getByRole("button").click();
+  return card;
+}
+
+async function approveReview(page: Page, card: Locator): Promise<void> {
+  await card.getByRole("button", { name: "Approve request", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Approve request" }).click();
+  await expect(card).toHaveCount(0);
+}
+
 test("all partner screens render without sign-in in the loopback preview", async ({
   page,
 }) => {
@@ -137,6 +155,7 @@ test("cafe edit stays pending until an independent reviewer publishes it", async
 }) => {
   const address = `Browser verified ${randomUUID().slice(0, 8)}`;
   await page.goto("/partner/cafe?id=101");
+  const cafeName = await page.getByLabel("Café name", { exact: true }).inputValue();
   await page.getByLabel("Address", { exact: true }).fill(address);
   await page.getByRole("button", { name: "Submit for review" }).click();
   await expect(page.getByRole("status")).toContainText("Submitted");
@@ -145,15 +164,51 @@ test("cafe edit stays pending until an independent reviewer publishes it", async
     address,
   );
   await page.goto("/partner/preview-review");
-  const request = page.locator("section").filter({ hasText: address });
-  await expect(request).toBeVisible();
-  await request.getByRole("button", { name: "Approve request" }).click();
-  await expect(request).toHaveCount(0);
+  const request = await openReview(page, cafeName);
+  await expect(request.getByText("Current", { exact: true }).first()).toBeVisible();
+  await expect(request.getByText(address, { exact: true })).toBeVisible();
+  await expect(request.getByText(/Unchanged fields/)).toBeVisible();
+  await approveReview(page, request);
   await page.goto("/partner/cafe?id=101");
   await expect(page.getByLabel("Address", { exact: true })).toHaveValue(
     address,
   );
 });
+test("staff can filter the review queue and reject a request with feedback", async ({
+  page,
+}) => {
+  const name = `Review queue test ${randomUUID().slice(0, 8)}`;
+  const feedback = "Please add the café’s street address.";
+  await page.goto("/partner/cafe");
+  await page.getByLabel("Café name", { exact: true }).fill(name);
+  await page.getByRole("button", { name: "Submit for review" }).click();
+  await expect(page.getByRole("status")).toContainText("Submitted");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/partner/preview-review");
+  await page.getByLabel("Search review requests").fill(name);
+  await expect(page.getByRole("status")).toContainText("Showing 1 of");
+  const filter = page.getByLabel("Filter by request type");
+  await filter.selectOption("removal");
+  await expect(page.getByText("No requests match these filters.")).toBeVisible();
+  await filter.selectOption("new");
+  const card = await openReview(page, name);
+  await card.getByRole("button", { name: "Reject request" }).click();
+  const dialog = page.getByRole("dialog");
+  const reject = dialog.getByRole("button", { name: "Reject request" });
+  await expect(reject).toBeDisabled();
+  await dialog.getByLabel("Rejection reason").fill(feedback);
+  await reject.click();
+  await expect(card).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText(`Rejected the request for ${name}.`);
+
+  await page.goto("/partner/cafes");
+  const request = page.getByRole("region", { name: "Change requests" })
+    .getByRole("listitem").filter({ hasText: name });
+  await expect(request).toContainText("Changes requested");
+  await expect(request).toContainText(feedback);
+});
+
 test("removal archives an existing café after approval without submitting unsaved edits", async ({
   page,
 }) => {
@@ -166,11 +221,7 @@ test("removal archives an existing café after approval without submitting unsav
   await expect(page.getByRole("status")).toContainText("Submitted");
 
   await page.goto("/partner/preview-review");
-  const creation = page.locator("section").filter({
-    has: page.getByRole("cell", { name, exact: true }),
-  });
-  await creation.getByRole("button", { name: "Approve request" }).click();
-  await expect(creation).toHaveCount(0);
+  await approveReview(page, await openReview(page, name));
 
   const list = `/partner/cafes?q=${encodeURIComponent(name)}`;
   await page.goto(list);
@@ -208,12 +259,9 @@ test("removal archives an existing café after approval without submitting unsav
   );
 
   await page.goto("/partner/preview-review");
-  const removal = page.locator("section").filter({
-    has: page.getByRole("heading", { name, exact: true }),
-  });
+  const removal = await openReview(page, name);
   await expect(removal).toContainText("removes this café from public listings");
-  await removal.getByRole("button", { name: "Approve request" }).click();
-  await expect(removal).toHaveCount(0);
+  await approveReview(page, removal);
 
   await page.goto(cafeUrl);
   await expect(page.getByLabel("Active café")).not.toBeChecked();
@@ -277,11 +325,7 @@ test("a partner can discard a draft and withdraw a café removal request", async
   await page.getByRole("button", { name: "Submit for review" }).click();
   await expect(page.getByRole("status")).toContainText("Submitted");
   await page.goto("/partner/preview-review");
-  const creation = page.locator("section").filter({
-    has: page.getByRole("cell", { name, exact: true }),
-  });
-  await creation.getByRole("button", { name: "Approve request" }).click();
-  await expect(creation).toHaveCount(0);
+  await approveReview(page, await openReview(page, name));
 
   await page.goto(`/partner/cafes?q=${encodeURIComponent(name)}`);
   await page.getByRole("link", { name: "Details & edit request" }).click();
@@ -493,7 +537,11 @@ test("responsive layouts fit mobile, intermediate and desktop widths", async ({
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    for (const [route, title] of [["team", "Team"], ["billing", "Plan & settings"]]) {
+    for (const [route, title] of [
+      ["team", "Team"],
+      ["billing", "Plan & settings"],
+      ["preview-review", "Staff review"],
+    ]) {
       await page.goto(`/partner/${route}`);
       await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
       expect(
@@ -619,7 +667,7 @@ test("managed images stay private through draft resume and render for the review
     .click();
   await expect(page.getByRole("status")).toContainText("Submitted");
   await page.goto("/partner/preview-review");
-  const request = page.locator("section").filter({ hasText: name });
+  const request = await openReview(page, name);
   await expect(request.getByAltText("Proposed cover")).toBeVisible();
   await expect(request.getByAltText("Proposed gallery 2")).toBeVisible();
   await request.getByAltText("Proposed cover").scrollIntoViewIfNeeded();
@@ -632,10 +680,7 @@ test("managed images stay private through draft resume and render for the review
         ),
     )
     .toBe(true);
-  await request
-    .getByRole("button", { name: "Approve request", exact: true })
-    .click();
-  await expect(request).toHaveCount(0);
+  await approveReview(page, request);
 });
 
 test("an administrator can clean up a detached upload through the real Storage API", async ({
@@ -655,11 +700,15 @@ test("an administrator can clean up a detached upload through the real Storage A
   );
   await page.getByRole("button", { name: "Remove cover", exact: true }).click();
   await page.goto("/partner/preview-review");
-  await page.getByLabel("Upload ID", { exact: true }).fill(cover);
-  await page
+  await page.getByRole("link", { name: "Jump to administrator tools" }).click();
+  await expect(page).toHaveURL(/#review-admin-tools$/);
+  const admin = page.getByRole("region", { name: "Administrator tools" });
+  await admin.getByText("Upload cleanup", { exact: true }).click();
+  await admin.getByLabel("Upload ID", { exact: true }).fill(cover);
+  await admin
     .getByRole("button", { name: "Remove unused upload", exact: true })
     .click();
-  await expect(page.getByRole("status")).toContainText("Unused upload removed");
+  await expect(admin.getByRole("status")).toContainText("Unused upload removed");
   const response = await page.request.get(`/partner/media/${cover}`);
   expect(response.status()).toBe(404);
 });

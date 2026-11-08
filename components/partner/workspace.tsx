@@ -1,9 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import { CafeDirectory } from "./cafe-directory";
 import { ImageUploader } from "./image-uploader";
 import { type MediaSelection, EMPTY_MEDIA } from "@/lib/partner/media";
-import { cleanupImageAction } from "@/app/partner/media-actions";
 import { CAFE_AMENITIES } from "@/lib/partner/amenities";
 import { randomUUID } from "node:crypto";
 import { ActionForm } from "./action-form";
@@ -14,14 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
 import type { ReactNode } from "react";
 type Row = Record<string, unknown>;
 const str = (x: unknown) =>
@@ -90,7 +80,7 @@ function Area({
     </div>
   );
 }
-function Select({
+export function Select({
   name,
   label,
   options,
@@ -133,46 +123,6 @@ export function Panel({
       </CardHeader>
       <CardContent>{children}</CardContent>
     </Card>
-  );
-}
-function Records({ rows, columns }: { rows: Row[]; columns: string[] }) {
-  return rows.length ? (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          {columns.map((k) => (
-            <TableHead key={k}>
-              {(
-                {
-                  id: "Reference",
-                  cafe_id: "Café",
-                  cafe_name: "Café",
-                  created_at: "Recorded",
-                  occurred_at: "Redeemed",
-                  low_stock: "Stock status",
-                } as Record<string, string>
-              )[k] || k.replaceAll("_", " ")}
-            </TableHead>
-          ))}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {rows.map((row, i) => (
-          <TableRow key={str(row.id) || i}>
-            {columns.map((k) => (
-              <TableCell
-                key={k}
-                className="max-w-72 whitespace-normal break-words"
-              >
-                {str(row[k])}
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  ) : (
-    <p className="py-6 text-sm text-muted-foreground">No records yet.</p>
   );
 }
 const cafeOptions = (d: PortalData) =>
@@ -555,193 +505,5 @@ export function Rewards({
         </div>
       </Panel>
     </>
-  );
-}
-export function StaffReviews({ data }: { data: PortalData }) {
-  return (
-    <div className="space-y-6">
-      <Panel title="Pending café reviews">
-        <p className="mb-6 text-sm text-muted-foreground">
-          Approve the complete request or reject it with a reason. Self-review
-          and outdated baselines are blocked.
-        </p>
-        {!data.changes.length && <p>No requests awaiting review.</p>}
-        <div className="space-y-6">
-          {data.changes.map((ch) => (
-            <section key={str(ch.id)} className="min-w-0 rounded-xl border p-4">
-              <h3 className="mb-3 font-serif text-xl">
-                {str(ch.cafe_name) || "New café request"}
-              </h3>
-              <p className="mb-4 break-all text-xs text-muted-foreground">
-                Request {str(ch.id)} · submitted {str(ch.created_at)}
-              </p>
-              {!!ch.cafe_id && (ch.payload as Row)?.is_active === false && (
-                <p className="mb-4 text-sm font-medium">
-                  Approval removes this café from public listings and keeps
-                  its history in the workspace.
-                </p>
-              )}
-              <Records
-                rows={Object.entries((ch.payload || {}) as Row).map(
-                  ([field, proposed]) => ({
-                    field,
-                    current: str((ch.current_values as Row | null)?.[field]),
-                    proposed: str(proposed),
-                  }),
-                )}
-                columns={["field", "current", "proposed"]}
-              />
-              <div className="my-4 flex flex-wrap gap-4">
-                {(() => {
-                  const media =
-                    (ch.media as unknown as MediaSelection) || EMPTY_MEDIA;
-                  return [
-                    ...(media.cover
-                      ? [{ id: media.cover, label: "Proposed cover" }]
-                      : []),
-                    ...media.gallery.map((id, i) => ({
-                      id,
-                      label: `Proposed gallery ${i + 1}`,
-                    })),
-                  ].map(({ id, label }) => (
-                    <figure key={`${id}-${label}`}>
-                      <Image
-                        src={`/partner/media/${id}?review=1`}
-                        alt={label}
-                        width={240}
-                        height={180}
-                        unoptimized
-                        className="h-45 w-60 max-w-full rounded-lg object-cover"
-                      />
-                      <figcaption className="mt-2 text-sm">{label}</figcaption>
-                    </figure>
-                  ));
-                })()}
-              </div>
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <ActionForm
-                  operation="review"
-                  context={context(data, {
-                    chain_id: ch.chain_id,
-                    id: ch.id,
-                    decision: "approve",
-                  })}
-                  label="Approve request"
-                >
-                  <p className="text-xs text-muted-foreground">
-                    Approves publication of the images and café details. If an
-                    image copy fails, retry approval; the current listing stays
-                    unchanged.
-                  </p>
-                </ActionForm>
-                <ActionForm
-                  operation="review"
-                  context={context(data, {
-                    chain_id: ch.chain_id,
-                    id: ch.id,
-                    decision: "reject",
-                  })}
-                  label="Reject request"
-                >
-                  <Field name="reason" label="Rejection reason" required />
-                </ActionForm>
-              </div>
-            </section>
-          ))}
-        </div>
-      </Panel>
-      {data.staff_admin && (
-        <>
-          <Panel title="Upload cleanup">
-            <p className="mb-4 text-sm text-muted-foreground">
-              Administrators can remove an unused upload by its ID. Draft,
-              pending and live image references are protected. Failed cleanup
-              remains available for retry.
-            </p>
-            <Records
-              rows={data.media.map((m) => ({
-                id: m.id,
-                state: m.state,
-                created_at: m.created_at,
-                cleanup_error: m.cleanup_error,
-              }))}
-              columns={["id", "state", "created_at", "cleanup_error"]}
-            />
-            <ActionForm
-              action={cleanupImageAction}
-              label="Remove unused upload"
-            >
-              <Field name="id" label="Upload ID" required />
-            </ActionForm>
-          </Panel>
-          <Panel title="Provision a partner Owner">
-            <ActionForm
-              operation="provision"
-              context={context(data)}
-              label="Provision partner"
-            >
-              <Field name="name" label="Chain name" required />
-              <Field name="chain_id" label="Existing chain ID (optional)" />
-              <Field
-                name="owner_id"
-                label="Existing authenticated Owner user ID"
-                required
-              />
-            </ActionForm>
-          </Panel>
-          <Panel title="Authoritative plan activation">
-            <p className="mb-4 text-sm text-muted-foreground">
-              Internal admin only. Record the approved activation reference.
-              This does not charge a payment method. Free transitions take
-              effect immediately and require an explicit café selection;
-              scheduled cancellation and payment grace await billing policy.
-            </p>
-            <ActionForm
-              operation="activate_plan"
-              context={context(data)}
-              label="Record plan change"
-            >
-              <Select
-                name="chain_id"
-                label="Partner"
-                options={data.accounts.map((a) => ({
-                  value: str(a.chain_id),
-                  label: `${a.name} · ${a.plan}`,
-                }))}
-              />
-              <Select
-                name="plan"
-                label="Plan"
-                options={[
-                  { value: "paid", label: "Paid" },
-                  { value: "free", label: "Free" },
-                ]}
-              />
-              <Field
-                name="reason"
-                label="Approval / subscription event reference"
-                required
-              />
-              <Field
-                name="cafe_ids"
-                label="For Free: selected café ID 1"
-                type="number"
-                help="Select the agreed cafés explicitly; automatic fallback is disabled."
-              />
-              <Field
-                name="cafe_ids"
-                label="For Free: selected café ID 2"
-                type="number"
-              />
-              <Field
-                name="cafe_ids"
-                label="For Free: selected café ID 3"
-                type="number"
-              />
-            </ActionForm>
-          </Panel>
-        </>
-      )}
-    </div>
   );
 }

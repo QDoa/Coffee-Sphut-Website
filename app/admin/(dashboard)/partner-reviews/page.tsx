@@ -1,7 +1,8 @@
+import { StaffReviews } from "@/components/partner/staff-reviews";
 import { requireStaff } from "@/lib/admin/auth";
 import { portalData } from "@/lib/partner/portal";
 import { isPartnerPortalEnabled } from "@/lib/partner/preview";
-import { StaffReviews, Panel } from "@/components/partner/workspace";
+import { Panel } from "@/components/partner/workspace";
 export default async function PartnerReviews() {
   await requireStaff();
   if (!isPartnerPortalEnabled())

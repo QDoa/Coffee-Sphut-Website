@@ -11,6 +11,7 @@ import {
   BookOpen,
   Users,
   CreditCard,
+  ClipboardCheck,
   ArrowUpRight,
 } from "lucide-react";
 import {
@@ -34,6 +35,7 @@ const links = [
   ["Team", "team", Users],
   ["Plan & settings", "billing", CreditCard],
 ] as const;
+const previewLinks = [...links, ["Staff review", "preview-review", ClipboardCheck]] as const;
 export function PartnerShell({
   data,
   preview,
@@ -45,9 +47,12 @@ export function PartnerShell({
 }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
+  const navigation = preview ? previewLinks : links;
+  const reviewing = preview && path === "/partner/preview-review";
+  const workspaceName = data.name || (reviewing ? "Staff workspace" : "Partner workspace");
   const nav = (
     <nav aria-label="Partner navigation" className="space-y-1 p-4">
-      {links
+      {navigation
         .filter(([, key]) => key !== "team" || data.role === "owner")
         .map(([label, key, Icon]) => (
           <Link
@@ -64,7 +69,7 @@ export function PartnerShell({
           >
             <Icon className="size-4" />
             {label}
-            {["inventory", "recipes"].includes(key) && data.plan !== "paid" && (
+            {["inventory", "recipes"].includes(key) && data.plan === "free" && (
               <span className="ml-auto text-[10px] uppercase">Paid</span>
             )}
           </Link>
@@ -79,7 +84,7 @@ export function PartnerShell({
       >
         Skip to content
       </a>
-      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r bg-background lg:flex">
+      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col overflow-y-auto border-r bg-background lg:flex">
         <Link href="/partner" className="border-b p-8 font-serif text-2xl">
           Coffee Sphut
           <span className="mt-2 block font-sans text-xs tracking-widest text-muted-foreground uppercase">
@@ -88,10 +93,12 @@ export function PartnerShell({
         </Link>
         {nav}
         <div className="mt-auto border-t p-6">
-          <p className="truncate text-sm font-medium">{data.name}</p>
-          <p className="my-2 text-xs capitalize text-muted-foreground">
-            {data.role?.replaceAll("_", " ")} · {data.plan}
-          </p>
+          <p className="truncate text-sm font-medium">{workspaceName}</p>
+          {data.role && (
+            <p className="my-2 text-xs capitalize text-muted-foreground">
+              {data.role.replaceAll("_", " ")} · {data.plan}
+            </p>
+          )}
           {!preview && (
             <form action={partnerSignOut}>
               <Button variant="outline" className="w-full">
@@ -129,7 +136,7 @@ export function PartnerShell({
                 <Menu />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0">
+            <SheetContent side="left" className="overflow-y-auto p-0">
               <SheetHeader className="p-6">
                 <SheetTitle>Coffee Sphut partners</SheetTitle>
                 <SheetDescription>
@@ -140,7 +147,7 @@ export function PartnerShell({
             </SheetContent>
           </Sheet>
           <p className="min-w-0 flex-1 truncate text-sm font-medium">
-            {data.name || "Partner workspace"}
+            {workspaceName}
           </p>
           <span className="rounded-full border px-3 py-1 text-xs capitalize">
             {data.plan || "Staff"}
@@ -156,10 +163,7 @@ export function PartnerShell({
               Coffee Sphut partners
             </p>
             <h1 className="font-serif text-4xl sm:text-5xl">
-              {links.find(([, k]) => path === `/partner/${k}`)?.[0] ||
-                (path.includes("preview-review")
-                  ? "Staff review"
-                  : "Café details")}
+              {navigation.find(([, k]) => path === `/partner/${k}`)?.[0] || "Café details"}
             </h1>
           </div>
           {children}
