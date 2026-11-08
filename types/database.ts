@@ -1564,6 +1564,11 @@ export type Database = {
         Args: { p_input?: Json; p_section?: string }
         Returns: Json
       }
+      partner_save_stocktake: {
+        Args: { p_chain: string; p_cafe: number; p_request: string; p_counts: Json; p_reason: string }
+        Returns: number
+      }
+      partner_stocktake_items: { Args: { p_chain: string }; Returns: Json }
       partner_validate_cafe: { Args: { p: Json }; Returns: undefined }
       public_cafes_v2: {
         Args: { p_ids?: number[]; p_search?: string }

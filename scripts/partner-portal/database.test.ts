@@ -328,6 +328,64 @@ test("self-review denied to a dual-role admin; rejection requires reason", () =>
     );
   }));
 
+test("stocktake uses scoped exact balances and saves a batch atomically with safe retries", () =>
+  transaction(async (c) => {
+    await actor(c, 1);
+    const add = (cafe_id: number) => command(c, "item", {
+      cafe_id, name: "Stocktake fixture", code: randomUUID(), type: "ingredient", unit: "g",
+    });
+    const first = (await add(101)).id;
+    const second = (await add(101)).id;
+    const foreign = (await add(102)).id;
+    const opening = (item_id: string, quantity: string) => command(c, "movement", {
+      item_id, type: "opening", quantity, reason: "Stocktake test",
+    });
+    await opening(first, "10");
+    await opening(second, "999999999999.999999");
+    const request = randomUUID();
+    const counts = [
+      { item_id: first, expected: "10.000000", quantity: "0" },
+      { item_id: second, expected: "999999999999.999999", quantity: "999999999999.999998" },
+    ];
+    const take = (cafe: number, entries = counts, id = request, chain = A) =>
+      c.query("select public.partner_save_stocktake($1,$2,$3,$4,$5) as saved",
+        [chain, cafe, id, JSON.stringify(entries), "Closing count"]);
+    const ledger = () => c.query(
+      "select item_id, quantity, resulting_balance from public.partner_movements where type='count' and item_id=any($1) order by item_id",
+      [[first, second]],
+    );
+    await actor(c, 2);
+    const items = (await c.query("select public.partner_stocktake_items($1) as items", [A])).rows[0].items;
+    assert.ok(items.every((item: { cafe_id: number }) => item.cafe_id === 101));
+    assert.equal(items.find((item: { id: string }) => item.id === second).balance, "999999999999.999999");
+    await denied(c, () => take(102, [{ item_id: foreign, expected: "0", quantity: "1" }]), /Paid access/);
+    await denied(c, () => take(101, [counts[0], { item_id: foreign, expected: "0", quantity: "1" }]), /became unavailable/);
+    await denied(c, () => take(101, [counts[0], counts[0]]), /one valid/);
+    await opening(first, "1");
+    await denied(c, () => take(101), /balance changed/);
+    assert.equal((await ledger()).rowCount, 0);
+    assert.equal((await c.query("select balance from public.partner_items where id=$1", [second])).rows[0].balance,
+      "999999999999.999999");
+
+    counts[0].expected = "11.000000";
+    assert.equal((await take(101)).rows[0].saved, 2);
+    assert.equal((await take(101)).rows[0].saved, 2);
+    const { rows } = await ledger();
+    assert.equal(rows.length, 2);
+    assert.equal(rows.find((row) => row.item_id === first).resulting_balance, "0.000000");
+    assert.equal(rows.find((row) => row.item_id === second).quantity, "-0.000001");
+    await denied(c, () => take(101, [{ ...counts[0], quantity: "1" }]), /reused with different data/);
+    await denied(c, () => take(101, counts, request, B), /Paid access/);
+
+    await c.query("RESET ROLE");
+    await c.query("update public.partner_accounts set plan='free' where chain_id=$1", [A]);
+    await actor(c, 2);
+    await denied(c, () => take(101), /Paid access/);
+    assert.deepEqual((await c.query("select public.partner_stocktake_items($1) as items", [A])).rows[0].items, []);
+    await c.query("SET LOCAL ROLE anon");
+    await denied(c, () => take(101), /permission denied/);
+  }));
+
 test("stock ledger: 20 receipt minus 3 consumed then count 15; retries and insufficient stock", () =>
   transaction(async (c) => {
     await actor(c, 1);

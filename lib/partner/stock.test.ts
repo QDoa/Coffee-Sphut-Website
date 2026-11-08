@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { restockSuggestion, stockView } from "./stock";
+import { COUNT_QUANTITY, restockSuggestion, stockView } from "./stock";
 test("runway distinguishes low, empty, no history and no recorded usage", () => {
   const item = { id: "a", balance: 100, threshold: 10, active: true };
   assert.equal(stockView(item, []).runway, "Building usage history");
@@ -29,4 +29,11 @@ test("restock suggestions cover demand plus the threshold and preserve the no-hi
   assert.deepEqual(restockSuggestion(20, 5, 3.25, 1), { quantity: 0, needsReview: false });
   assert.deepEqual(restockSuggestion(3, 5, null, 7), { quantity: 2, needsReview: false });
   assert.deepEqual(restockSuggestion(0, 0, null, 7), { quantity: 0, needsReview: true });
+});
+
+test("stocktake accepts zero and exact quantities within the ledger precision", () => {
+  for (const value of ["0", ".5", "12.123456", "999999999999.999999"])
+    assert.match(value, COUNT_QUANTITY);
+  for (const value of ["", "-1", "NaN", "1.1234567", "1000000000000", "1e2"])
+    assert.doesNotMatch(value, COUNT_QUANTITY);
 });

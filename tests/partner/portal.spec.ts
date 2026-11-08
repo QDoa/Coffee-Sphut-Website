@@ -979,6 +979,60 @@ test("restock planner uses the selected horizon and copies café-specific quanti
   }
 });
 
+test("stocktake preserves entered counts on a conflict and then saves reviewed variances together", async ({ page }) => {
+  const client = await db("postgres");
+  const first = randomUUID();
+  const second = randomUUID();
+  const name = `Stocktake fixture ${first.slice(0, 8)}`;
+  const note = `Closing count ${first}`;
+  try {
+    await client.query(
+      `insert into public.partner_items(id,chain_id,cafe_id,name,code,type,unit,balance)
+       values($1::uuid,'20000000-0000-4000-8000-000000000001',101,$3,$1::uuid::text,'ingredient','g',10),
+             ($2::uuid,'20000000-0000-4000-8000-000000000001',101,$4,$2::uuid::text,'product','each',5)`,
+      [first, second, name + " beans", name + " cups"],
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/partner/inventory?view=stocktake&cafe_id=101");
+    const stocktake = page.getByRole("region", { name: "Stocktake mode" });
+    await stocktake.getByLabel("Find items to count").fill(name);
+    const beans = stocktake.getByLabel(new RegExp(`Counted .* ${name} beans`));
+    const cups = stocktake.getByLabel(new RegExp(`Counted .* ${name} cups`));
+    await beans.fill("8");
+    await cups.fill("0");
+    await expect(stocktake.getByText("−2 g difference")).toBeVisible();
+    await expect(stocktake.getByText("−5 each difference")).toBeVisible();
+    await stocktake.getByLabel("Stocktake note (optional)").fill(note);
+    await client.query("update public.partner_items set balance=9 where id=$1", [first]);
+    await stocktake.getByRole("button", { name: "Save 2 counts" }).click();
+    await expect(stocktake.getByText("Balance changed. Recheck this count.")).toBeVisible();
+    await expect(beans).toHaveValue("8");
+    await expect(cups).toHaveValue("0");
+    expect((await client.query("select 1 from public.partner_movements where reason=$1", [note])).rowCount).toBe(0);
+
+    await beans.fill("7");
+    await expect(stocktake.getByText("−2 g difference")).toBeVisible();
+    await stocktake.getByRole("button", { name: "Save 2 counts" }).click();
+    await expect(stocktake.getByRole("status")).toContainText("Saved 2 stock counts");
+    await expect(beans).toHaveValue("");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const counts = await client.query(
+      "select item_id,quantity,resulting_balance from public.partner_movements where reason=$1 and type='count'", [note],
+    );
+    expect(counts.rows).toEqual(expect.arrayContaining([
+      { item_id: first, quantity: "-2.000000", resulting_balance: "7.000000" },
+      { item_id: second, quantity: "-5.000000", resulting_balance: "0.000000" },
+    ]));
+    expect(counts.rowCount).toBe(2);
+  } finally {
+    await client.query("delete from public.partner_movements where item_id=any($1)", [[first, second]]);
+    await client.query("delete from public.partner_items where id=any($1)", [[first, second]]);
+    await client.query("delete from public.partner_operations where action='stocktake' and input->>'reason'=$1", [note]);
+    await client.query("delete from public.partner_audit where action='stocktake' and details->>'reason'=$1", [note]);
+    await client.end();
+  }
+});
+
 test("stock watch explains threshold alerts and opens the exact café item", async ({ page }) => {
   const client = await db("postgres");
   const id = randomUUID();

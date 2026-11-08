@@ -2,6 +2,7 @@ import { StaffReviews } from "@/components/partner/staff-reviews";
 import { Dashboard } from "@/components/partner/dashboard";
 import { Inventory } from "@/components/partner/inventory";
 import { RestockPlanner } from "@/components/partner/restock-planner";
+import { StocktakeMode } from "@/components/partner/stocktake-mode";
 import { PlanSettings } from "@/components/partner/plan-settings";
 import { Recipes } from "@/components/partner/recipes";
 import { Team } from "@/components/partner/team";
@@ -9,7 +10,12 @@ import { ReviewNotifications } from "@/components/partner/review-notifications";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { randomUUID } from "node:crypto";
-import { portalCafeRequest, portalData, portalReviewNotifications } from "@/lib/partner/portal";
+import {
+  portalCafeRequest,
+  portalData,
+  portalReviewNotifications,
+  portalStocktakeItems,
+} from "@/lib/partner/portal";
 import { Button } from "@/components/ui/button";
 import { isLocalPartnerPreview } from "@/lib/partner/preview";
 import { requestQueueQuery } from "@/lib/partner/request-queue";
@@ -44,7 +50,7 @@ async function loadWorkspace(
       Object.entries(query).filter(([, v]) => v !== "" && v !== undefined),
     ),
     section === "preview-review",
-    ["overview", "inventory"].includes(section),
+    section === "overview" || (section === "inventory" && query.view !== "stocktake"),
   )
     .then((data) => ({ data, error: null, loadedAt: Date.now() }))
     .catch((error: Error) => {
@@ -143,7 +149,9 @@ export default async function WorkspacePage({
       </main>
     );
   let data = result.data;
-  const inventoryView = query.view === "restock" ? "restock" : "stock";
+  const inventoryView = query.view === "restock" || query.view === "stocktake" ? query.view : "stock";
+  const stocktakeItems = section === "inventory" && inventoryView === "stocktake" && data.chain_id
+    ? await portalStocktakeItems(data.chain_id).catch(() => null) : null;
   const requestedPage = Number(query.page);
   const notificationPage = section === "notifications"
     ? Number.isInteger(requestedPage) && requestedPage > 0 && requestedPage <= 2_147_483_647
@@ -245,10 +253,11 @@ export default async function WorkspacePage({
         <Rewards data={data} params={query} />
       ) : section === "inventory" ? (
         <>
-          <nav aria-label="Inventory views" className="grid grid-cols-2 gap-1 sm:flex sm:flex-wrap sm:gap-2">
+          <nav aria-label="Inventory views" className="grid grid-cols-3 gap-1 sm:flex sm:flex-wrap sm:gap-2">
             {[
               ["stock", "Inventory & activity", "Inventory"],
               ["restock", "Restock planner", "Restock"],
+              ["stocktake", "Stocktake mode", "Stocktake"],
             ].map(([view, label, shortLabel]) => {
               const params = new URLSearchParams();
               if (view !== "stock") params.set("view", view);
@@ -267,6 +276,20 @@ export default async function WorkspacePage({
           </nav>
           {inventoryView === "restock" ? (
             <RestockPlanner data={data} cafeId={query.cafe_id} />
+          ) : inventoryView === "stocktake" ? (
+            stocktakeItems && data.chain_id ? (
+              <StocktakeMode
+                key={query.cafe_id || ""}
+                cafes={data.cafes.filter((cafe) => cafe.is_active === true).map((cafe) => ({
+                  id: String(cafe.id),
+                  name: String(cafe.name || "Café"),
+                })).sort((a, b) => a.name.localeCompare(b.name))}
+                items={stocktakeItems.filter((item) =>
+                  data.cafes.some((cafe) => cafe.id === item.cafe_id && cafe.is_active === true))}
+                chainId={data.chain_id}
+                cafeId={query.cafe_id}
+              />
+            ) : <p role="alert" className="text-sm text-destructive">Stocktake is unavailable. Refresh the page and try again.</p>
           ) : (
             <Inventory
               key={`${query.cafe_id || ""}:${query.item_id || ""}`}

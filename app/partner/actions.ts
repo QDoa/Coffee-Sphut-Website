@@ -9,6 +9,7 @@ import { portalClient, portalData } from "@/lib/partner/portal";
 import { isLocalPartnerPreview } from "@/lib/partner/preview";
 import { safePartnerNext } from "@/lib/partner/redirects";
 import { cafePayload } from "@/lib/partner/forms";
+import { COUNT_QUANTITY, STOCKTAKE_LIMIT } from "@/lib/partner/stock";
 import { publishReviewedMedia } from "@/lib/partner/media";
 import type { Json } from "@/types/database";
 export interface PortalActionState {
@@ -18,6 +19,35 @@ export interface PortalActionState {
   savedId?: string;
   savedRevision?: number;
   nextRequestId?: string;
+}
+
+const stocktakeSchema = z.object({
+  p_chain: z.uuid(),
+  p_cafe: z.number().int().positive(),
+  p_request: z.uuid(),
+  p_reason: z.string().trim().max(200),
+  p_counts: z.array(z.object({
+    item_id: z.uuid(),
+    expected: z.string().regex(COUNT_QUANTITY),
+    quantity: z.string().regex(COUNT_QUANTITY),
+  })).min(1).max(STOCKTAKE_LIMIT),
+});
+
+export async function saveStocktake(input: unknown): Promise<{ saved?: number; error?: string; stale?: boolean }> {
+  const parsed = stocktakeSchema.safeParse(input);
+  if (!parsed.success) return { error: "Check that each count is nonnegative and has up to six decimal places." };
+  const client = await portalClient();
+  const { data, error } = await client.rpc("partner_save_stocktake", parsed.data);
+  if (error) {
+    if (error.code === "PT409") {
+      revalidatePath("/partner/inventory");
+      return { error: error.message, stale: true };
+    }
+    if (error.code === "42501") return { error: "Paid access to this active café is required." };
+    return { error: "The stocktake could not be saved. Try again." };
+  }
+  revalidatePath("/partner", "layout");
+  return { saved: data };
 }
 
 const recipeStockSchema = z.array(

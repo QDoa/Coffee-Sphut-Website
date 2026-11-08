@@ -43,3 +43,6 @@ export function restockSuggestion(balance: number, threshold: number, daily: num
   const quantity = Math.max(0, Math.ceil(threshold + (daily ?? 0) * days - balance));
   return { quantity, needsReview: balance === 0 && quantity === 0 };
 }
+
+export const STOCKTAKE_LIMIT = 250;
+export const COUNT_QUANTITY = /^(?:\d{1,12}(?:\.\d{1,6})?|\.\d{1,6})$/;

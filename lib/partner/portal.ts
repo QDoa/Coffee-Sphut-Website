@@ -51,6 +51,25 @@ export const portalSchema = z.object({
   staff_admin: z.boolean().default(false),
 });
 export type PortalData = z.infer<typeof portalSchema>;
+
+const stocktakeItemsSchema = z.array(z.object({
+  id: z.uuid(),
+  cafe_id: z.number().int().positive(),
+  name: z.string(),
+  code: z.string(),
+  unit: z.enum(["g", "ml", "each"]),
+  balance: z.string(),
+}));
+
+export type StocktakeItem = z.infer<typeof stocktakeItemsSchema>[number];
+
+export async function portalStocktakeItems(chainId: string): Promise<StocktakeItem[]> {
+  const client = await portalClient();
+  const { data, error } = await client.rpc("partner_stocktake_items", { p_chain: chainId });
+  if (error) throw new Error(error.message);
+  return stocktakeItemsSchema.parse(data);
+}
+
 export async function portalClient(reviewer = false) {
   if (!isPartnerPortalEnabled())
     throw new Error(
