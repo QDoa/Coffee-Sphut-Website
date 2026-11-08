@@ -1552,6 +1552,14 @@ export type Database = {
         Args: { p_staff: boolean; p_search: string; p_filter: string; p_page: number }
         Returns: Json
       }
+      partner_review_notifications: {
+        Args: { p_page: number }
+        Returns: Json
+      }
+      partner_mark_review_notification_read: {
+        Args: { p_change: string }
+        Returns: undefined
+      }
       partner_snapshot: {
         Args: { p_input?: Json; p_section?: string }
         Returns: Json

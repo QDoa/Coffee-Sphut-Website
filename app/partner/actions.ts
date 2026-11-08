@@ -109,6 +109,19 @@ const planCafesSchema = z.array(z.object({
   active: z.boolean(),
 }));
 
+export async function markReviewNotificationRead(
+  _previous: PortalActionState,
+  form: FormData,
+): Promise<PortalActionState> {
+  const id = z.uuid().safeParse(form.get("notification_id"));
+  if (!id.success) return { error: "Choose a review notification." };
+  const client = await portalClient();
+  const { error } = await client.rpc("partner_mark_review_notification_read", { p_change: id.data });
+  if (error) return { error: "This notification could not be marked as read." };
+  revalidatePath("/partner", "layout");
+  return { message: "Marked as read." };
+}
+
 export async function getPlanCafes(chainId: string) {
   if (!z.uuid().safeParse(chainId).success)
     return { error: "Choose a partner chain." };

@@ -177,3 +177,27 @@ export async function portalCafeRequest(id: string, chainId: string | undefined)
   if (error) throw new Error(error.message);
   return data === null ? null : z.record(z.string(), z.unknown()).parse(data);
 }
+
+const reviewNotificationsSchema = z.object({
+  unread: z.number().int().nonnegative(),
+  total: z.number().int().nonnegative(),
+  page: z.number().int().positive(),
+  updates: z.array(z.object({
+    id: z.string(),
+    cafe_id: z.number().nullable(),
+    name: z.string().nullable(),
+    status: z.enum(["approved", "rejected"]),
+    reason: z.string().nullable(),
+    reviewed_at: z.string(),
+    read: z.boolean(),
+  })),
+});
+
+export type ReviewNotificationsData = z.infer<typeof reviewNotificationsSchema>;
+
+export async function portalReviewNotifications(page: number): Promise<ReviewNotificationsData> {
+  const client = await portalClient();
+  const { data, error } = await client.rpc("partner_review_notifications", { p_page: page });
+  if (error) throw new Error(error.message);
+  return reviewNotificationsSchema.parse(data);
+}

@@ -680,6 +680,42 @@ test("request lookup and queue results respect current partner and staff scope",
     assert.equal((await queue(true)).request_total, 0);
   }));
 
+test("review notifications are scoped to the submitter and have idempotent read receipts", () =>
+  transaction(async (c) => {
+    const [approved, rejected, pending] = [randomUUID(), randomUUID(), randomUUID()];
+    await c.query(
+      `insert into public.partner_changes(id,chain_id,cafe_id,submitter,payload,status,reviewer,reviewed_at)
+       values($1,$4,101,$5,'{}','approved',$6,now()),
+             ($2,$4,null,$5,'{"name":"Rejected café"}','rejected',$6,now()),
+             ($3,$4,null,$5,'{"name":"Pending café"}','pending',null,null)`,
+      [approved, rejected, pending, A, uid(1), uid(4)],
+    );
+    const updates = async (page = 1) =>
+      (await c.query("select public.partner_review_notifications($1) as result", [page])).rows[0].result;
+    const mark = (id: string) => c.query("select public.partner_mark_review_notification_read($1)", [id]);
+    await actor(c, 2);
+    assert.equal((await updates()).total, 0);
+    await denied(c, () => mark(approved), /row-level security/);
+    await actor(c, 4);
+    assert.equal((await updates()).total, 0);
+    await denied(c, () => mark(approved), /row-level security/);
+
+    await actor(c, 1);
+    const initial = await updates();
+    assert.deepEqual(new Set(initial.updates.map((row: { id: string }) => row.id)), new Set([approved, rejected]));
+    assert.equal(initial.unread, 2);
+    assert.deepEqual((await updates(0)).updates, []);
+    await denied(c, () => mark(pending), /row-level security/);
+    await mark(approved);
+    await mark(approved);
+    assert.equal((await updates()).unread, 1);
+    assert.equal((await updates()).updates.find((row: { id: string }) => row.id === approved).read, true);
+    await c.query("RESET ROLE");
+    await c.query("update public.partner_cafe_access set restricted=true where cafe_id=101");
+    await actor(c, 1);
+    assert.deepEqual((await updates()).updates.map((row: { id: string }) => row.id), [rejected]);
+  }));
+
 test("a staff Free downgrade requires explicit confirmation to remove all café access", () =>
   transaction(async (c) => {
     await actor(c, 4);

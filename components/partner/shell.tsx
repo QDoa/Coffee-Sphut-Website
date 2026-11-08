@@ -12,6 +12,7 @@ import {
   Users,
   CreditCard,
   ClipboardCheck,
+  Bell,
   ArrowUpRight,
 } from "lucide-react";
 import {
@@ -39,10 +40,12 @@ const previewLinks = [...links, ["Staff review", "preview-review", ClipboardChec
 export function PartnerShell({
   data,
   preview,
+  reviewUnread,
   children,
 }: {
   data: PortalData;
   preview: boolean;
+  reviewUnread?: number;
   children: ReactNode;
 }) {
   const path = usePathname();
@@ -149,6 +152,23 @@ export function PartnerShell({
           <p className="min-w-0 flex-1 truncate text-sm font-medium">
             {workspaceName}
           </p>
+          {data.chain_id && (
+            <Button asChild size="icon" variant="outline" className="relative size-11 shrink-0">
+              <Link
+                href="/partner/notifications"
+                prefetch={false}
+                aria-current={path === "/partner/notifications" ? "page" : undefined}
+                aria-label={`Review notifications${reviewUnread ? `, ${reviewUnread} unread` : ""}`}
+              >
+                <Bell aria-hidden="true" />
+                {!!reviewUnread && (
+                  <span className="absolute -top-1 -right-1 rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground" aria-hidden="true">
+                    {reviewUnread > 99 ? "99+" : reviewUnread}
+                  </span>
+                )}
+              </Link>
+            </Button>
+          )}
           <span className="rounded-full border px-3 py-1 text-xs capitalize">
             {data.plan || "Staff"}
           </span>
@@ -163,7 +183,9 @@ export function PartnerShell({
               Coffee Sphut partners
             </p>
             <h1 className="font-serif text-4xl sm:text-5xl">
-              {navigation.find(([, k]) => path === `/partner/${k}`)?.[0] || "Café details"}
+              {path === "/partner/notifications"
+                ? "Review notifications"
+                : navigation.find(([, k]) => path === `/partner/${k}`)?.[0] || "Café details"}
             </h1>
           </div>
           {children}

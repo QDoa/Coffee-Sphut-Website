@@ -4,10 +4,11 @@ import { Inventory } from "@/components/partner/inventory";
 import { PlanSettings } from "@/components/partner/plan-settings";
 import { Recipes } from "@/components/partner/recipes";
 import { Team } from "@/components/partner/team";
+import { ReviewNotifications } from "@/components/partner/review-notifications";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { randomUUID } from "node:crypto";
-import { portalCafeRequest, portalData } from "@/lib/partner/portal";
+import { portalCafeRequest, portalData, portalReviewNotifications } from "@/lib/partner/portal";
 import { isLocalPartnerPreview } from "@/lib/partner/preview";
 import { requestQueueQuery } from "@/lib/partner/request-queue";
 import { PartnerShell } from "@/components/partner/shell";
@@ -31,7 +32,7 @@ async function loadWorkspace(
   const source =
     section === "preview-review"
       ? "staff"
-      : section === "billing" || (section === "cafe" && (!query.id || query.change))
+      : ["billing", "notifications"].includes(section) || (section === "cafe" && (!query.id || query.change))
         ? "overview"
         : section;
   // Let Next.js redirects propagate; source failures render explicitly below.
@@ -69,6 +70,7 @@ export default async function WorkspacePage({
       "recipes",
       "team",
       "billing",
+      "notifications",
       "preview-review",
       "accept",
       "password",
@@ -139,6 +141,14 @@ export default async function WorkspacePage({
       </main>
     );
   let data = result.data;
+  const requestedPage = Number(query.page);
+  const notificationPage = section === "notifications"
+    ? Number.isInteger(requestedPage) && requestedPage > 0 && requestedPage <= 2_147_483_647
+      ? requestedPage : 1
+    : 0;
+  const notifications = data.chain_id
+    ? await portalReviewNotifications(notificationPage).catch(() => null)
+    : null;
   const selection =
     section === "billing" && data.plan === "free" && data.role === "owner"
       ? await portalData("selection").catch(() => null)
@@ -151,7 +161,7 @@ export default async function WorkspacePage({
     const removableStatus = removableCafeChange(draft, data.actor);
     if (!["draft", "rejected"].includes(String(draft.status)))
       return (
-        <PartnerShell data={data} preview={preview}>
+        <PartnerShell data={data} preview={preview} reviewUnread={notifications?.unread}>
           <Panel
             title={
               draft.cafe_id && payload.is_active === false
@@ -191,7 +201,7 @@ export default async function WorkspacePage({
       data.gallery = payload.gallery as string[];
   }
   return (
-    <PartnerShell data={data} preview={preview}>
+    <PartnerShell data={data} preview={preview} reviewUnread={notifications?.unread}>
       {section === "overview" ? (
         <Dashboard data={data} />
       ) : section === "cafes" ? (
@@ -243,6 +253,8 @@ export default async function WorkspacePage({
         <Team data={data} loadedAt={result.loadedAt} />
       ) : section === "billing" ? (
         <PlanSettings data={data} selectionCafes={selection?.cafes} />
+      ) : section === "notifications" ? (
+        <ReviewNotifications data={data} notifications={notifications} />
       ) : (
         <StaffReviews data={data} query={requestQueueQuery(query, true)} path="/partner/preview-review" />
       )}

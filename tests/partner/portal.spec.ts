@@ -268,6 +268,21 @@ test("staff can filter the review queue and reject a request with feedback", asy
     .getByRole("listitem").filter({ hasText: name });
   await expect(request).toContainText("Changes requested");
   await expect(request).toContainText(feedback);
+
+  const bell = page.getByRole("link", { name: /^Review notifications, \d+ unread$/ });
+  const unread = Number((await bell.getAttribute("aria-label"))?.match(/\d+/)?.[0]);
+  await bell.click();
+  await expect(page.getByRole("heading", { name: "Review notifications", exact: true })).toBeVisible();
+  const update = page.getByRole("listitem").filter({ hasText: name });
+  await expect(update).toContainText(feedback);
+  await expect(update.getByText("Unread", { exact: true })).toBeVisible();
+  await update.getByRole("button", { name: "Mark as read" }).click();
+  await expect(update.getByText("Unread", { exact: true })).toHaveCount(0);
+  await expect(page.getByText(`${unread - 1} unread`, { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(update.getByRole("button", { name: "Mark as read" })).toHaveCount(0);
+  await update.getByRole("link", { name: "Open request" }).click();
+  await expect(page.getByLabel("Café name", { exact: true })).toHaveValue(name);
 });
 
 test("older drafts open directly and both queues search and paginate on the server", async ({ page }) => {

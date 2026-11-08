@@ -80,4 +80,8 @@ fixture_invite_receipts=$(docker exec coffee-partner-test psql -U postgres -d po
 if [[ "$fixture_invite_receipts" != 't' ]]; then
   docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < supabase/migrations/20261108060449_protect_partner_invitation_receipts.sql
 fi
+fixture_review_notifications=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select to_regprocedure('public.partner_review_notifications(integer)') is not null")
+if [[ "$fixture_review_notifications" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261108221342_partner_cafe_review_notifications.sql
+fi
 echo 'Local fixtures ready. Run pnpm partner:preview and open http://127.0.0.1:3100/partner/overview'
