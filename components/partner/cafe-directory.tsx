@@ -14,9 +14,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DiscardCafeChangeButton } from "./discard-cafe-change-button";
 
 interface CafeDirectoryProps {
   initialSearch: string;
+  notice?: string;
   canAdd: boolean;
   cafes: {
     id: string;
@@ -34,6 +36,7 @@ interface CafeDirectoryProps {
     date: string;
     dateLabel: string;
     reviewed: boolean;
+    removableStatus?: "draft" | "pending";
     href: string;
   }[];
 }
@@ -66,6 +69,7 @@ const ROW_CLASS =
 
 export function CafeDirectory({
   initialSearch,
+  notice,
   canAdd,
   cafes,
   requests,
@@ -305,6 +309,11 @@ export function CafeDirectory({
           </label>
         </div>
 
+        {notice && (
+          <p role="status" className="border-b bg-primary/5 px-4 py-3 text-sm sm:px-5">
+            {notice}
+          </p>
+        )}
         {visibleRequests.length ? (
           <ul className="divide-y">
             {visibleRequests.map((request) => {
@@ -338,16 +347,25 @@ export function CafeDirectory({
                     )}
                   </div>
                   {request.href ? (
-                    <Button asChild variant="outline" className="min-h-11 shrink-0">
-                      <Link
-                        href={request.href}
-                        prefetch={false}
-                        aria-label={`${action}: ${request.name}`}
-                      >
-                        {action}
-                        <ArrowRight aria-hidden="true" />
-                      </Link>
-                    </Button>
+                    <div className="flex max-w-full shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+                      <Button asChild variant="outline" className="min-h-11">
+                        <Link
+                          href={request.href}
+                          prefetch={false}
+                          aria-label={`${action}: ${request.name}`}
+                        >
+                          {action}
+                          <ArrowRight aria-hidden="true" />
+                        </Link>
+                      </Button>
+                      {request.removableStatus && (
+                        <DiscardCafeChangeButton
+                          id={request.id}
+                          name={request.name}
+                          status={request.removableStatus}
+                        />
+                      )}
+                    </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">
                       Saved by a teammate

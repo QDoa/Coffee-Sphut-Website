@@ -16,8 +16,10 @@ import {
   StaffReviews,
   Panel,
   Field,
+  removableCafeChange,
 } from "@/components/partner/workspace";
 import { ActionForm } from "@/components/partner/action-form";
+import { DiscardCafeChangeButton } from "@/components/partner/discard-cafe-change-button";
 import { RemoveCafeButton } from "@/components/partner/remove-cafe-button";
 import { passwordAction } from "../actions";
 export const dynamic = "force-dynamic";
@@ -138,6 +140,7 @@ export default async function WorkspacePage({
     const draft = available.changes.find((ch) => ch.id === query.change);
     if (!draft) notFound();
     const payload = draft.payload as Record<string, unknown>;
+    const removableStatus = removableCafeChange(draft, data.actor);
     if (!["draft", "rejected"].includes(String(draft.status)))
       return (
         <PartnerShell data={data} preview={preview}>
@@ -153,9 +156,18 @@ export default async function WorkspacePage({
                 ? "Coffee Sphut approved this request."
                 : "Submitted to Coffee Sphut and awaiting review."}
             </p>
-            <Link className="underline" href="/partner/cafes">
-              Return to cafés
-            </Link>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <Link className="underline" href="/partner/cafes">
+                Return to cafés
+              </Link>
+              {removableStatus && (
+                <DiscardCafeChangeButton
+                  id={query.change}
+                  name={String(payload.name || data.cafe?.name || "this café")}
+                  status={removableStatus}
+                />
+              )}
+            </div>
           </Panel>
         </PartnerShell>
       );
@@ -172,9 +184,19 @@ export default async function WorkspacePage({
       {section === "overview" ? (
         <Dashboard data={data} />
       ) : section === "cafes" ? (
-        <Cafes data={data} q={query.q} />
+        <Cafes data={data} q={query.q} removed={query.removed} />
       ) : section === "cafe" ? (
         <>
+          {query.change &&
+            removableCafeChange(data.changes[0], data.actor) === "draft" && (
+              <div className="flex justify-end">
+                <DiscardCafeChangeButton
+                  id={query.change}
+                  name={String(data.cafe?.name || "this café")}
+                  status="draft"
+                />
+              </div>
+            )}
           {!query.change && data.cafe?.is_active === true && (
             <div className="flex justify-end">
               <RemoveCafeButton

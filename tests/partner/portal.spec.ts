@@ -138,6 +138,63 @@ test("removal archives an existing café after approval without submitting unsav
   await expect(page.getByRole("status")).toContainText("approved this request");
 });
 
+test("a partner can discard a draft and withdraw a café removal request", async ({
+  page,
+}) => {
+  const name = `Withdraw test ${randomUUID().slice(0, 8)}`;
+  const requests = page.getByRole("region", { name: "Change requests" });
+  const confirm = page.getByRole("alertdialog");
+  await page.goto("/partner/cafe");
+  await page.getByLabel("Café name", { exact: true }).fill(name);
+  await page.getByRole("button", { name: "Save draft" }).click();
+  await expect(page.getByRole("status")).toContainText("Saved");
+  await page.goto("/partner/cafes");
+  const discard = requests.getByRole("button", {
+    name: `Discard draft for ${name}`,
+  });
+  await discard.click();
+  await confirm.getByRole("button", { name: "Keep draft" }).click();
+  await expect(discard).toBeVisible();
+  await discard.click();
+  await confirm
+    .getByRole("button", { name: "Discard draft", exact: true })
+    .click();
+  await expect(requests.getByRole("status")).toHaveText("Draft discarded.");
+  await expect(requests.getByRole("heading", { name, exact: true })).toHaveCount(0);
+
+  await page.goto("/partner/cafe");
+  await page.getByLabel("Café name", { exact: true }).fill(name);
+  await page.getByRole("button", { name: "Submit for review" }).click();
+  await expect(page.getByRole("status")).toContainText("Submitted");
+  await page.goto("/partner/preview-review");
+  const creation = page.locator("section").filter({
+    has: page.getByRole("cell", { name, exact: true }),
+  });
+  await creation.getByRole("button", { name: "Approve request" }).click();
+  await expect(creation).toHaveCount(0);
+
+  await page.goto(`/partner/cafes?q=${encodeURIComponent(name)}`);
+  await page.getByRole("link", { name: "Details & edit request" }).click();
+  await expect(page).toHaveURL(/\/partner\/cafe\?id=\d+$/);
+  const cafeUrl = page.url();
+  await page.getByRole("button", { name: "Remove café", exact: true }).click();
+  await confirm.getByRole("button", { name: "Request removal" }).click();
+  await page
+    .getByRole("button", { name: `Withdraw removal request for ${name}` })
+    .click();
+  await confirm
+    .getByRole("button", { name: "Withdraw removal request", exact: true })
+    .click();
+  await expect(requests.getByRole("status")).toHaveText(
+    "Café removal request withdrawn.",
+  );
+  await expect(
+    requests.getByRole("button", { name: `Withdraw removal request for ${name}` }),
+  ).toHaveCount(0);
+  await page.goto(cafeUrl);
+  await expect(page.getByLabel("Active café")).toBeChecked();
+});
+
 test("stock movements preview balances in the selected item's unit before saving", async ({
   page,
 }) => {

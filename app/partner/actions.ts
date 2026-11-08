@@ -47,6 +47,30 @@ export async function getRecipeStock(recipeId: string, cafeId: number) {
   return { items: parsed.data };
 }
 
+export async function discardCafeChange(
+  id: string,
+  status: "draft" | "pending",
+): Promise<PortalActionState> {
+  if (!z.uuid().safeParse(id).success || !["draft", "pending"].includes(status))
+    return { error: "Choose a draft or a pending café removal request." };
+
+  const client = await portalClient();
+  const { data, error } = await client.rpc("partner_discard_cafe_change", {
+    p_change: id,
+    p_status: status,
+  });
+  if (error) return { error: "The request could not be removed. Try again." };
+  if (!data) {
+    return {
+      error: "This request has changed or is unavailable. Refresh to see its current status.",
+    };
+  }
+
+  revalidatePath("/partner", "layout");
+  revalidatePath("/admin/partner-reviews");
+  redirect(`/partner/cafes?removed=${status}#cafe-change-requests`);
+}
+
 export async function commandAction(
   _previous: PortalActionState,
   form: FormData,

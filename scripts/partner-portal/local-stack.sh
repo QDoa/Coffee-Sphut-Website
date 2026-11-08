@@ -54,4 +54,9 @@ fixture_recipe_stock=$(docker exec coffee-partner-test psql -U postgres -d postg
 if [[ "$fixture_recipe_stock" != 't' ]]; then
   docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261107235247_partner_recipe_stock_preview.sql
 fi
+fixture_discard_change=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select to_regprocedure('public.partner_discard_cafe_change(uuid,text)') is not null")
+if [[ "$fixture_discard_change" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261108001428_partner_discard_change.sql
+  docker exec coffee-partner-test psql -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema'" >/dev/null
+fi
 echo 'Local fixtures ready. Run pnpm partner:preview and open http://127.0.0.1:3100/partner/overview'

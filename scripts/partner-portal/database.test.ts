@@ -151,6 +151,61 @@ test("partner café requests restrict editable amenities and preserve existing r
     assert.equal(updated.rating, 4.5);
   }));
 
+test("only the submitter can discard a draft or withdraw a pending café removal", () =>
+  transaction(async (c) => {
+    const discard = async (id: string, status: string): Promise<boolean> =>
+      (
+        await c.query("select public.partner_discard_cafe_change($1,$2) as removed", [
+          id,
+          status,
+        ])
+      ).rows[0].removed;
+
+    await actor(c, 1);
+    const draft = await command(c, "save_change", {
+      payload: { name: "Disposable draft" },
+    });
+    const ordinary = await command(c, "submit_change", {
+      payload: { name: "New café under review" },
+    });
+    const { cafe } = await snapshot(c, "cafe", { id: 101 });
+    const target = {
+      cafe_id: 101,
+      baseline: cafe.partner_revision,
+      payload: { is_active: false },
+    };
+    const removal = await command(c, "submit_change", target);
+    await actor(c, 2);
+    assert.equal(await discard(removal.id, "pending"), false);
+    await actor(c, 4);
+    await c.query("select * from public.partner_media_prepare($1)", [removal.id]);
+    assert.equal(await discard(removal.id, "pending"), false);
+    await actor(c, 1);
+    assert.equal(await discard(ordinary.id, "pending"), false);
+    assert.equal(await discard(removal.id, "draft"), false);
+    assert.equal(await discard(draft.id, "draft"), true);
+    assert.equal(await discard(draft.id, "draft"), false);
+    assert.equal(await discard(removal.id, "pending"), true);
+    assert.equal((await snapshot(c, "cafe", { id: 101 })).cafe.is_active, true);
+    assert.equal(
+      (await snapshot(c, "cafes")).changes.some(
+        (change: { id: string }) => change.id === removal.id || change.id === draft.id,
+      ),
+      false,
+    );
+
+    const replacement = await command(c, "submit_change", target);
+    await actor(c, 4);
+    await denied(
+      c,
+      () => command(c, "review", { id: removal.id, decision: "approve" }),
+      /pending request/,
+    );
+    await command(c, "review", { id: replacement.id, decision: "approve" });
+    await actor(c, 1);
+    assert.equal(await discard(replacement.id, "pending"), false);
+  }));
+
 test("Free cannot access Paid data through reads, commands or forged plan activation", () =>
   transaction(async (c) => {
     await actor(c, 3);

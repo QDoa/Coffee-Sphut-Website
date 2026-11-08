@@ -177,7 +177,30 @@ function Records({ rows, columns }: { rows: Row[]; columns: string[] }) {
 }
 const cafeOptions = (d: PortalData) =>
   d.cafes.map((c) => ({ value: str(c.id), label: str(c.name) }));
-export function Cafes({ data, q }: { data: PortalData; q?: string }) {
+export function removableCafeChange(
+  change: Row | undefined,
+  actor: string,
+): "draft" | "pending" | undefined {
+  if (!change || change.submitter !== actor) return;
+  if (change.status === "draft") return "draft";
+  const payload = change.payload as Row | null;
+  if (
+    change.status === "pending" &&
+    change.cafe_id &&
+    payload?.is_active === false
+  )
+    return "pending";
+}
+
+export function Cafes({
+  data,
+  q,
+  removed,
+}: {
+  data: PortalData;
+  q?: string;
+  removed?: string;
+}) {
   const initialSearch = typeof q === "string" ? q : "";
   const cafes = data.cafes.map((cafe) => ({
     id: str(cafe.id),
@@ -215,6 +238,7 @@ export function Cafes({ data, q }: { data: PortalData; q?: string }) {
       date,
       dateLabel: date ? dateFormat.format(new Date(date)) : "",
       reviewed: Boolean(change.reviewed_at),
+      removableStatus: removableCafeChange(change, data.actor),
       href:
         status === "draft" && change.submitter !== data.actor
           ? ""
@@ -225,6 +249,13 @@ export function Cafes({ data, q }: { data: PortalData; q?: string }) {
     <CafeDirectory
       key={initialSearch}
       initialSearch={initialSearch}
+      notice={
+        removed === "draft"
+          ? "Draft discarded."
+          : removed === "pending"
+            ? "Café removal request withdrawn."
+            : undefined
+      }
       cafes={cafes}
       requests={requests}
       canAdd={data.role === "owner" || data.role === "chain_manager"}
