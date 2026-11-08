@@ -1,6 +1,6 @@
 # Partner portal implementation and validation report
 
-Date: November 5, 2026. Branch: `codex/partner-portal`.
+Initial report November 5, 2026 · Updated November 8, 2026 · Branch `codex/partner-portal`
 
 ## Outcome
 
@@ -66,6 +66,23 @@ Stock runway is current balance divided by daily recorded consumption plus wasta
 
 Additional validation: stock-state unit test, real-database analytics/authorization test on a fresh migration replay, and responsive chart/filter/drawer workflows at 320, 390, 897 and 1280 pixels. Nine inherited database advisor warnings remain; none concern the new analytics. Deploy `20261105160940_partner_dashboard_insights.sql` alongside the application update. No hosted project was changed.
 
+## Restock planner, Stocktake mode and onboarding checklist
+
+| Feature | Commit | Verified behavior |
+| --- | --- | --- |
+| [Restock planner](http://127.0.0.1:3100/partner/inventory?view=restock) | `930e462` | Suggestions change with the coverage horizon and selected café. The copied list includes café, item and quantity. Unit tests cover rounding and the fallback when usage history is unavailable. |
+| [Stocktake mode](http://127.0.0.1:3100/partner/inventory?view=stocktake) | `fdcb2e6` | Entered counts show differences before saving. A stale balance prevents the entire batch from saving and preserves the typed counts. Reviewed counts, including zero and quantities with six decimal places, create inventory movements. Database tests cover safe retries, café and chain scope, and Paid access. |
+| [Onboarding checklist](http://127.0.0.1:3100/partner/overview) | `782a22b` | The Dashboard links to the next applicable setup step. Progress comes from workspace records and updates when a milestone is completed. Steps depend on the partner’s role and plan. |
+
+| Verification | Result |
+| --- | --- |
+| `pnpm partner:test:unit` | 32 passed |
+| `PARTNER_TEST_REPLAY=1 pnpm partner:test:db` | 28 passed against the isolated replay database |
+| `pnpm partner:test:browser` | 24 passed in the local preview, including the three new workflows and the mobile inventory navigation regression |
+| TypeScript, targeted ESLint and Git whitespace checks | Passed |
+
+The [stocktake migration](../../supabase/migrations/20261108222720_partner_stocktake.sql) was installed in the local preview and replay databases. Apply it before deploying Stocktake mode to a hosted environment. The local database security advisor reported four existing policy warnings and no findings for the stocktake functions.
+
 ## Managed image workflow completed in this follow-up
 
 Partners can upload JPEG, PNG or WebP cover/gallery files up to 5 MB each. The server checks file signatures and size; Storage enforces bucket limits, current membership/café scope and immutable object paths. Upload metadata is checked before the file becomes selectable. Drafts retain selected upload IDs across saves and resubmission.
@@ -95,6 +112,8 @@ The legacy mobile source reads raw café codes as a loyalty-availability flag an
 `supabase/rollout/partner-private-boundary.sql` is a **separate, coordinated release step**, tested locally. It narrows direct café/gallery/menu reads, customer reward/card reads, and direct reward mutations. Apply it only after supported mobile versions use the new interfaces. Until that cutoff is applied, the pre-existing legacy public exposure remains; the additive portal migration alone does not establish the complete public/private contract.
 
 ## Verification evidence
+
+The results below record the original portal rollout validation. The November 8 checks are listed in [Restock planner, Stocktake mode and onboarding checklist](#restock-planner-stocktake-mode-and-onboarding-checklist).
 
 - 77 domain/action/audit/helper tests passed, including the new preview guards and café-field round trips, plus the existing reward, image and deep-link regressions.
 - 18 core Postgres integration tests and 3 post-cutoff privacy tests passed, including real RLS roles, cross-tenant/assignment denial, revocation, Free feature denial, reviewed publication, rejection/stale/self-review checks, receipt/consume/count integrity, immutable history, recipe ownership/units, downgrade preservation and re-upgrade, invitation binding, and actual redemption-café reporting.
