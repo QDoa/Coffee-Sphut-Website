@@ -478,6 +478,22 @@ test("a partner can discard a draft and withdraw a café removal request", async
   await expect(page.getByLabel("Active café")).toBeChecked();
 });
 
+test("mobile stock rows show warnings and open movements with the item selected", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto("/partner/inventory");
+  const stock = page.getByRole("list", { name: "Stock items" });
+  const firstRow = stock.getByRole("listitem").first();
+  await expect(firstRow).toBeInViewport();
+  const row = stock.getByRole("listitem").filter({ hasText: "House espresso beans" });
+  await expect(row).toContainText("North Star");
+  await expect(row).toContainText(/\d.* g/);
+  await row.getByRole("button", { name: "Record movement for House espresso beans" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByLabel("Item and café", { exact: true })).toHaveValue(
+    "40000000-0000-4000-8000-000000000001",
+  );
+});
+
 test("stock movements preview balances in the selected item's unit before saving", async ({
   page,
 }) => {

@@ -341,7 +341,7 @@ export function Inventory({ data }: { data: PortalData }) {
           </Button>
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
         {[
           {
             label: "Active items",
@@ -368,20 +368,20 @@ export function Inventory({ data }: { data: PortalData }) {
             Icon: ArrowDownUp,
           },
         ].map(({ label, value, detail, Icon }) => (
-          <div key={label} className="rounded-2xl border bg-card p-5">
-            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+          <div key={label} className="rounded-2xl border bg-card p-3 sm:p-5">
+            <div className="flex items-center justify-between gap-1 text-xs font-medium text-muted-foreground">
               {label}
-              <Icon className="size-4" />
+              <Icon className="size-4 shrink-0" aria-hidden="true" />
             </div>
-            <p className="my-3 text-3xl font-semibold tabular-nums">{value}</p>
-            <p className="text-xs text-muted-foreground">{detail}</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums sm:my-3 sm:text-3xl">{value}</p>
+            <p className="hidden text-xs text-muted-foreground sm:block">{detail}</p>
           </div>
         ))}
       </div>
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_18rem]">
         <section className="min-w-0 overflow-hidden rounded-2xl border bg-card">
           <Tabs defaultValue="stock">
-            <div className="space-y-5 border-b p-5">
+            <div className="space-y-3 border-b p-4 sm:space-y-5 sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="font-medium">All inventory</h2>
@@ -443,6 +443,49 @@ export function Inventory({ data }: { data: PortalData }) {
               </div>
             </div>
             <TabsContent value="stock" className="m-0">
+              {visible.length > 0 && (
+                <ul aria-label="Stock items" className="divide-y md:hidden">
+                  {visible.map((item) => (
+                    <li key={String(item.id)} className="space-y-3 p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0 [overflow-wrap:anywhere]">
+                          <p className="font-medium">{String(item.name)}</p>
+                          <p className="text-xs text-muted-foreground">{cafeName(item.cafe_id)} · {String(item.code)}</p>
+                        </div>
+                        <p className="text-sm font-semibold tabular-nums">
+                          {amount(item.balance)} {String(item.unit)}
+                        </p>
+                      </div>
+                      <p className={`text-sm ${item.attention ? "font-medium text-amber-900" : "text-muted-foreground"}`}>
+                        {item.status}{item.days !== null && item.balance > 0 ? ` · ${item.runway}` : ""}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {!!item.active && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="min-h-11"
+                            onClick={() => open("movement", String(item.id))}
+                            aria-label={`Record movement for ${item.name}`}
+                          >
+                            Record movement
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="min-h-11"
+                          onClick={() => open("manage", String(item.id))}
+                          aria-label={`Manage ${item.name}`}
+                        >
+                          Manage
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="hidden md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -523,6 +566,7 @@ export function Inventory({ data }: { data: PortalData }) {
                   ))}
                 </TableBody>
               </Table>
+              </div>
               {!visible.length && (
                 <div className="space-y-2 p-10 text-center">
                   <Package className="mx-auto size-7 text-muted-foreground" />
