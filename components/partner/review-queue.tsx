@@ -1,12 +1,13 @@
 "use client";
 
 import { useActionState, useId, useState } from "react";
-import Image from "next/image";
 import { ChevronDown, ClipboardCheck } from "lucide-react";
 import { commandAction, type PortalActionState } from "@/app/partner/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { RequestQueuePage } from "@/lib/partner/request-queue";
+import type { ReviewField } from "@/lib/partner/reviews";
+import { RequestFieldList, RequestPhotoGrid } from "./request-details";
 import { RequestQueueCount, RequestQueueFilters, RequestQueuePagination } from "./request-queue-controls";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -26,14 +27,6 @@ const REQUEST_TYPES = {
   removal: { label: "Removal", className: "bg-amber-100 text-amber-950" },
   reactivation: { label: "Reactivation", className: "bg-primary/10 text-primary" },
 };
-
-export interface ReviewField {
-  key: string;
-  label: string;
-  current: string | null;
-  proposed: string;
-  changed: boolean;
-}
 
 export interface ReviewRequest {
   id: string;
@@ -175,7 +168,7 @@ function RequestDetails({
       <div className="space-y-2">
         <h4 className="text-sm font-semibold">{request.kind === "new" ? "Proposed listing" : "Proposed changes"}</h4>
         {changed.length ? (
-          <FieldList fields={changed} compare={request.kind !== "new"} />
+          <RequestFieldList fields={changed} compare={request.kind !== "new"} />
         ) : (
           <p className="text-sm text-muted-foreground">No changed fields to compare.</p>
         )}
@@ -186,33 +179,14 @@ function RequestDetails({
             {request.kind === "new" ? "Empty fields" : "Unchanged fields"} ({unchanged.length})
           </summary>
           <div className="border-t p-3">
-            <FieldList fields={unchanged} compare={false} />
+            <RequestFieldList fields={unchanged} compare={false} />
           </div>
         </details>
       )}
       {request.photos.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-semibold">Uploaded photos</h4>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {request.photos.map(({ id, label }) => {
-              const src = `/partner/media/${id}?review=1`;
-              return (
-                <figure key={`${id}-${label}`} className="min-w-0">
-                  <a href={src} target="_blank" rel="noreferrer">
-                    <Image
-                      src={src}
-                      alt={label}
-                      width={240}
-                      height={180}
-                      unoptimized
-                      className="aspect-4/3 w-full rounded-lg bg-muted object-cover"
-                    />
-                  </a>
-                  <figcaption className="mt-1 text-xs text-muted-foreground">{label}</figcaption>
-                </figure>
-              );
-            })}
-          </div>
+          <RequestPhotoGrid photos={request.photos} staff />
         </div>
       )}
       <details>
@@ -224,30 +198,6 @@ function RequestDetails({
         <DecisionButton request={request} decision="reject" onReviewed={onReviewed} />
       </div>
     </div>
-  );
-}
-
-function FieldList({ fields, compare }: { fields: ReviewField[]; compare: boolean }) {
-  return (
-    <dl className="divide-y rounded-xl border">
-      {fields.map((field) => (
-        <div key={field.key} className="grid min-w-0 gap-2 p-3 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
-          <dt className="font-medium [overflow-wrap:anywhere]">{field.label}</dt>
-          <dd className={`grid min-w-0 gap-2 ${compare ? "sm:grid-cols-2" : ""}`}>
-            {compare && (
-              <div className="min-w-0 rounded-lg bg-muted/45 p-2.5">
-                <p className="mb-1 text-xs font-medium text-muted-foreground">Current</p>
-                <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{field.current ?? "Unavailable in this review"}</p>
-              </div>
-            )}
-            <div className={compare ? "min-w-0 rounded-lg bg-primary/5 p-2.5" : "min-w-0"}>
-              {compare && <p className="mb-1 text-xs font-medium text-primary">Proposed</p>}
-              <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{field.proposed}</p>
-            </div>
-          </dd>
-        </div>
-      ))}
-    </dl>
   );
 }
 

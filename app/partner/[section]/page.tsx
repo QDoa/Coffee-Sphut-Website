@@ -7,6 +7,7 @@ import { PlanSettings } from "@/components/partner/plan-settings";
 import { Recipes } from "@/components/partner/recipes";
 import { Team } from "@/components/partner/team";
 import { ReviewNotifications } from "@/components/partner/review-notifications";
+import { RequestFieldList, RequestPhotoGrid } from "@/components/partner/request-details";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { randomUUID } from "node:crypto";
@@ -19,6 +20,8 @@ import {
 } from "@/lib/partner/portal";
 import { Button } from "@/components/ui/button";
 import { isLocalPartnerPreview } from "@/lib/partner/preview";
+import { EMPTY_MEDIA, type MediaSelection } from "@/lib/partner/media";
+import { cafeRequestFields, cafeRequestPhotos } from "@/lib/partner/reviews";
 import { requestQueueQuery } from "@/lib/partner/request-queue";
 import { PartnerShell } from "@/components/partner/shell";
 import {
@@ -174,7 +177,18 @@ export default async function WorkspacePage({
     if (!draft || (query.id && query.id !== String(draft.cafe_id))) notFound();
     const payload = draft.payload as Record<string, unknown>;
     const removableStatus = removableCafeChange(draft, data.actor);
-    if (!["draft", "rejected"].includes(String(draft.status)))
+    if (draft.status === "pending" || draft.status === "approved") {
+      const pending = draft.status === "pending";
+      const live = pending && draft.cafe_id
+        ? await portalData("cafe", { id: Number(draft.cafe_id) })
+        : null;
+      const current = live?.cafe ? { ...live.cafe, gallery: live.gallery ?? [] } : {};
+      const media = (draft.media as MediaSelection | null) || EMPTY_MEDIA;
+      const fields = cafeRequestFields(payload, current, media, !draft.cafe_id)
+        .filter((field) => field.changed);
+      const photos = cafeRequestPhotos(media);
+      const name = String(payload.name ||
+        data.cafes.find((cafe) => cafe.id === draft.cafe_id)?.name || "Café request");
       return (
         <PartnerShell data={data} preview={preview} reviewUnread={notifications?.unread}>
           <Panel
@@ -185,19 +199,37 @@ export default async function WorkspacePage({
             }
           >
             <p role="status">
-              {draft.status === "approved"
-                ? "Coffee Sphut approved this request."
-                : "Submitted to Coffee Sphut and awaiting review."}
+              {pending
+                ? "Submitted to Coffee Sphut and awaiting review."
+                : "Coffee Sphut approved this request."}
             </p>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <Link className="underline" href="/partner/cafes">
-                Return to cafés
+            <section aria-labelledby="requested-changes" className="mt-5 space-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground">{name}</p>
+                <h2 id="requested-changes" className="font-semibold">
+                  {pending ? (draft.cafe_id ? "Requested changes" : "Proposed listing") : "Submitted values"}
+                </h2>
+              </div>
+              {fields.length > 0 ? (
+                <RequestFieldList fields={fields} compare={Boolean(live?.cafe)} />
+              ) : (
+                <p className="text-sm text-muted-foreground">No listing fields differ from the current listing.</p>
+              )}
+              {photos.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">Uploaded photos</h3>
+                  <RequestPhotoGrid photos={photos} />
+                </div>
+              )}
+            </section>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <Link className="underline" href="/partner/cafes?tab=requests">
+                Back to change requests
               </Link>
               {removableStatus && (
                 <DiscardCafeChangeButton
                   id={query.change}
-                  name={String(payload.name ||
-                    data.cafes.find((cafe) => cafe.id === draft.cafe_id)?.name || "this café")}
+                  name={name}
                   status={removableStatus}
                 />
               )}
@@ -205,6 +237,7 @@ export default async function WorkspacePage({
           </Panel>
         </PartnerShell>
       );
+    }
     if (draft.cafe_id) data = await portalData("cafe", { id: Number(draft.cafe_id) });
     approvedAmenities = data.cafe?.amenities;
     data.cafe = {

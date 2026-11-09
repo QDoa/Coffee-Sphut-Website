@@ -235,6 +235,64 @@ test("cafe edit stays pending until an independent reviewer publishes it", async
     address,
   );
 });
+test("partners can see requested values before and after approval", async ({ page }) => {
+  const client = await db("postgres");
+  const id = randomUUID();
+  const name = `Request details fixture ${id.slice(0, 8)}`;
+  const chain = "20000000-0000-4000-8000-000000000001";
+  const owner = "10000000-0000-4000-8000-000000000001";
+  let cafeId: number | undefined;
+  try {
+    const inserted = await client.query(
+      `insert into public."Cafe"(chain_id,name,description,phone_number,is_active)
+       values($1,$2,'Original description','555-0100',true) returning id,partner_revision`,
+      [chain, name],
+    );
+    cafeId = Number(inserted.rows[0].id);
+    await client.query(
+      `insert into public.partner_changes(id,chain_id,cafe_id,baseline,payload,status,submitter)
+       values($1,$2,$3,$4,$5,'pending',$6)`,
+      [id, chain, cafeId, inserted.rows[0].partner_revision, {
+        name, description: "New description for the café", phone_number: null,
+      }, owner],
+    );
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/partner/cafes?tab=requests&request_q=${encodeURIComponent(name)}`);
+    await page.getByRole("link", { name: `View request: ${name}` }).click();
+    const requested = page.getByRole("region", { name: "Requested changes" });
+    const description = requested.getByText("Description", { exact: true }).locator("..");
+    await expect(description).toContainText("Original description");
+    await expect(description).toContainText("New description for the café");
+    const phone = requested.getByText("Phone number", { exact: true }).locator("..");
+    await expect(phone).toContainText("555-0100");
+    await expect(phone.getByText("—", { exact: true })).toBeVisible();
+    await expect(requested.getByText("Café name", { exact: true })).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const requestUrl = page.url();
+
+    await page.goto("/partner/preview-review");
+    await approveReview(page, await openReview(page, name));
+    await client.query('update public."Cafe" set description=$1 where id=$2', ["A later edit", cafeId]);
+    await page.goto(requestUrl);
+    await expect(page.getByRole("status")).toContainText("approved this request");
+    const submitted = page.getByRole("region", { name: "Submitted values" });
+    await expect(submitted).toContainText("New description for the café");
+    await expect(submitted).not.toContainText("A later edit");
+    await expect(submitted.getByText("Current", { exact: true })).toHaveCount(0);
+  } finally {
+    await client.query("delete from public.partner_audit where action='review' and target=$1", [id]);
+    await client.query("delete from public.partner_operations where action='review' and input->>'id'=$1", [id]);
+    await client.query("delete from public.partner_media_publications where change_id=$1", [id]);
+    await client.query("delete from public.partner_changes where id=$1", [id]);
+    if (cafeId) {
+      await client.query("delete from public.partner_cafe_access where cafe_id=$1", [cafeId]);
+      await client.query('delete from public."Cafe" where id=$1', [cafeId]);
+    }
+    await client.end();
+  }
+});
+
 test("staff can filter the review queue and reject a request with feedback", async ({
   page,
 }) => {
