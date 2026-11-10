@@ -5,6 +5,7 @@ import { isLocalPartnerPreview } from "@/lib/partner/preview";
 import { DEFAULT_SALES_CURRENCY, demoPosStatusSchema, RECIPE_SALES_CSV_HEADER, recipeSalesRankingSchema, SALES_CSV_COLUMNS, salesFiltersSchema, salesImportCurrencySchema, salesReportSchema, type RecipeSalesRanking, type SalesReportData } from "@/lib/partner/sales";
 import { ActionForm } from "./action-form";
 import { ReportFilters } from "./report-filters";
+import { TrendPlot, trendScale } from "./trend-plot";
 import { Panel, Select } from "./workspace";
 
 const currencyNames = new Intl.DisplayNames("en-CA", { type: "currency" });
@@ -54,8 +55,8 @@ function SalesCharts({ report, cafes, money }: {
 }) {
   const lower = Math.min(0, ...report.trend.map((day) => day.net ?? 0));
   const upper = Math.max(0, ...report.trend.map((day) => day.net ?? 0));
-  const span = upper - lower || 1;
-  const zero = lower === 0 && upper === 0 ? 0 : -lower / span * 100;
+  const scale = trendScale(lower, upper, 0.01);
+  const zero = scale.position(0);
   const maxCafe = Math.max(1, ...report.cafes.map((cafe) => Math.abs(cafe.net)));
   return (
     <div className="grid min-w-0 gap-4 xl:grid-cols-2">
@@ -64,25 +65,28 @@ function SalesCharts({ report, cafes, money }: {
         <p className="mt-1 text-sm text-muted-foreground">
           {report.trend.every((day) => day.from === day.through) ? "By business date" : "Grouped by date range"} · Gray marks periods with no sales data.
         </p>
-        <div className="mt-5" aria-hidden="true">
-          <div className="relative flex h-36 gap-1 border-b sm:gap-1.5">
-            <div className="absolute inset-x-0 border-t border-muted-foreground/30" style={{ bottom: `${zero}%` }} />
+        <TrendPlot axisLabel={`Net sales (${report.currency ?? DEFAULT_SALES_CURRENCY})`} scale={scale} dates={
+          <>
+            <span>{displayDate(report.from)}</span>
+            {report.from !== report.through && <span>{displayDate(report.through)}</span>}
+          </>
+        }>
+          <div className="absolute inset-0 flex gap-px min-[420px]:gap-1">
             {report.trend.map((day) => {
               const net = day.net ?? 0;
               return (
                 <div key={day.from} className="relative min-w-0 flex-1">
                   <div className={`absolute inset-x-0 rounded-sm ${day.net === null ? "bg-muted-foreground/35" : net < 0 ? "bg-destructive" : "bg-primary"}`}
-                    style={{ bottom: net < 0 ? `${(net - lower) / span * 100}%` : `${Math.min(zero, 98)}%`, height: net ? `${Math.abs(net) / span * 100}%` : "3px" }}
+                    style={{
+                      bottom: net ? `${scale.position(Math.min(0, net))}%` : `clamp(0px, ${zero}%, calc(100% - 3px))`,
+                      height: net ? `${Math.abs(scale.position(net) - zero)}%` : "3px",
+                    }}
                     title={`${day.from}${day.from === day.through ? "" : ` to ${day.through}`} · ${day.net === null ? "No data" : money(net)}`} />
                 </div>
               );
             })}
           </div>
-          <div className="mt-2 flex justify-between gap-2 text-xs text-muted-foreground">
-            <span>{displayDate(report.from)}</span>
-            {report.from !== report.through && <span>{displayDate(report.through)}</span>}
-          </div>
-        </div>
+        </TrendPlot>
         <details className="mt-3 text-sm">
           <summary className="cursor-pointer py-2 font-medium text-primary">View trend data</summary>
           <dl className="max-h-60 divide-y overflow-y-auto rounded-lg border">

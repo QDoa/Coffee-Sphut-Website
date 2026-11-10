@@ -3,6 +3,7 @@ import { ArrowUpRight, ChevronDown, Download, Gift, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PortalData } from "@/lib/partner/portal";
 import { ReportFilters } from "./report-filters";
+import { TrendPlot, trendScale } from "./trend-plot";
 import { Select } from "./workspace";
 
 const number = new Intl.NumberFormat("en-CA");
@@ -12,6 +13,7 @@ const shortDate = new Intl.DateTimeFormat("en-CA", {
 
 function Trend({ buckets }: { buckets: NonNullable<PortalData["reward_trend"]> }) {
   const peak = Math.max(0, ...buckets.map(({ total }) => total));
+  const scale = trendScale(0, peak);
   function label(day: string) {
     const date = new Date(day + "T00:00:00Z");
     return Number.isNaN(date.getTime()) ? day : shortDate.format(date);
@@ -24,24 +26,25 @@ function Trend({ buckets }: { buckets: NonNullable<PortalData["reward_trend"]> }
       <p className="mt-1 text-sm text-muted-foreground">
         {buckets.every((bucket) => bucket.from === bucket.through) ? "Daily redemptions" : "Redemptions by date range"} · {hasCoverage ? `Peak ${number.format(peak)}` : "No tracking in this period"}
       </p>
-      <div className="mt-5" aria-hidden="true">
-        <div className="flex h-32 items-end gap-1 border-b sm:gap-1.5">
+      <TrendPlot axisLabel="Redemptions" scale={scale} dates={
+        <>
+          <span>{label(buckets[0].from)}</span>
+          {buckets.length >= 7 && <span>{label(buckets[Math.floor(buckets.length / 2)].from)}</span>}
+          {buckets.length > 1 && <span>{label(buckets[buckets.length - 1].through)}</span>}
+        </>
+      }>
+        <div className="absolute inset-0 flex items-end gap-px min-[420px]:gap-1">
           {buckets.map((bucket) => (
             <div key={bucket.from} className="flex h-full min-w-0 flex-1 items-end justify-center">
               <div
                 className={`w-full max-w-9 rounded-t-sm ${bucket.tracked ? bucket.total ? "bg-primary" : "bg-primary/30" : "bg-muted-foreground/25"}`}
-                style={{ height: bucket.total ? `${Math.max(4, bucket.total / peak * 100)}%` : "3px" }}
+                style={{ height: bucket.total ? `${scale.position(bucket.total)}%` : "3px" }}
                 title={`${bucket.from}${bucket.from === bucket.through ? "" : ` to ${bucket.through}`} · ${bucket.tracked ? number.format(bucket.total) : "No tracking"}`}
               />
             </div>
           ))}
         </div>
-        <div className="mt-2 flex justify-between gap-2 text-xs text-muted-foreground">
-          <span>{label(buckets[0].from)}</span>
-          {buckets.length >= 7 && <span>{label(buckets[Math.floor(buckets.length / 2)].from)}</span>}
-          {buckets.length > 1 && <span>{label(buckets[buckets.length - 1].through)}</span>}
-        </div>
-      </div>
+      </TrendPlot>
       {buckets.some((bucket) => !bucket.tracked) && <p className="mt-3 text-xs text-muted-foreground">Gray marks periods outside tracking coverage.</p>}
       <details className="mt-3 text-sm">
         <summary className="w-fit cursor-pointer rounded-sm py-2 font-medium text-primary focus-visible:ring-2 focus-visible:ring-ring">
