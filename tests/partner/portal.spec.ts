@@ -947,6 +947,7 @@ test("an administrator can clean up a detached upload through the real Storage A
 test("reward presets show their dates and invalid ranges keep the filters available", async ({ page }) => {
   await page.goto("/partner/rewards");
   await page.getByRole("link", { name: "This week" }).click();
+  await expect(page.getByRole("link", { name: "This week" })).toHaveAttribute("aria-current", "true");
   await expect(page.getByText(/Reporting period \d{4}-\d{2}-\d{2} to/)).toBeVisible();
   await expect(page.getByLabel("From", { exact: true })).not.toHaveValue("");
   await page.getByLabel("From", { exact: true }).fill("2026-12-02");
@@ -955,7 +956,9 @@ test("reward presets show their dates and invalid ranges keep the filters availa
   await expect(page.getByText("Choose an end date on or after the start date.")).toBeVisible();
   await expect(page.getByLabel("From", { exact: true })).toHaveValue("2026-12-02");
   await page.getByRole("link", { name: "Last 30 days" }).click();
+  await expect(page.getByRole("link", { name: "Last 30 days" })).toHaveAttribute("aria-current", "true");
   await expect(page.getByText(/Reporting period \d{4}-\d{2}-\d{2} to/)).toBeVisible();
+  await expect(page.getByLabel("From", { exact: true })).not.toHaveValue("2026-12-02");
 });
 
 test("reward charts, café groups and CSV use the full filtered report", async ({ page }) => {
@@ -986,6 +989,7 @@ test("reward charts, café groups and CSV use the full filtered report", async (
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
     await breakdown.getByRole("link", { name: /North Star • Riverside/ }).click();
+    await expect(page.getByRole("combobox", { name: "Café", exact: true })).toHaveValue("102");
     await expect(events.getByRole("list", { name: /Downtown/ })).toHaveCount(0);
     await expect(events.getByRole("list", { name: /Riverside/ }).getByRole("listitem")).toHaveCount(50);
     const fullCafeCount = await breakdown.getByRole("listitem").innerText();

@@ -160,7 +160,7 @@ export function Rewards({ data, params }: {
             </Button>
           ))}
         </div>
-        <form className="grid items-end gap-3 min-[375px]:grid-cols-2 lg:grid-cols-4 lg:gap-4">
+        <form key={reportQuery.toString()} className="grid items-end gap-3 min-[375px]:grid-cols-2 lg:grid-cols-4 lg:gap-4">
           <div className="min-w-0 min-[375px]:col-span-2 lg:col-span-1">
             <Select name="cafe_id" label="Café" value={params.cafe_id} options={[
               { value: "", label: "All accessible cafés" },
