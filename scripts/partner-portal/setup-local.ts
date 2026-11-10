@@ -19,6 +19,9 @@ async function main() {
     await c.query(
       readFileSync("scripts/partner-portal/seed-local.sql", "utf8"),
     );
+    await c.query(
+      readFileSync("scripts/partner-portal/demo-pos.sql", "utf8"),
+    );
     const secret = "coffee-partner-local-jwt-secret-at-least-32-characters";
     const jwt = (sub?: string) => {
       const data = [

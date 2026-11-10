@@ -96,4 +96,24 @@ fixture_reward_breakdown=$(docker exec coffee-partner-test psql -U postgres -d p
 if [[ "$fixture_reward_breakdown" != 't' ]]; then
   docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261109003542_partner_reward_activity_breakdown.sql
 fi
+fixture_sales_report=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select to_regclass('public.partner_sales_daily') is not null")
+if [[ "$fixture_sales_report" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261110035521_partner_sales_report.sql
+fi
+fixture_recipe_sales=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select to_regclass('public.partner_recipe_sales_daily') is not null")
+if [[ "$fixture_recipe_sales" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261110041354_partner_recipe_sales.sql
+fi
+fixture_order_sales=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select to_regclass('public.partner_sales_orders') is not null")
+if [[ "$fixture_order_sales" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261110043753_partner_sales_order_sources.sql
+fi
+fixture_channel_filter=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select to_regprocedure('public.partner_sales_report(uuid,bigint,date,date,text,text)') is not null")
+if [[ "$fixture_channel_filter" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261110052717_partner_sales_channel_filter.sql
+fi
+fixture_demo_pos=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select to_regprocedure('public.partner_sync_demo_pos(uuid)') is not null")
+if [[ "$fixture_demo_pos" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < scripts/partner-portal/demo-pos.sql
+fi
 echo 'Local fixtures ready. Run pnpm partner:preview and open http://127.0.0.1:3100/partner/overview'

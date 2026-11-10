@@ -2,6 +2,7 @@ import { StaffReviews } from "@/components/partner/staff-reviews";
 import { Dashboard } from "@/components/partner/dashboard";
 import { Inventory } from "@/components/partner/inventory";
 import { Rewards } from "@/components/partner/reward-activity";
+import { SalesReport } from "@/components/partner/sales-report";
 import { RestockPlanner } from "@/components/partner/restock-planner";
 import { StocktakeMode } from "@/components/partner/stocktake-mode";
 import { PlanSettings } from "@/components/partner/plan-settings";
@@ -44,7 +45,7 @@ async function loadWorkspace(
   const source =
     section === "preview-review"
       ? "staff"
-      : ["billing", "notifications"].includes(section) || (section === "cafe" && (!query.id || query.change))
+      : ["billing", "notifications", "sales"].includes(section) || (section === "cafe" && (!query.id || query.change))
         ? "overview"
         : section;
   // Let Next.js redirects propagate; source failures render explicitly below.
@@ -78,6 +79,7 @@ export default async function WorkspacePage({
       "cafes",
       "cafe",
       "rewards",
+      "sales",
       "inventory",
       "recipes",
       "team",
@@ -288,6 +290,8 @@ export default async function WorkspacePage({
         </>
       ) : section === "rewards" ? (
         <Rewards data={data} params={query} />
+      ) : section === "sales" ? (
+        <SalesReport data={data} params={query} />
       ) : section === "inventory" ? (
         <>
           <nav aria-label="Inventory views" className="grid grid-cols-3 gap-1 sm:flex sm:flex-wrap sm:gap-2">

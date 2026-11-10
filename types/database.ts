@@ -1543,6 +1543,30 @@ export type Database = {
         Args: { p_cafe_id: number; p_recipe_id: string }
         Returns: Json
       }
+      partner_import_daily_sales: {
+        Args: { p_chain: string; p_cafe: number; p_rows: Json; p_replace?: boolean }
+        Returns: number
+      }
+      partner_sales_report: {
+        Args: { p_chain: string; p_cafe?: number; p_from?: string; p_to?: string; p_currency?: string; p_channel?: string }
+        Returns: Json
+      }
+      partner_import_recipe_sales: {
+        Args: { p_chain: string; p_cafe: number; p_rows: Json; p_replace: boolean }
+        Returns: number
+      }
+      partner_recipe_sales_report: {
+        Args: { p_chain: string; p_from: string; p_to: string; p_cafe?: number; p_channel?: string }
+        Returns: Json
+      }
+      partner_demo_pos_status: {
+        Args: { p_chain: string }
+        Returns: Json
+      }
+      partner_sync_demo_pos: {
+        Args: { p_chain: string }
+        Returns: number
+      }
       partner_role: { Args: { p_chain: string }; Returns: string }
       partner_team_assignments: {
         Args: { p_chain: string }

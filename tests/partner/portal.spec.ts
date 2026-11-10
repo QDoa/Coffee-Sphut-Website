@@ -1025,6 +1025,223 @@ test("reward charts, café groups and CSV use the full filtered report", async (
   }
 });
 
+test("sales report syncs Nigeria demo orders and compares POS and mobile sales by café", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto("/partner/sales");
+  const demo = page.getByRole("region", { name: "Demo orders · Nigeria" });
+  await expect(demo.getByText("North Star • Downtown", { exact: true })).toBeVisible();
+  await expect(demo.getByText("North Star • Riverside", { exact: true })).toBeVisible();
+  await demo.getByRole("button", { name: /sync demo orders/i }).click();
+  await expect(demo.getByRole("status")).toHaveText(/Synced [\d,]+ demo orders\.|Demo orders are up to date/);
+  await expect(demo.getByText("Last successful sync")).toBeVisible();
+  await expect(demo.getByText("Connected", { exact: true })).toBeVisible();
+  const totals = page.getByRole("region", { name: "Sales totals" });
+  await expect(totals).toContainText("NGN");
+  const before = await totals.innerText();
+  await demo.getByRole("button", { name: "Sync demo orders", exact: true }).click();
+  await expect(demo.getByRole("status")).toHaveText("Demo orders are up to date. No new orders.");
+  await expect(totals).toHaveText(before, { useInnerText: true });
+  await expect(page.getByRole("region", { name: "Top recipes by servings sold" })).toContainText("House latte");
+  await expect(page.getByRole("link", { name: "CSV fallback" })).toBeVisible();
+  await page.getByRole("link", { name: "Compare sales channels" }).click();
+  const comparison = page.getByRole("region", { name: "POS vs mobile sales by café" });
+  for (const name of ["North Star • Downtown", "North Star • Riverside"]) {
+    const card = comparison.getByRole("heading", { name, exact: true }).locator("..");
+    await expect(card.getByText("POS", { exact: true })).toBeVisible();
+    await expect(card.getByText("Mobile", { exact: true })).toBeVisible();
+    await expect(card.locator("dd")).toHaveText([/NGN.*[1-9]\d* orders/, /NGN.*[1-9]\d* orders/]);
+  }
+  await page.getByRole("combobox", { name: "Café", exact: true }).selectOption("102");
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect(comparison.getByRole("heading", { name: "North Star • Riverside" })).toBeVisible();
+  await expect(comparison.getByRole("heading", { name: "North Star • Downtown" })).toHaveCount(0);
+  const channelPicker = page.getByRole("combobox", { name: "Sales channel" });
+  const recipes = page.getByRole("region", { name: "Top recipes by servings sold" });
+  const channelTotals = comparison.locator("dd .font-medium");
+  const [posNet, mobileNet] = await channelTotals.allTextContents();
+  const servings = recipes.getByRole("listitem").first().locator("span").nth(1);
+  const allServings = await servings.innerText();
+  const allNet = await totals.locator("dd").first().innerText();
+  await expect(channelPicker).toHaveValue("");
+  await channelPicker.selectOption("mobile");
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect(page).toHaveURL(/channel=mobile/);
+  await expect(totals.locator("dd").first()).toHaveText(mobileNet);
+  await expect(recipes).toContainText("ranked by Mobile servings sold");
+  const mobileServings = await servings.innerText();
+  expect(mobileServings).not.toBe(allServings);
+  await expect(channelTotals).toHaveText([posNet, mobileNet]);
+
+  await channelPicker.selectOption("pos");
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect(page).toHaveURL(/channel=pos/);
+  await expect(totals.locator("dd").first()).toHaveText(posNet);
+  await expect(recipes).toContainText("ranked by POS servings sold");
+  expect(await servings.innerText()).not.toBe(mobileServings);
+
+  await channelPicker.selectOption("");
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect(totals.locator("dd").first()).toHaveText(allNet);
+  await expect(servings).toHaveText(allServings);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("sales report imports daily POS data, handles corrections, and charts filtered sales", async ({ page }) => {
+  const client = await db("postgres");
+  const chain = "20000000-0000-4000-8000-000000000001";
+  const name = `Sales fixture ${randomUUID().slice(0, 8)}`;
+  let cafeId: string | undefined;
+  try {
+    cafeId = (await client.query(
+      'insert into public."Cafe"(chain_id,name,is_active) values($1,$2,true) returning id',
+      [chain, name],
+    )).rows[0].id;
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.goto("/partner/sales?from=2024-05-01&to=2024-05-03");
+    await expect(page.getByRole("heading", { name: "Sales report", exact: true })).toBeVisible();
+    const form = page.locator("#sales-import");
+    await form.getByRole("combobox", { name: "Café for this CSV" }).selectOption(String(cafeId));
+    const [template] = await Promise.all([
+      page.waitForEvent("download"),
+      form.getByRole("link", { name: "Download CSV template" }).click(),
+    ]);
+    expect(template.suggestedFilename()).toBe("daily-pos-sales-template.csv");
+    const importCurrency = form.getByRole("combobox", { name: "Currency for this CSV" });
+    await expect(importCurrency).toHaveValue("NGN");
+    await expect(importCurrency.locator("option").nth(1)).toHaveText("NGN · Nigerian Naira");
+    for (const code of ["GHS", "KES", "ZAR", "XOF", "XAF", "UGX", "CAD"]) {
+      await expect(importCurrency.locator(`option[value="${code}"]`)).toHaveCount(1);
+    }
+    const setFile = (gross: string, code?: string, date = "2024-05-02") => {
+      const currencyColumn = code === undefined ? [] : ["currency"];
+      const currencyCell = code === undefined ? [] : [code];
+      const headers = ["date", ...currencyColumn, "gross_sales", "discounts", "refunds", "tax", "orders"];
+      const row = [date, ...currencyCell, gross, "10", "5", "4.25", "12"];
+      return form.getByLabel("POS CSV file").setInputFiles({
+        name: "sales.csv", mimeType: "text/csv",
+        buffer: Buffer.from(`${headers.join(",")}\r\n${row.join(",")}\r\n`),
+      });
+    };
+    const save = form.getByRole("button", { name: "Import sales" });
+    await importCurrency.selectOption("");
+    await setFile("100");
+    await save.click();
+    await expect(form.getByRole("alert")).toContainText("Choose the currency for this CSV");
+    await importCurrency.selectOption("NGN");
+    await setFile("1,000");
+    await save.click();
+    await expect(form.getByRole("alert")).toContainText("Line 2");
+    await setFile("100", "GHS");
+    await save.click();
+    await expect(form.getByRole("alert")).toContainText("Line 2 uses GHS, but you selected NGN");
+    await expect(page.getByText("No sales match these filters.")).toBeVisible();
+    await setFile("100");
+    await save.click();
+    await expect(form.getByRole("status")).toContainText("Saved sales for 1 day.");
+    const cafes = page.getByRole("region", { name: "Net sales by café" });
+    await expect(cafes).toContainText(name);
+    await expect(cafes).toContainText(/NGN\s+85\.00/);
+    await expect(page.getByRole("region", { name: "POS vs mobile sales by café" }))
+      .toContainText("No POS or mobile order breakdown is available");
+    const trend = page.getByRole("region", { name: "Net sales over time" });
+    await trend.getByText("View trend data").click();
+    await expect(trend.getByText("No data", { exact: true })).toHaveCount(2);
+    await save.click();
+    await expect(form.getByRole("status")).toContainText("No changes saved.");
+    await setFile("125", "");
+    await save.click();
+    await expect(form.getByRole("alert")).toContainText("Replace existing days");
+    await form.getByRole("checkbox", { name: /Replace existing days/ }).check();
+    await save.click();
+    await expect(cafes).toContainText(/NGN\s+110\.00/);
+
+    await importCurrency.selectOption("");
+    await setFile("200", "GHS", "2024-05-03");
+    await save.click();
+    await expect(form.getByRole("status")).toContainText("Saved sales for 1 day.");
+    await expect(cafes).toContainText(/NGN\s+110\.00/);
+    await page.getByRole("combobox", { name: "Café", exact: true }).selectOption(String(cafeId));
+    await page.getByRole("combobox", { name: "Currency", exact: true }).selectOption("GHS");
+    await page.getByRole("button", { name: "Apply filters" }).click();
+    await expect(page).toHaveURL(new RegExp(`cafe_id=${cafeId}`));
+    await expect(page).toHaveURL(/currency=GHS/);
+    await expect(cafes).toContainText(/GHS\s+185\.00/);
+    for (const width of [320, 390, 897, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+  } finally {
+    if (cafeId) {
+      await client.query("delete from public.partner_audit where action='import_daily_sales' and target=$1", [cafeId]);
+      await client.query("delete from public.partner_sales_daily where cafe_id=$1", [cafeId]);
+      await client.query("delete from public.partner_cafe_access where cafe_id=$1", [cafeId]);
+      await client.query('delete from public."Cafe" where id=$1', [cafeId]);
+    }
+    await client.end();
+  }
+});
+
+test("sales report ranks imported recipe servings and follows the café filter", async ({ page }) => {
+  const client = await db("postgres");
+  const chain = "20000000-0000-4000-8000-000000000001";
+  const suffix = randomUUID().slice(0, 8);
+  const mocha = `Mocha, "iced" ${suffix}`;
+  const latte = `Latte ${suffix}`;
+  const cafeName = `Recipe sales café ${suffix}`;
+  const recipeIds = [randomUUID(), randomUUID()];
+  let cafeId: string | undefined;
+  try {
+    cafeId = (await client.query(
+      'insert into public."Cafe"(chain_id,name,is_active) values($1,$2,true) returning id',
+      [chain, cafeName],
+    )).rows[0].id;
+    await client.query(
+      "insert into public.partner_recipes(id,chain_id,name,yield,ingredients) values($1,$3,$4,1,'[]'),($2,$3,$5,1,'[]')",
+      [...recipeIds, chain, mocha, latte],
+    );
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.goto("/partner/recipes");
+    await page.getByRole("link", { name: "View recipe sales ranking" }).click();
+    await expect(page).toHaveURL(/\/partner\/sales#recipe-sales$/);
+    await page.goto("/partner/sales?from=2024-07-01&to=2024-07-03");
+    const chart = page.getByRole("region", { name: "Top recipes by servings sold" });
+    await chart.getByRole("link", { name: "Import recipe sales CSV" }).click();
+    const form = page.locator("#recipe-sales-import");
+    await form.getByRole("combobox", { name: "Café for recipe sales" }).selectOption(String(cafeId));
+    const csvMocha = `"${mocha.replaceAll('"', '""')}"`;
+    await form.getByLabel("Recipe sales CSV file").setInputFiles({
+      name: "recipe-sales.csv", mimeType: "text/csv",
+      buffer: Buffer.from(`date,recipe,servings_sold\r\n2024-07-02,${latte},7\r\n2024-07-02,${csvMocha},18\r\n`),
+    });
+    await form.getByRole("button", { name: "Import recipe sales" }).click();
+    await expect(form.getByRole("status")).toHaveText("Saved 2 recipe sales rows.");
+    await expect(chart.getByRole("listitem").first()).toContainText(mocha);
+    await expect(chart.getByRole("listitem").first()).toContainText("18 servings sold");
+    await expect(chart.getByRole("listitem").nth(1)).toContainText(latte);
+    await expect(page.getByText("No sales match these filters.")).toBeVisible();
+    const breakdown = chart.getByRole("listitem").first().locator("details");
+    if (await breakdown.getAttribute("open") === null) await breakdown.locator("summary").click();
+    await expect(breakdown.locator("dl > div").filter({ hasText: cafeName }).locator("dd")).toHaveText("18");
+    await expect(breakdown.locator("dl > div").filter({ hasText: "North Star • Downtown" }).locator("dd")).toHaveText("No data");
+    await page.getByRole("combobox", { name: "Café", exact: true }).selectOption(String(cafeId));
+    await page.getByRole("button", { name: "Apply filters" }).click();
+    await expect(breakdown.locator("dt")).toHaveText([cafeName]);
+    await page.getByRole("combobox", { name: "Café", exact: true }).selectOption("101");
+    await page.getByRole("button", { name: "Apply filters" }).click();
+    await expect(chart.getByText("No recipe servings sold", { exact: false })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  } finally {
+    if (cafeId) {
+      await client.query("delete from public.partner_recipe_sales_daily where cafe_id=$1", [cafeId]);
+      await client.query("delete from public.partner_audit where action='import_recipe_sales' and target=$1", [cafeId]);
+      await client.query("delete from public.partner_cafe_access where cafe_id=$1", [cafeId]);
+      await client.query('delete from public."Cafe" where id=$1', [cafeId]);
+    }
+    await client.query("delete from public.partner_recipes where id=any($1::uuid[])", [recipeIds]);
+    await client.end();
+  }
+});
+
 test("restock planner uses the selected horizon and copies café-specific quantities", async ({ page, context }) => {
   const client = await db("postgres");
   const id = randomUUID();

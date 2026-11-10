@@ -992,6 +992,188 @@ test("oversized reward exports keep the report total and return no partial CSV r
     assert.deepEqual(exported.events, []);
   }));
 
+test("daily sales imports are scoped, repeatable and explicit about replacements", () =>
+  transaction(async (c) => {
+    const first = { sale_date: "2024-06-10", currency: "CAD", gross_sales: 100, discounts: 10, refunds: 5, tax: 4.25, orders: 12 };
+    const another = { ...first, sale_date: "2024-06-11", currency: "USD", gross_sales: 200 };
+    const importRows = async (cafe: number, rows: typeof first[], replace = false) =>
+      (await c.query("select public.partner_import_daily_sales($1,$2,$3,$4) as changed",
+        [A, cafe, JSON.stringify(rows), replace])).rows[0].changed;
+    const report = async (currency: string | null = null, cafe: number | null = null, chain = A) =>
+      (await c.query("select public.partner_sales_report($1,$2,'2024-06-10','2024-06-12',$3) as report",
+        [chain, cafe, currency])).rows[0].report;
+
+    await actor(c, 1);
+    assert.equal(await importRows(101, [first, another]), 2);
+    assert.equal(await importRows(101, [first, another]), 0);
+    assert.equal(await importRows(102, [{ ...first, gross_sales: 155 }]), 1);
+    await denied(c, () => importRows(101, [{ ...first, gross_sales: 120 }, { ...first, sale_date: "2024-06-12" }]), /Replace existing days/);
+    await denied(c, () => importRows(101, [first, first]), /one row per date/);
+    await denied(c, () => importRows(103, [first]), /active café/);
+    assert.deepEqual((await report()).trend.map((b: { net: number | null }) => b.net), [225, null, null]);
+    assert.equal(await importRows(101, [{ ...first, gross_sales: 120 }], true), 1);
+    const all = await report("CAD");
+    assert.deepEqual(all.currencies, ["CAD", "USD"]);
+    assert.deepEqual(all.cafes.map(({ cafe_id, net }: { cafe_id: number; net: number }) => [cafe_id, net]), [[102, 140], [101, 105]]);
+    assert.equal(all.totals.net, 245);
+    assert.equal((await report("USD")).totals.net, 185);
+    assert.equal((await report("CAD", 101)).totals.net, 105);
+    assert.equal(await importRows(102, [{ ...first, sale_date: "2024-06-12", currency: "NGN", gross_sales: 12000 }]), 1);
+    const preferred = await report();
+    assert.equal(preferred.currency, "NGN");
+    assert.equal(preferred.totals.net, 11985);
+    assert.deepEqual(preferred.currencies, ["CAD", "NGN", "USD"]);
+    assert.equal((await report("CAD")).totals.net, 245);
+    await denied(c, () => c.query("update public.partner_sales_daily set gross_sales=0"), /permission denied/);
+
+    await actor(c, 2);
+    const assignedCafeReport = await report();
+    assert.equal(assignedCafeReport.currency, "CAD");
+    assert.equal(assignedCafeReport.totals.net, 105);
+    await denied(c, () => report("CAD", 102), /access is required/);
+    await denied(c, () => importRows(101, [first]), /Owner or Chain Manager/);
+    await actor(c, 3);
+    await denied(c, () => report(), /access is required/);
+    assert.equal((await report(null, null, B)).totals.rows, 0);
+    await c.query("SET LOCAL ROLE anon");
+    await denied(c, () => report(), /permission denied/);
+  }));
+
+test("recipe sales match chain recipes and rank only sales in the caller's café and date scope", () =>
+  transaction(async (c) => {
+    await actor(c, 1);
+    const [latte] = (await c.query("select id from public.partner_recipes where chain_id=$1 and name='House latte'", [A])).rows;
+    const first = { sale_date: "2024-07-02", recipe: " house Latte ", servings_sold: 12 };
+    const save = async (cafe: number, rows: typeof first[], replace = false) =>
+      (await c.query("select public.partner_import_recipe_sales($1,$2,$3,$4) as changed",
+        [A, cafe, JSON.stringify(rows), replace])).rows[0].changed;
+    const rank = async (cafe: number | null = null, from = "2024-07-01") =>
+      (await c.query("select public.partner_recipe_sales_report($1,$2,'2024-07-03',$3) as ranking", [A, from, cafe])).rows[0].ranking;
+
+    const movements = (await c.query("select count(*) from public.partner_movements")).rows[0].count;
+    assert.equal(await save(101, [first]), 1);
+    assert.equal(await save(101, [{ ...first, recipe: latte.id }]), 0);
+    await denied(c, () => save(101, [first, { ...first, recipe: latte.id }]), /one row per recipe/);
+    await denied(c, () => save(101, [first, { ...first, recipe: "Unknown recipe" }]), /Could not match/);
+    await denied(c, () => save(101, [{ ...first, servings_sold: 18 }]), /Replace existing recipe sales/);
+    assert.equal(await save(101, [{ ...first, servings_sold: 18 }], true), 1);
+    assert.equal(await save(102, [{ ...first, servings_sold: 25 }]), 1);
+    await denied(c, () => save(103, [first]), /active café/);
+    const downtown = { cafe_id: 101, servings_sold: 18 };
+    const riverside = { cafe_id: 102, servings_sold: 25 };
+    assert.deepEqual(await rank(), [{
+      recipe_id: latte.id, name: "House latte", servings_sold: 43, cafes: [downtown, riverside],
+    }]);
+    assert.deepEqual((await rank(102))[0].cafes, [riverside]);
+    assert.deepEqual(await rank(null, "2024-07-03"), []);
+    assert.equal((await c.query("select count(*) from public.partner_movements")).rows[0].count, movements);
+    assert.equal((await c.query("select count(*) from public.partner_sales_daily where chain_id=$1 and sale_date=$2", [A, first.sale_date])).rows[0].count, "0");
+    await denied(c, () => c.query("update public.partner_recipe_sales_daily set servings_sold=1"), /permission denied/);
+
+    await actor(c, 2);
+    assert.equal((await rank())[0].servings_sold, 18);
+    assert.deepEqual((await rank())[0].cafes, [downtown]);
+    await denied(c, () => rank(102), /Paid café access/);
+    await denied(c, () => save(101, [first]), /Owner or Chain Manager/);
+    await actor(c, 3);
+    await denied(c, () => rank(), /Paid café access/);
+    await c.query("SET LOCAL ROLE anon");
+    await denied(c, () => rank(), /permission denied/);
+  }));
+
+test("demo POS sync replaces covered CSV reporting without double counting and retains uncovered history", () =>
+  transaction(async (c) => {
+    const { day, older } = (await c.query(`select
+      ((now() at time zone 'Africa/Lagos')::date - 1)::text as day,
+      ((now() at time zone 'Africa/Lagos')::date - 40)::text as older`)).rows[0];
+    const csvDay = { sale_date: day, currency: "NGN", gross_sales: 100, discounts: 0, refunds: 0, tax: 0, orders: 1 };
+    const recipeDay = { sale_date: day, recipe: "House latte", servings_sold: 999999 };
+    const importCsv = (saleDate: string) => c.query("select public.partner_import_daily_sales($1,101,$2,true)",
+      [A, JSON.stringify([{ ...csvDay, sale_date: saleDate }])]);
+    const importRecipeCsv = (saleDate = day) => c.query("select public.partner_import_recipe_sales($1,101,$2,true)",
+      [A, JSON.stringify([{ ...recipeDay, sale_date: saleDate }])]);
+    const sync = async () => (await c.query("select public.partner_sync_demo_pos($1) as count", [A])).rows[0].count;
+    const status = async () => (await c.query("select public.partner_demo_pos_status($1) as status", [A])).rows[0].status;
+    const report = async (saleDate: string, cafe: number | null = 101, currency = "NGN", channel: string | null = null) =>
+      (await c.query("select public.partner_sales_report($1,$3,$2,$2,$4,$5) as report", [A, saleDate, cafe, currency, channel])).rows[0].report;
+    const rank = async (saleDate: string, channel: string | null = null, cafe: number | null = 101) =>
+      (await c.query("select public.partner_recipe_sales_report($1,$2,$2,$3,$4) as recipes", [A, saleDate, cafe, channel])).rows[0].recipes;
+
+    await actor(c, 1);
+    await importCsv(day);
+    await importCsv(older);
+    await importRecipeCsv();
+    await importRecipeCsv(older);
+    assert.equal((await report(day)).totals.orders, 1);
+    assert.ok(await sync() > 0);
+    const completed = (await c.query("select count(*)::int as count from public.partner_sales_orders where chain_id=$1 and cafe_id=101 and sale_date=$2", [A, day])).rows[0].count;
+    assert.ok(completed > 1);
+    const channels = (await c.query(`select cafe_id::int, channel, count(*)::int as orders,
+      sum(gross_sales-discounts-refunds)::float8 as net
+      from public.partner_sales_orders where chain_id=$1 and cafe_id=101 and sale_date=$2 group by cafe_id,channel order by channel`, [A, day])).rows;
+    assert.deepEqual(channels.map(({ channel }) => channel), ["mobile", "pos"]);
+    const syncedReport = await report(day);
+    assert.deepEqual(syncedReport.channels, channels);
+    assert.equal(syncedReport.totals.orders, completed);
+    assert.equal(syncedReport.totals.rows, 1);
+    assert.equal(syncedReport.cafes[0].days, 1);
+    for (const channel of channels) {
+      const filtered = await report(day, 101, "NGN", channel.channel);
+      assert.equal(filtered.totals.net, channel.net);
+      assert.equal(filtered.totals.orders, channel.orders);
+      assert.deepEqual(filtered.channels, channels);
+      const expectedRecipes = (await c.query(`select r.recipe_id, p.name, sum(r.servings_sold)::int as servings_sold
+        from public.partner_sales_order_recipes r join public.partner_sales_orders o on o.id=r.order_id
+        join public.partner_recipes p on p.id=r.recipe_id
+        where o.chain_id=$1 and o.cafe_id=101 and o.sale_date=$2 and o.channel=$3
+        group by r.recipe_id,p.name order by servings_sold desc,p.name,r.recipe_id limit 10`, [A, day, channel.channel])).rows;
+      assert.ok(expectedRecipes.length > 0);
+      assert.deepEqual(await rank(day, channel.channel), expectedRecipes.map((recipe) => ({
+        ...recipe, cafes: [{ cafe_id: 101, servings_sold: recipe.servings_sold }],
+      })));
+    }
+    const olderReport = await report(older);
+    assert.equal(olderReport.totals.orders, 1);
+    assert.deepEqual(olderReport.channels, []);
+    assert.equal((await report(older, 101, "NGN", "pos")).totals.rows, 0);
+    assert.equal((await rank(older))[0].servings_sold, recipeDay.servings_sold);
+    assert.deepEqual(await rank(older, "pos"), []);
+    await denied(c, () => report(day, 101, "NGN", "unknown"), /valid sales channel/);
+    await denied(c, () => rank(day, "unknown"), /valid sales channel/);
+    assert.deepEqual((await report(day, 101, "USD")).channels, []);
+    assert.deepEqual((await report(day, null)).channels.map(({ cafe_id }: { cafe_id: number }) => cafe_id), [101, 101, 102, 102]);
+    assert.equal(await sync(), 0);
+    assert.equal((await report(day)).totals.orders, completed);
+    assert.ok((await status()).synced_at);
+    assert.equal((await c.query("select orders from public.partner_sales_daily where chain_id=$1 and cafe_id=101 and sale_date=$2", [A, day])).rows[0].orders, 1);
+    const ranking = await rank(day);
+    assert.ok(ranking.length > 0 && ranking.every((recipe: { servings_sold: number }) => recipe.servings_sold < completed));
+    await denied(c, () => importCsv(day), /synced from orders/);
+    await denied(c, importRecipeCsv, /synced from orders/);
+    await denied(c, () => c.query("delete from public.partner_sales_orders"), /permission denied/);
+
+    await c.query("RESET ROLE");
+    await c.query(`insert into public.partner_sales_orders(chain_id,cafe_id,source,source_order_id,channel,sale_date,currency,gross_sales,discounts,refunds,tax)
+      values($1,101,'mobile_checkout','future-order-fixture','mobile',$2,'NGN',2000,0,0,0)`, [A, day]);
+    await actor(c, 1);
+    const combined = await report(day);
+    assert.equal(combined.totals.orders, completed + 1);
+    assert.deepEqual(combined.channels, [{ ...channels[0], orders: channels[0].orders + 1, net: channels[0].net + 2000 }, channels[1]]);
+
+    await actor(c, 2);
+    assert.deepEqual((await status()).locations.map((location: { id: number }) => location.id), [101]);
+    const accessible = await c.query("select distinct cafe_id from public.partner_sales_orders");
+    assert.deepEqual(accessible.rows.map((row) => Number(row.cafe_id)), [101]);
+    assert.deepEqual((await report(day, null)).channels, combined.channels);
+    assert.deepEqual(await rank(day, "mobile", null), await rank(day, "mobile", 101));
+    await denied(c, sync, /Owner or Chain Manager/);
+    await actor(c, 3);
+    assert.deepEqual((await status()).locations, []);
+    await denied(c, sync, /Owner or Chain Manager/);
+    await c.query("SET LOCAL ROLE anon");
+    await denied(c, sync, /permission denied/);
+  }));
+
 test("public replacement hides archived cafes and secrets; anonymous cannot call operational RPC", () =>
   transaction(async (c) => {
     await c.query("SET LOCAL ROLE anon");

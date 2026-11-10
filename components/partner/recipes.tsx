@@ -284,6 +284,7 @@ export function Recipes({ data }: { data: PortalData }) {
         <div className="max-w-xl space-y-1 text-sm text-muted-foreground">
           <p>Shared recipes keep preparation consistent across your cafés.</p>
           <p>Use Inventory to record stock usage.</p>
+          <Link href="/partner/sales#recipe-sales" className="inline-block font-medium text-primary underline underline-offset-4">View recipe sales ranking</Link>
         </div>
         {canEdit ? (
           <Button
@@ -416,14 +417,19 @@ export function Recipes({ data }: { data: PortalData }) {
                   </div>
                   <div id={`recipe-details-${recipeId}`} hidden={!open}>
                     {open && (
-                      <RecipeAmounts
-                        key={String(recipe.revision)}
-                        recipeId={recipeId}
-                        ingredients={ingredients}
-                        names={names}
-                        servings={servings}
-                        cafes={data.cafes}
-                      />
+                      <>
+                        <RecipeAmounts
+                          key={String(recipe.revision)}
+                          recipeId={recipeId}
+                          ingredients={ingredients}
+                          names={names}
+                          servings={servings}
+                          cafes={data.cafes}
+                        />
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Recipe ID for POS imports <code className="ml-1 select-all break-all">{recipeId}</code>
+                        </p>
+                      </>
                     )}
                   </div>
                 </article>
