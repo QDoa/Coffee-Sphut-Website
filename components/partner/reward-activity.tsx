@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ArrowUpRight, ChevronDown, Download, Gift, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PortalData } from "@/lib/partner/portal";
-import { Field, Panel, Select } from "./workspace";
+import { ReportFilters } from "./report-filters";
+import { Select } from "./workspace";
 
 const number = new Intl.NumberFormat("en-CA");
 const shortDate = new Intl.DateTimeFormat("en-CA", {
@@ -149,30 +150,29 @@ export function Rewards({ data, params }: {
 
   return (
     <>
-      <Panel title="Report filters">
-        <div className="mb-4 flex flex-wrap gap-2" aria-label="Date presets">
-          {[["week", "This week"], ["month", "Last 30 days"]].map(([key, label]) => (
-            <Button key={key} asChild variant={range === key ? "secondary" : "outline"} className="min-h-11">
-              <Link
-                href={`?${new URLSearchParams({ range: key, ...(params.cafe_id ? { cafe_id: params.cafe_id } : {}) })}`}
-                aria-current={range === key ? "true" : undefined}
-              >{label}</Link>
-            </Button>
-          ))}
-        </div>
-        <form key={reportQuery.toString()} className="grid items-end gap-3 min-[375px]:grid-cols-2 lg:grid-cols-4 lg:gap-4">
-          <div className="min-w-0 min-[375px]:col-span-2 lg:col-span-1">
-            <Select name="cafe_id" label="Café" value={params.cafe_id} options={[
-              { value: "", label: "All accessible cafés" },
-              ...data.cafes.map((cafe) => ({ value: String(cafe.id), label: String(cafe.name || "Café") })),
-            ]} />
-          </div>
-          <Field name="from" label="From" type="date" value={params.from ?? data.reward_from} />
-          <Field name="to" label="Through" type="date" value={params.to ?? data.reward_to} />
-          <Button className="min-h-11 min-[375px]:col-span-2 lg:col-span-1">Apply filters</Button>
-        </form>
-        {data.reward_error && <p role="alert" className="mt-3 text-sm text-destructive">{data.reward_error}</p>}
-      </Panel>
+      <ReportFilters
+        path="/partner/rewards"
+        formKey={reportQuery.toString()}
+        from={params.from ?? data.reward_from}
+        through={params.to ?? data.reward_to}
+        error={data.reward_error}
+        cafe={<Select name="cafe_id" label="Café" value={params.cafe_id} options={[
+          { value: "", label: "All accessible cafés" },
+          ...data.cafes.map((cafe) => ({ value: String(cafe.id), label: String(cafe.name || "Café") })),
+        ]} />}
+        presets={
+          <nav className="flex flex-wrap gap-2" aria-label="Date presets">
+            {[["week", "This week"], ["month", "Last 30 days"]].map(([key, label]) => (
+              <Button key={key} asChild variant={range === key ? "secondary" : "outline"} className="min-h-11 px-3">
+                <Link
+                  href={`?${new URLSearchParams({ range: key, ...(params.cafe_id ? { cafe_id: params.cafe_id } : {}) })}`}
+                  aria-current={range === key ? "true" : undefined}
+                >{label}</Link>
+              </Button>
+            ))}
+          </nav>
+        }
+      />
       {!data.reward_error && (
         <>
           <section aria-label="Reward report summary" className="space-y-4 rounded-2xl border bg-card p-4 sm:p-5">

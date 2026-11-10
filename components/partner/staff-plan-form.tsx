@@ -4,9 +4,8 @@ import { useEffect, useId, useState } from "react";
 import { getPlanCafes } from "@/app/partner/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PartnerSelect } from "./partner-select";
 import { ActionForm } from "./action-form";
-
-const SELECT_CLASS = "min-h-11 w-full rounded-lg border bg-background px-3 text-sm";
 
 interface StaffPlanFormProps {
   partners: { id: string; label: string }[];
@@ -54,9 +53,9 @@ export function StaffPlanForm({ partners, requestId }: StaffPlanFormProps) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2 text-sm font-medium">
           <label htmlFor={`${formId}-chain`}>Partner</label>
-          <select
+          <PartnerSelect
             id={`${formId}-chain`}
-            className={SELECT_CLASS}
+            className="rounded-lg"
             name="chain_id"
             value={chain}
             required
@@ -67,13 +66,13 @@ export function StaffPlanForm({ partners, requestId }: StaffPlanFormProps) {
           >
             <option value="">Choose a partner</option>
             {partners.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
-          </select>
+          </PartnerSelect>
         </div>
         <div className="space-y-2 text-sm font-medium">
           <label htmlFor={`${formId}-plan`}>Plan</label>
-          <select
+          <PartnerSelect
             id={`${formId}-plan`}
-            className={SELECT_CLASS}
+            className="rounded-lg"
             name="plan"
             value={plan}
             onChange={(event) => {
@@ -83,7 +82,7 @@ export function StaffPlanForm({ partners, requestId }: StaffPlanFormProps) {
           >
             <option value="paid">Paid</option>
             <option value="free">Free</option>
-          </select>
+          </PartnerSelect>
         </div>
       </div>
 

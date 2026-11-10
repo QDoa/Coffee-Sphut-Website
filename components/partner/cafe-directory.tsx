@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PartnerSelect } from "./partner-select";
 import type { RequestQueuePage } from "@/lib/partner/request-queue";
 import { RequestQueueCount, RequestQueueFilters, RequestQueuePagination } from "./request-queue-controls";
 import { DiscardCafeChangeButton } from "./discard-cafe-change-button";
@@ -67,8 +68,6 @@ const REQUEST_STATUSES: Record<
   },
 };
 
-const FILTER_CLASS =
-  "min-h-11 w-full rounded-xl border bg-background px-3 text-sm focus-visible:ring-2 focus-visible:ring-ring";
 const ROW_CLASS =
   "flex flex-col items-start gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5";
 
@@ -214,16 +213,16 @@ export function CafeDirectory({
                   type="search"
                 />
               </label>
-              <select
+              <PartnerSelect
                 aria-label="Filter cafés by status"
-                className={FILTER_CLASS}
+                className="focus-visible:ring-2 focus-visible:ring-ring"
                 value={cafeStatus}
                 onChange={(event) => setCafeStatus(event.currentTarget.value)}
               >
                 <option value="all">All cafés</option>
                 <option value="active">Active</option>
                 <option value="archived">Archived</option>
-              </select>
+              </PartnerSelect>
             </div>
           </div>
 

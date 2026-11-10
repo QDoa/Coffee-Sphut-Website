@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PartnerSelect } from "./partner-select";
 import { Label } from "@/components/ui/label";
 import {
   Sheet,
@@ -155,9 +156,8 @@ function RecipeAmounts({
           {cafes.length > 0 ? (
             <div className="space-y-2 pt-2">
               <Label htmlFor={`${id}-cafe`}>Check stock at café</Label>
-              <select
+              <PartnerSelect
                 id={`${id}-cafe`}
-                className="min-h-11 w-full min-w-0 rounded-xl border bg-background px-3 text-sm"
                 value={cafeId}
                 onChange={(event) => {
                   setResponse(null);
@@ -171,7 +171,7 @@ function RecipeAmounts({
                     {cafe.is_active === false ? " (archived)" : ""}
                   </option>
                 ))}
-              </select>
+              </PartnerSelect>
               {cafeId && !stock && (
                 <p role="status" className="text-sm text-muted-foreground">
                   Checking stock…
@@ -346,16 +346,15 @@ export function Recipes({ data }: { data: PortalData }) {
                 className="min-h-11 pl-9"
               />
             </label>
-            <select
+            <PartnerSelect
               aria-label="Filter recipes by status"
-              className="min-h-11 w-full min-w-0 rounded-xl border bg-background px-3 text-sm"
               value={status}
               onChange={(event) => setStatus(event.currentTarget.value)}
             >
               <option value="all">All recipes</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
-            </select>
+            </PartnerSelect>
           </div>
         </div>
 
@@ -369,7 +368,7 @@ export function Recipes({ data }: { data: PortalData }) {
               return (
                 <article
                   key={String(recipe.id)}
-                  className="min-w-0 space-y-4 rounded-2xl border bg-card p-5"
+                  className="flex min-w-0 flex-col gap-3 rounded-2xl border bg-card p-4"
                   aria-labelledby={`recipe-${recipe.id}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">

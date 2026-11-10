@@ -5,6 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { commandAction } from "@/app/partner/actions";
 import { ActionForm } from "./action-form";
 import { Input } from "@/components/ui/input";
+import { PartnerSelect } from "./partner-select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import type { PortalData } from "@/lib/partner/portal";
@@ -23,9 +24,6 @@ interface IngredientRow extends Omit<RecipeIngredient, "quantity"> {
 export function recipeIngredients(value: unknown): RecipeIngredient[] {
   return Array.isArray(value) ? (value as RecipeIngredient[]) : [];
 }
-
-const selectClass =
-  "min-h-11 w-full min-w-0 rounded-xl border bg-background px-3 text-sm";
 
 export function RecipeEditor({
   recipe,
@@ -96,15 +94,14 @@ export function RecipeEditor({
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${id}-status`}>Recipe status</Label>
-          <select
+          <PartnerSelect
             id={`${id}-status`}
             name="active"
             defaultValue={String(recipe?.active ?? true)}
-            className={selectClass}
           >
             <option value="true">Active</option>
             <option value="false">Inactive</option>
-          </select>
+          </PartnerSelect>
         </div>
       </div>
 
@@ -165,7 +162,7 @@ export function RecipeEditor({
                   <Trash2 aria-hidden="true" />
                 </Button>
               </div>
-              <select
+              <PartnerSelect
                 id={`${fieldId}-item`}
                 value={row.item_id}
                 required
@@ -177,7 +174,6 @@ export function RecipeEditor({
                     unit: String(selected?.unit ?? ""),
                   });
                 }}
-                className={selectClass}
               >
                 <option value="">Choose ingredient</option>
                 {retained && (
@@ -190,7 +186,7 @@ export function RecipeEditor({
                     {String(item.name)} ({String(item.unit)})
                   </option>
                 ))}
-              </select>
+              </PartnerSelect>
               <div className="space-y-2">
                 <Label htmlFor={`${fieldId}-quantity`}>
                   Quantity {index + 1}

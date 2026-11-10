@@ -7,9 +7,11 @@ import { ActionForm } from "./action-form";
 import type { PortalData } from "@/lib/partner/portal";
 import type { RequestQueueQuery } from "@/lib/partner/request-queue";
 import { Input } from "@/components/ui/input";
+import { PartnerSelect } from "./partner-select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 type Row = Record<string, unknown>;
 const str = (x: unknown) =>
@@ -30,6 +32,7 @@ export function Field({
   type = "text",
   required = false,
   help,
+  inputClassName,
 }: {
   name: string;
   label: string;
@@ -37,13 +40,14 @@ export function Field({
   type?: string;
   required?: boolean;
   help?: string;
+  inputClassName?: string;
 }) {
   const id = name + "-" + randomUUID();
   return (
     <div className="min-w-0 space-y-2">
       <Label htmlFor={id}>{label}</Label>
       <Input
-        className="min-h-11"
+        className={cn("min-h-11", inputClassName)}
         id={id}
         name={name}
         type={type}
@@ -90,20 +94,20 @@ export function Select({
   value?: string;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="min-w-0 space-y-2">
       <Label htmlFor={name}>{label}</Label>
-      <select
+      <PartnerSelect
         id={name}
         name={name}
         defaultValue={value}
-        className="min-h-11 w-full rounded-lg border bg-background px-3 text-sm"
+        className="rounded-lg"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
           </option>
         ))}
-      </select>
+      </PartnerSelect>
     </div>
   );
 }

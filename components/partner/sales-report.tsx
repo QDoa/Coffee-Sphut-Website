@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { importDailySales, importRecipeSales, syncDemoPos } from "@/app/partner/sales-actions";
 import { portalClient, type PortalData } from "@/lib/partner/portal";
 import { isLocalPartnerPreview } from "@/lib/partner/preview";
 import { DEFAULT_SALES_CURRENCY, demoPosStatusSchema, RECIPE_SALES_CSV_HEADER, recipeSalesRankingSchema, SALES_CSV_COLUMNS, salesFiltersSchema, salesImportCurrencySchema, salesReportSchema, type RecipeSalesRanking, type SalesReportData } from "@/lib/partner/sales";
 import { ActionForm } from "./action-form";
-import { Field, Panel, Select } from "./workspace";
+import { ReportFilters } from "./report-filters";
+import { Panel, Select } from "./workspace";
 
 const currencyNames = new Intl.DisplayNames("en-CA", { type: "currency" });
 const importCurrencyOptions = [
@@ -284,30 +284,38 @@ export async function SalesReport({ data, params }: { data: PortalData; params: 
   return (
     <>
       <DemoPosConnection chainId={chainId} canSync={canImport} />
-      <Panel title="Report filters">
-        <form action="/partner/sales" key={JSON.stringify(params)} className="grid min-w-0 items-end gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-          <Select name="cafe_id" label="Café" value={params.cafe_id ?? ""} options={[{ value: "", label: "All accessible cafés" }, ...cafes]} />
-          <Field name="from" label="From" type="date" value={params.from ?? report?.from} />
-          <Field name="to" label="Through" type="date" value={params.to ?? report?.through} />
-          <Select name="currency" label="Currency" value={params.currency ?? ""} options={[
-            { value: "", label: report?.currency ? `Default for period (${report.currency})` : "Default for period" },
-            ...currencyOptions.map((currency) => ({ value: currency, label: currency })),
-          ]} />
-          <Select name="channel" label="Sales channel" value={params.channel ?? ""} options={[
-            { value: "", label: "All" },
-            ...SALES_CHANNELS.map(({ id, label }) => ({ value: id, label })),
-          ]} />
-          <Button className="min-h-11">Apply filters</Button>
-        </form>
-        <p className="mt-3 text-xs text-muted-foreground">All includes CSV history. POS and Mobile show orders with a recorded channel.</p>
-        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
-          <Link href="/partner/sales" className="font-medium text-primary underline underline-offset-4">Reset to last 30 days</Link>
-          {canImport && <a href="#sales-import" className="font-medium text-primary underline underline-offset-4">CSV fallback</a>}
-          {!!report?.channels.length && <a href="#sales-by-channel" className="font-medium text-primary underline underline-offset-4">Compare sales channels</a>}
-          {report && data.plan === "paid" && <a href="#recipe-sales" className="font-medium text-primary underline underline-offset-4">See top recipes</a>}
-        </div>
-        {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
-      </Panel>
+      <div className="space-y-2">
+        <ReportFilters
+          path="/partner/sales"
+          formKey={JSON.stringify(params)}
+          from={params.from ?? report?.from}
+          through={params.to ?? report?.through}
+          error={error}
+          cafe={<Select name="cafe_id" label="Café" value={params.cafe_id ?? ""} options={[{ value: "", label: "All accessible cafés" }, ...cafes]} />}
+        >
+          <div className="grid min-w-0 items-start gap-3 min-[420px]:grid-cols-2">
+            <Select name="currency" label="Currency" value={params.currency ?? ""} options={[
+              { value: "", label: report?.currency ? `Default for period (${report.currency})` : "Default for period" },
+              ...currencyOptions.map((currency) => ({ value: currency, label: currency })),
+            ]} />
+            <div className="min-w-0">
+              <Select name="channel" label="Sales channel" value={params.channel ?? ""} options={[
+                { value: "", label: "All" },
+                ...SALES_CHANNELS.map(({ id, label }) => ({ value: id, label })),
+              ]} />
+              <p className="mt-1.5 text-xs text-muted-foreground">All includes CSV history.</p>
+            </div>
+          </div>
+        </ReportFilters>
+        {(canImport || !!report?.channels.length || (report && data.plan === "paid")) && (
+          <nav aria-label="Sales report sections" className="flex flex-wrap items-center gap-x-4 px-1 text-sm [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4">
+            <span className="text-muted-foreground">Jump to</span>
+            {canImport && <a href="#sales-import">CSV fallback</a>}
+            {!!report?.channels.length && <a href="#sales-by-channel">Compare sales channels</a>}
+            {report && data.plan === "paid" && <a href="#recipe-sales">See top recipes</a>}
+          </nav>
+        )}
+      </div>
       {report && (report.totals.rows > 0 ? (
         <section aria-label="Sales totals" className="rounded-2xl border bg-card p-4 sm:p-5">
           <dl className="grid gap-4 sm:grid-cols-3">

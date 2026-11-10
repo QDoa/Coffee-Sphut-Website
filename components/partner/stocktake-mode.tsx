@@ -5,6 +5,7 @@ import { ClipboardList } from "lucide-react";
 import { saveStocktake } from "@/app/partner/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PartnerSelect } from "./partner-select";
 import type { StocktakeItem } from "@/lib/partner/portal";
 import { COUNT_QUANTITY, STOCKTAKE_LIMIT } from "@/lib/partner/stock";
 
@@ -110,11 +111,11 @@ export function StocktakeMode({ cafes, items, chainId, cafeId }: {
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-2 text-sm font-medium">
                 <span className="block">Café to count</span>
-                <select value={cafe} disabled={counts.length > 0}
+                <PartnerSelect value={cafe} disabled={counts.length > 0}
                   onChange={(event) => { setCafe(event.target.value); setSearch(""); setResult({}); }}
-                  className="min-h-11 w-full rounded-xl border bg-background px-3 disabled:opacity-70">
+                  className="disabled:opacity-70">
                   {cafes.map(({ id, name }) => <option key={id} value={id}>{name}</option>)}
-                </select>
+                </PartnerSelect>
               </label>
               <label className="space-y-2 text-sm font-medium">
                 <span className="block">Find items to count</span>

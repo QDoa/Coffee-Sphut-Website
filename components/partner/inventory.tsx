@@ -13,6 +13,7 @@ import { stockView, amount, type Row } from "@/lib/partner/stock";
 import { ActionForm } from "./action-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PartnerSelect } from "./partner-select";
 import {
   Sheet,
   SheetContent,
@@ -113,20 +114,20 @@ function Field({
         {label}
       </label>
       {options ? (
-        <select
+        <PartnerSelect
           id={id}
           name={name}
           {...valueProps}
           aria-describedby={describedBy}
           required
-          className="min-h-11 w-full rounded-xl border bg-card px-3"
+          className="bg-card"
         >
           {options.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
           ))}
-        </select>
+        </PartnerSelect>
       ) : (
         <div className="relative">
           <Input
@@ -430,8 +431,8 @@ export function Inventory({ data, cafeId, itemId }: {
                 </label>
                 <label className="min-w-0 flex-1 basis-40">
                   <span className="sr-only">Filter by café</span>
-                  <select
-                    className="min-h-11 w-full rounded-xl border bg-card px-3 text-sm"
+                  <PartnerSelect
+                    className="bg-card"
                     value={cafe}
                     onChange={(e) => {
                       setCafe(e.target.value);
@@ -444,12 +445,12 @@ export function Inventory({ data, cafeId, itemId }: {
                         {String(c.name)}
                       </option>
                     ))}
-                  </select>
+                  </PartnerSelect>
                 </label>
                 <label className="min-w-0 flex-1 basis-36">
                   <span className="sr-only">Filter stock status</span>
-                  <select
-                    className="min-h-11 w-full rounded-xl border bg-card px-3 text-sm"
+                  <PartnerSelect
+                    className="bg-card"
                     value={filter}
                     onChange={(e) => {
                       setFilter(e.target.value);
@@ -466,7 +467,7 @@ export function Inventory({ data, cafeId, itemId }: {
                         {label}
                       </option>
                     ))}
-                  </select>
+                  </PartnerSelect>
                 </label>
               </div>
             </div>

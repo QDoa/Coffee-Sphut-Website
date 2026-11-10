@@ -639,97 +639,129 @@ test("stock movements preview balances in the selected item's unit before saving
 test("recipes can be created, found by ingredient, and edited from the library", async ({
   page,
 }) => {
-  const name = `Test recipe ${Date.now()}`;
-  await page.goto("/partner/recipes");
-  await page.getByRole("button", { name: "Add recipe", exact: true }).click();
-  const editor = page.getByRole("dialog");
-  await editor.getByLabel("Recipe name", { exact: true }).fill(name);
-  await expect(
-    editor.getByRole("button", { name: "Save recipe" }),
-  ).toBeDisabled();
-  await editor
-    .getByRole("button", { name: "Add ingredient", exact: true })
-    .click();
-  await editor
-    .getByLabel("Ingredient 1", { exact: true })
-    .selectOption("40000000-0000-4000-8000-000000000001");
-  const quantity = editor.getByLabel("Quantity 1", { exact: true });
-  await expect(quantity).toHaveAccessibleDescription("g");
-  await quantity.fill("18");
-  await editor
-    .getByRole("button", { name: "Add ingredient", exact: true })
-    .click();
-  await editor
-    .getByLabel("Ingredient 2", { exact: true })
-    .selectOption("40000000-0000-4000-8000-000000000001");
-  await editor.getByLabel("Quantity 2", { exact: true }).fill("2");
-  await editor
-    .getByRole("button", { name: "Save recipe", exact: true })
-    .click();
-  await expect(page.getByRole("status")).toHaveText(`${name} saved.`);
-  await expect(editor).toHaveCount(0);
+  const chain = "20000000-0000-4000-8000-000000000001";
+  const name = `Test recipe ${randomUUID()}`;
+  const client = await db("postgres");
+  try {
+    await page.goto("/partner/recipes");
+    await page.getByRole("button", { name: "Add recipe", exact: true }).click();
+    const editor = page.getByRole("dialog");
+    await editor.getByLabel("Recipe name", { exact: true }).fill(name);
+    await expect(
+      editor.getByRole("button", { name: "Save recipe" }),
+    ).toBeDisabled();
+    await editor
+      .getByRole("button", { name: "Add ingredient", exact: true })
+      .click();
+    await editor
+      .getByLabel("Ingredient 1", { exact: true })
+      .selectOption("40000000-0000-4000-8000-000000000001");
+    const quantity = editor.getByLabel("Quantity 1", { exact: true });
+    await expect(quantity).toHaveAccessibleDescription("g");
+    await quantity.fill("18");
+    await editor
+      .getByRole("button", { name: "Add ingredient", exact: true })
+      .click();
+    await editor
+      .getByLabel("Ingredient 2", { exact: true })
+      .selectOption("40000000-0000-4000-8000-000000000001");
+    await editor.getByLabel("Quantity 2", { exact: true }).fill("2");
+    await editor
+      .getByRole("button", { name: "Save recipe", exact: true })
+      .click();
+    await expect(page.getByRole("status")).toHaveText(`${name} saved.`);
+    await expect(editor).toHaveCount(0);
 
-  const card = page.getByRole("article", { name, exact: true });
-  const search = page.getByLabel("Search recipes", { exact: true });
-  await search.fill("House espresso beans");
-  await expect(card).toContainText("Makes 1 serving · 2 ingredients");
-  await expect(card.getByRole("button", { name: "Scale recipe", exact: true })).toHaveCount(0);
-  await card.getByRole("button", { name: "View recipe", exact: true }).click();
-  await expect(card).toContainText("18 g");
-  await card.getByRole("button", { name: "Scale recipe", exact: true }).click();
-  const target = card.getByLabel("Target servings", { exact: true });
-  await expect(target).toHaveValue("1");
-  await target.fill("2.5");
-  await expect(card).toContainText("45 g");
-  await expect(card).toContainText("Makes 1 serving");
-  const cafe = card.getByLabel("Check stock at café", { exact: true });
-  await cafe.selectOption("101");
-  const onHand = card.getByText(/g on hand$/);
-  await expect(onHand).toHaveCount(1);
-  const available = Number(
-    (await onHand.textContent())?.replace(/[^\d.]/g, ""),
-  );
-  const servings = Math.floor(available / 20) + 1;
-  await target.fill(String(servings));
-  await expect(
-    card.getByText(
-      `Short by ${(servings * 20 - available).toLocaleString("en", { maximumFractionDigits: 6 })} g`,
-      { exact: true },
-    ),
-  ).toBeVisible();
-  await cafe.selectOption("102");
-  await expect(
-    card.getByText("No matching stock item", { exact: true }).first(),
-  ).toBeVisible();
-  await expect(onHand).toHaveCount(0);
-  await target.fill("0");
-  await expect(
-    card.getByText("Enter a valid number of servings greater than zero."),
-  ).toBeVisible();
-  await expect(card.getByText("45 g", { exact: true })).toHaveCount(0);
-  await page.reload();
-  await card.getByRole("button", { name: "View recipe", exact: true }).click();
-  await expect(card).toContainText("18 g");
-  await search.fill(name);
-  await card.getByRole("button", { name: `Edit ${name}` }).click();
-  await expect(quantity).toHaveValue("18");
-  await expect(editor.getByLabel("Servings per batch")).toHaveValue("1");
-  await editor.getByLabel("Servings per batch").fill("2");
-  await editor.getByLabel("Recipe status").selectOption("false");
-  await editor
-    .getByRole("button", { name: "Save recipe", exact: true })
-    .click();
-  await expect(editor).toHaveCount(0);
-  await expect(card).toContainText("Makes 2 servings");
-  await expect(card).toContainText("Inactive");
+    const card = page.getByRole("article", { name, exact: true });
+    const search = page.getByLabel("Search recipes", { exact: true });
+    await search.fill("House espresso beans");
+    await expect(card).toContainText("Makes 1 serving · 2 ingredients");
+    await expect(card.getByRole("button", { name: "Scale recipe", exact: true })).toHaveCount(0);
+    await card.getByRole("button", { name: "View recipe", exact: true }).click();
+    await expect(card).toContainText("18 g");
+    await card.getByRole("button", { name: "Scale recipe", exact: true }).click();
+    const target = card.getByLabel("Target servings", { exact: true });
+    await expect(target).toHaveValue("1");
+    await target.fill("2.5");
+    await expect(card).toContainText("45 g");
+    await expect(card).toContainText("Makes 1 serving");
+    const cafe = card.getByLabel("Check stock at café", { exact: true });
+    const stock = await client.query<{ cafe_id: number; balance: number }>(
+      `select cafe_id::int, balance::float8
+       from public.partner_items
+       where chain_id=$1 and cafe_id in (101,102) and code='BEANS'
+         and type='ingredient' and unit='g' and active`,
+      [chain],
+    );
+    const downtown = stock.rows.find(({ cafe_id }) => cafe_id === 101);
+    const riverside = stock.rows.find(({ cafe_id }) => cafe_id === 102);
+    if (!downtown) throw new Error("The Downtown recipe ingredient fixture is missing.");
+    const quantityFormat = new Intl.NumberFormat("en", { maximumFractionDigits: 6 });
+    const servings = Math.floor(Math.max(downtown.balance, riverside?.balance ?? 0) / 20) + 1;
+    const onHand = card.getByText(/g on hand$/);
+    const checkBalance = async (balance: number) => {
+      await expect(onHand).toHaveText(`${quantityFormat.format(balance)} g on hand`);
+      await expect(card.getByText(
+        `Short by ${quantityFormat.format(servings * 20 - balance)} g`,
+        { exact: true },
+      )).toBeVisible();
+    };
 
-  const status = page.getByLabel("Filter recipes by status");
-  await status.selectOption("active");
-  await expect(
-    page.getByText("No matching recipes", { exact: true }),
-  ).toBeVisible();
-  await status.selectOption("inactive");
-  await expect(card).toBeVisible();
+    await target.fill(String(servings));
+    await cafe.selectOption("101");
+    await checkBalance(downtown.balance);
+    await cafe.selectOption("102");
+    if (riverside) {
+      await checkBalance(riverside.balance);
+    } else {
+      await expect(card.getByText("No matching stock item", { exact: true }).first()).toBeVisible();
+      await expect(onHand).toHaveCount(0);
+    }
+    await target.fill("0");
+    await expect(
+      card.getByText("Enter a valid number of servings greater than zero."),
+    ).toBeVisible();
+    await expect(card.getByText("45 g", { exact: true })).toHaveCount(0);
+    await page.reload();
+    await card.getByRole("button", { name: "View recipe", exact: true }).click();
+    await expect(card).toContainText("18 g");
+    await search.fill(name);
+    await card.getByRole("button", { name: `Edit ${name}` }).click();
+    await expect(quantity).toHaveValue("18");
+    await expect(editor.getByLabel("Servings per batch")).toHaveValue("1");
+    await editor.getByLabel("Servings per batch").fill("2");
+    await editor.getByLabel("Recipe status").selectOption("false");
+    await editor
+      .getByRole("button", { name: "Save recipe", exact: true })
+      .click();
+    await expect(editor).toHaveCount(0);
+    await expect(card).toContainText("Makes 2 servings");
+    await expect(card).toContainText("Inactive");
+
+    const status = page.getByLabel("Filter recipes by status");
+    await status.selectOption("active");
+    await expect(
+      page.getByText("No matching recipes", { exact: true }),
+    ).toBeVisible();
+    await status.selectOption("inactive");
+    await expect(card).toBeVisible();
+  } finally {
+    try {
+      await client.query(
+        `with fixture as (
+           delete from public.partner_recipes where chain_id=$1 and name=$2 returning id
+         ), audit as (
+           delete from public.partner_audit where chain_id=$1 and action='recipe'
+             and target in (select id::text from fixture)
+         )
+         delete from public.partner_operations where action='recipe'
+           and result->>'id' in (select id::text from fixture)`,
+        [chain, name],
+      );
+    } finally {
+      await client.end();
+    }
+  }
 });
 test("responsive layouts fit mobile, intermediate and desktop widths", async ({
   page,

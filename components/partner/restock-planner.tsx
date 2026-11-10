@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ClipboardCopy, PackagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PartnerSelect } from "./partner-select";
 import type { PortalData } from "@/lib/partner/portal";
 import { amount, restockSuggestion, stockView } from "@/lib/partner/stock";
 
@@ -54,11 +55,10 @@ export function RestockPlanner({ data, cafeId }: { data: PortalData; cafeId?: st
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="space-y-2 text-sm font-medium">
           <span className="block">Café</span>
-          <select value={cafe} onChange={(event) => { setCafe(event.target.value); setFeedback(""); }}
-            className="min-h-11 w-full rounded-xl border bg-background px-3">
+          <PartnerSelect value={cafe} onChange={(event) => { setCafe(event.target.value); setFeedback(""); }}>
             <option value="">All accessible cafés</option>
             {Array.from(cafes, ([id, name]) => <option key={id} value={id}>{name}</option>)}
-          </select>
+          </PartnerSelect>
         </label>
         <label className="space-y-2 text-sm font-medium">
           <span className="block">Days of coverage</span>

@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import type { RequestQueuePage, RequestQueueQuery } from "@/lib/partner/request-queue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PartnerSelect } from "./partner-select";
 
 interface QueueLocation {
   path: string;
@@ -62,14 +63,13 @@ export function RequestQueueFilters({
             defaultValue={query.search}
           />
         </label>
-        <select
+        <PartnerSelect
           name="request_filter"
           aria-label={filterLabel}
-          className="min-h-11 w-full rounded-xl border bg-background px-3 text-sm"
           defaultValue={query.filter}
         >
           {options.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
-        </select>
+        </PartnerSelect>
         <Button type="submit" variant="outline" className="min-h-11">Search requests</Button>
       </Form>
       {(query.search || query.filter !== "all") && (
