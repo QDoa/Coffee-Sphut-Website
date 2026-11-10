@@ -1,6 +1,7 @@
 import { StaffReviews } from "@/components/partner/staff-reviews";
 import { Dashboard } from "@/components/partner/dashboard";
 import { Inventory } from "@/components/partner/inventory";
+import { Rewards } from "@/components/partner/reward-activity";
 import { RestockPlanner } from "@/components/partner/restock-planner";
 import { StocktakeMode } from "@/components/partner/stocktake-mode";
 import { PlanSettings } from "@/components/partner/plan-settings";
@@ -27,7 +28,6 @@ import { PartnerShell } from "@/components/partner/shell";
 import {
   Cafes,
   CafeEditor,
-  Rewards,
   Panel,
   Field,
   removableCafeChange,

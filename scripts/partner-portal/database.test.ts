@@ -933,6 +933,16 @@ test("reward capture attributes redemption to B even when earned at A; reports u
     await c.query("select public.redeem_reward($1,$2)", [id, "local-only-102"]);
     const report = await snapshot(c, "rewards", { cafe_id: 102 });
     assert.equal(report.total, 1);
+    assert.deepEqual(report.reward_cafe_totals, [{ cafe_id: 102, cafe_name: "North Star • Riverside", total: 1 }]);
+    assert.equal(report.reward_trend.length, 30);
+    assert.equal(report.reward_trend[0].tracked, false);
+    assert.equal(report.reward_trend.at(-1).total, 1);
+    assert.equal(report.reward_trend.at(-1).tracked, true);
+    const wide = await snapshot(c, "rewards", { from: "2020-01-01", cafe_id: 102, offset: 50 });
+    assert.ok(wide.reward_trend.length <= 30);
+    assert.deepEqual(wide.reward_cafe_totals, report.reward_cafe_totals);
+    assert.equal(wide.reward_trend.reduce((total: number, bucket: { total: number }) => total + bucket.total, 0), 1);
+    assert.deepEqual(wide.events, []);
     const exported = await snapshot(c, "rewards", { cafe_id: 102, export: "csv", offset: 50 });
     assert.equal(exported.total, report.total);
     assert.equal(exported.events[0].id, id);
@@ -954,6 +964,9 @@ test("reward capture attributes redemption to B even when earned at A; reports u
     );
     await actor(c, 2);
     assert.deepEqual((await snapshot(c, "rewards", { cafe_id: 102, export: "csv" })).events, []);
+    const limited = await snapshot(c, "rewards");
+    assert.deepEqual(limited.reward_cafe_totals, []);
+    assert.ok(limited.reward_trend.every((bucket: { total: number }) => bucket.total === 0));
   }));
 
 test("oversized reward exports keep the report total and return no partial CSV rows", () =>

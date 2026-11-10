@@ -92,4 +92,8 @@ fixture_stocktake=$(docker exec coffee-partner-test psql -U postgres -d postgres
 if [[ "$fixture_stocktake" != 't' ]]; then
   docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261108222720_partner_stocktake.sql
 fi
+fixture_reward_breakdown=$(docker exec coffee-partner-test psql -U postgres -d postgres -Atc "select strpos(pg_get_functiondef('public.partner_snapshot(text,jsonb)'::regprocedure),'reward_cafe_totals') > 0")
+if [[ "$fixture_reward_breakdown" != 't' ]]; then
+  docker exec -i coffee-partner-test psql -U postgres -d postgres -v ON_ERROR_STOP=1 --single-transaction -f - < supabase/migrations/20261109003542_partner_reward_activity_breakdown.sql
+fi
 echo 'Local fixtures ready. Run pnpm partner:preview and open http://127.0.0.1:3100/partner/overview'

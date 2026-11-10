@@ -958,7 +958,7 @@ test("reward presets show their dates and invalid ranges keep the filters availa
   await expect(page.getByText(/Reporting period \d{4}-\d{2}-\d{2} to/)).toBeVisible();
 });
 
-test("reward CSV includes every matching redemption across report pages", async ({ page }) => {
+test("reward charts, café groups and CSV use the full filtered report", async ({ page }) => {
   const references = Array.from({ length: 55 }, () => randomUUID());
   const otherCafe = randomUUID();
   const client = await db("postgres");
@@ -970,7 +970,31 @@ test("reward CSV includes every matching redemption across report pages", async 
        from unnest($1::uuid[]) as ids(id)`,
       [[...references, otherCafe], otherCafe],
     );
-    await page.goto("/partner/rewards?cafe_id=102&range=month&offset=50");
+    await page.goto("/partner/rewards?range=month");
+    const trend = page.getByRole("region", { name: "Redemption trend" });
+    await trend.getByText("View trend data").click();
+    const plotted = (await trend.locator("dd").allTextContents())
+      .reduce((sum, count) => sum + (Number(count.replaceAll(",", "")) || 0), 0);
+    expect(plotted).toBeGreaterThanOrEqual(56);
+    const breakdown = page.getByRole("region", { name: "Redemptions by café" });
+    await expect(breakdown.getByRole("link", { name: /North Star • Downtown/ })).toBeVisible();
+    const events = page.getByRole("region", { name: "Redemption events", exact: true });
+    await expect(events.getByRole("list", { name: /Downtown/ })).toBeVisible();
+    await expect(events.getByRole("list", { name: /Riverside/ })).toBeVisible();
+    for (const width of [320, 390, 897, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+    await breakdown.getByRole("link", { name: /North Star • Riverside/ }).click();
+    await expect(events.getByRole("list", { name: /Downtown/ })).toHaveCount(0);
+    await expect(events.getByRole("list", { name: /Riverside/ }).getByRole("listitem")).toHaveCount(50);
+    const fullCafeCount = await breakdown.getByRole("listitem").innerText();
+    await events.getByRole("link", { name: "Next" }).click();
+    await expect(page).toHaveURL(/offset=50/);
+    await expect(breakdown.getByRole("listitem")).toHaveText(fullCafeCount, { useInnerText: true });
+    const eventReference = events.getByText("Reference", { exact: false }).first();
+    await eventReference.click();
+    await expect(events.locator("code").first()).toBeVisible();
     const from = await page.getByLabel("From", { exact: true }).inputValue();
     const to = await page.getByLabel("Through", { exact: true }).inputValue();
     const [download] = await Promise.all([

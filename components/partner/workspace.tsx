@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { CafeDirectory } from "./cafe-directory";
 import { ImageUploader } from "./image-uploader";
 import { type MediaSelection, EMPTY_MEDIA } from "@/lib/partner/media";
@@ -7,8 +6,6 @@ import { randomUUID } from "node:crypto";
 import { ActionForm } from "./action-form";
 import type { PortalData } from "@/lib/partner/portal";
 import type { RequestQueueQuery } from "@/lib/partner/request-queue";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -126,8 +123,6 @@ export function Panel({
     </Card>
   );
 }
-const cafeOptions = (d: PortalData) =>
-  d.cafes.map((c) => ({ value: str(c.id), label: str(c.name) }));
 export function removableCafeChange(
   change: Row | undefined,
   actor: string,
@@ -397,157 +392,5 @@ export function CafeEditor({
         />
       </ActionForm>
     </Panel>
-  );
-}
-export function Rewards({
-  data,
-  params,
-}: {
-  data: PortalData;
-  params: Record<string, string | undefined>;
-}) {
-  const offset = Number(params.offset || 0);
-  const dateOptions = { dateStyle: "medium", timeStyle: "short" } as const;
-  let dateFormat: Intl.DateTimeFormat;
-  try {
-    dateFormat = new Intl.DateTimeFormat("en-CA", {
-      ...dateOptions,
-      timeZone: data.timezone || "UTC",
-    });
-  } catch {
-    dateFormat = new Intl.DateTimeFormat("en-CA", {
-      ...dateOptions,
-      timeZone: "UTC",
-    });
-  }
-  function formatTime(value: unknown): string {
-    const date = new Date(str(value));
-    return Number.isNaN(date.getTime())
-      ? "Time unavailable"
-      : dateFormat.format(date);
-  }
-  const range = params.from || params.to ? "" : params.range === "week" ? "week" : "month";
-  const exportParams = new URLSearchParams();
-  if (data.reward_from) exportParams.set("from", data.reward_from);
-  if (data.reward_to) exportParams.set("to", data.reward_to);
-  if (params.cafe_id) exportParams.set("cafe_id", params.cafe_id);
-  return (
-    <>
-      <Panel title="Reward usage">
-        <div className="mb-4 flex flex-wrap gap-2" aria-label="Date presets">
-          {[["week", "This week"], ["month", "Last 30 days"]].map(([key, label]) => (
-            <Button key={key} asChild variant={range === key ? "secondary" : "outline"} className="min-h-11">
-              <Link
-                href={`?${new URLSearchParams({ range: key, ...(params.cafe_id ? { cafe_id: params.cafe_id } : {}) })}`}
-                aria-current={range === key ? "true" : undefined}
-              >
-                {label}
-              </Link>
-            </Button>
-          ))}
-        </div>
-        <form className="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Select
-            name="cafe_id"
-            label="Café"
-            value={params.cafe_id}
-            options={[
-              { value: "", label: "All accessible cafés" },
-              ...cafeOptions(data),
-            ]}
-          />
-          <Field name="from" label="From" type="date" value={params.from ?? data.reward_from} />
-          <Field name="to" label="Through" type="date" value={params.to ?? data.reward_to} />
-          <Button className="min-h-11">Apply filters</Button>
-        </form>
-        {data.reward_error ? (
-          <p role="alert" className="mt-3 text-sm text-destructive">{data.reward_error}</p>
-        ) : (
-          <>
-            <p className="mt-6 font-serif text-4xl">
-              {data.total || 0}{" "}
-              <span className="font-sans text-sm text-muted-foreground">
-                completed redemptions
-              </span>
-            </p>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Reporting period {data.reward_from} to {data.reward_to}.
-              {data.coverage_at && <> Tracking began {formatTime(data.coverage_at)}.</>}
-            </p>
-            {data.reward_export_limit !== undefined && (data.total ?? 0) > data.reward_export_limit ? (
-              <p className="mt-4 text-sm text-muted-foreground">
-                To export this report, choose a shorter date range or a single café.
-              </p>
-            ) : (
-              <Button asChild variant="outline" className="mt-4 min-h-11">
-                <a href={`/partner/rewards/export?${exportParams}`} download>Download CSV</a>
-              </Button>
-            )}
-          </>
-        )}
-      </Panel>
-      {!data.reward_error && <Panel title="Redemption events">
-        <p className="text-sm text-muted-foreground">
-          Times shown in{" "}
-          {dateFormat.resolvedOptions().timeZone.replaceAll("_", " ")}.
-        </p>
-        {data.events.length ? (
-          <ul role="list" aria-label="Redemption events" className="mt-2 divide-y">
-            {data.events.map((event) => {
-              const reference = str(event.id);
-              return (
-                <li key={reference} className="py-4">
-                  <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-                    <div className="min-w-0 space-y-1">
-                      <p className="break-words font-medium">
-                        {str(event.cafe_name) || "Café"}
-                      </p>
-                      <time
-                        dateTime={str(event.occurred_at) || undefined}
-                        className="block text-sm text-muted-foreground"
-                      >
-                        {formatTime(event.occurred_at)}
-                      </time>
-                    </div>
-                    <Badge variant="secondary">Redeemed</Badge>
-                  </div>
-                  <details className="mt-2 text-xs text-muted-foreground">
-                    <summary className="min-h-11 w-fit cursor-pointer rounded-sm py-3 focus-visible:ring-2 focus-visible:ring-ring">
-                      Reference{" "}
-                      <span className="font-mono">{reference.slice(0, 8)}</span>
-                    </summary>
-                    <code className="block select-all break-all rounded-md bg-muted px-3 py-2 text-foreground">
-                      {reference}
-                    </code>
-                  </details>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="py-6 text-sm text-muted-foreground">
-            No redemptions match these filters.
-          </p>
-        )}
-        <div className="mt-4 flex gap-3">
-          {offset > 0 && (
-            <Link
-              className="underline"
-              href={`?${new URLSearchParams({ ...Object.fromEntries(Object.entries(params).filter(([, v]) => v) as [string, string][]), offset: String(Math.max(0, offset - 50)) })}`}
-            >
-              Previous
-            </Link>
-          )}
-          {offset + 50 < (data.total || 0) && (
-            <Link
-              className="underline"
-              href={`?${new URLSearchParams({ ...Object.fromEntries(Object.entries(params).filter(([, v]) => v) as [string, string][]), offset: String(offset + 50) })}`}
-            >
-              Next
-            </Link>
-          )}
-        </div>
-      </Panel>}
-    </>
   );
 }
