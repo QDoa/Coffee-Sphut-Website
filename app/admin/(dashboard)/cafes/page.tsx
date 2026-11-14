@@ -104,16 +104,16 @@ export default async function CafesPage({ searchParams }: CafesPageProps) {
       />
 
       <div className="min-w-0 rounded-xl border bg-card">
-        <Table>
+        <Table className="min-w-[1040px] table-fixed">
           <TableHeader>
             <TableRow>
               <TableHead>Store Name & Address</TableHead>
-              <TableHead>Chain</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>App Details</TableHead>
-              <TableHead>Reward Code</TableHead>
-              <TableHead>Rating</TableHead>
-              <TableHead className="w-[120px] text-right">Actions</TableHead>
+              <TableHead className="w-36">Chain</TableHead>
+              <TableHead className="w-24">Status</TableHead>
+              <TableHead className="w-28">App Details</TableHead>
+              <TableHead className="w-32">Reward Code</TableHead>
+              <TableHead className="w-22">Rating</TableHead>
+              <TableHead className="w-40 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -137,23 +137,23 @@ export default async function CafesPage({ searchParams }: CafesPageProps) {
                           <Store className="h-5 w-5" />
                         </div>
                       )}
-                      <div className="space-y-0.5 min-w-0">
+                      <div className="min-w-0 flex-1 space-y-0.5">
                         <Link
                           href={`/admin/cafes/${cafe.id}`}
-                          className="font-medium hover:underline block truncate"
+                          className="block font-medium whitespace-normal [overflow-wrap:anywhere] hover:underline"
                         >
                           {cafe.name}
                         </Link>
                         {cafe.address && (
-                          <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
-                            <MapPin className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{cafe.address}</span>
+                          <p className="flex items-start gap-1 text-xs whitespace-normal text-muted-foreground">
+                            <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
+                            <span className="min-w-0 [overflow-wrap:anywhere]">{cafe.address}</span>
                           </p>
                         )}
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="whitespace-normal [overflow-wrap:anywhere]">
                     <span className="text-sm">
                       {(cafe.Chains as unknown as { name: string })?.name ?? "Independent"}
                     </span>
@@ -179,7 +179,7 @@ export default async function CafesPage({ searchParams }: CafesPageProps) {
                   </TableCell>
                   <TableCell>
                     {cafe.reward_code ? (
-                      <Badge variant="outline" className="font-mono text-xs">
+                      <Badge variant="outline" className="max-w-full rounded-md font-mono text-xs whitespace-normal [overflow-wrap:anywhere]">
                         {cafe.reward_code}
                       </Badge>
                     ) : (
