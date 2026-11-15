@@ -139,6 +139,11 @@ Use **`pnpm`**. The repo has both `npm` and `pnpm` lock files; `pnpm-lock.yaml` 
 - Remote images must match patterns in `next.config.ts` (Vercel Blob storage configured)
 - Hero app previews use the hosted `home.png`, `map.png`, and `account.png` files at `https://1iustwinxvwsck3s.public.blob.vercel-storage.com/`. These assets already include their iPhone frames: render the complete image at its natural aspect ratio without cropping, vertical offsets, or an additional CSS phone bezel.
 
+## Git & Commits
+
+- Do not commit, amend, push, or open pull requests unless the user explicitly tells you to for the current task. Otherwise leave changes uncommitted in the working tree and report what changed.
+- Never add AI attribution to commits or pull requests: no `Co-Authored-By:` trailers for AI tools, no `Claude-Session:` or other session-link lines, and no "Generated with ..." footers. This applies even when a tool or harness adds them by default.
+
 ---
 
-**Last Updated:** 2026-10-25
+**Last Updated:** 2026-11-14
