@@ -47,6 +47,33 @@ test("all partner screens render without sign-in in the loopback preview", async
     ).toHaveCount(0);
   }
 });
+test("local recording mode hides the preview banner until turned off", async ({ page, browser }) => {
+  const banner = page.getByText("Local test workspace · synthetic data", { exact: false });
+  await page.goto("/partner/overview");
+  await expect(banner).toBeVisible();
+
+  await page.goto("/partner/preview-recording?enabled=1");
+  await expect(page).toHaveURL("/partner/overview");
+  await expect(banner).toHaveCount(0);
+
+  await page.goto("/partner/preview-review");
+  await expect(page.getByRole("heading", { name: "Staff review", exact: true })).toBeVisible();
+  await expect(banner).toHaveCount(0);
+
+  const otherSession = await browser.newContext();
+  try {
+    const otherPage = await otherSession.newPage();
+    await otherPage.goto(page.url());
+    await expect(otherPage.getByText("Local test workspace · synthetic data", { exact: false })).toBeVisible();
+  } finally {
+    await otherSession.close();
+  }
+
+  await page.goto("/partner/preview-recording?enabled=0");
+  await expect(page).toHaveURL("/partner/overview");
+  await expect(banner).toBeVisible();
+});
+
 test("team invitations explain access, can be copied, and can be revoked", async ({
   page,
   context,
@@ -60,7 +87,7 @@ test("team invitations explain access, can be copied, and can be revoked", async
   await form.getByRole("radio", { name: /Café Manager/ }).check();
   const create = form.getByRole("button", { name: "Create invitation link" });
   await expect(create).toBeDisabled();
-  await form.getByRole("checkbox", { name: /North Star • Riverside/ }).check();
+  await form.getByRole("checkbox", { name: /Lagoon & Bean • Lekki/ }).check();
   await create.click();
   await form.getByRole("button", { name: "Copy invitation link" }).click();
   await expect(form.getByText("Invitation link copied.")).toBeVisible();
@@ -71,7 +98,7 @@ test("team invitations explain access, can be copied, and can be revoked", async
   const invitations = page.getByRole("region", { name: "Invitations" });
   const row = invitations.getByRole("listitem").filter({ hasText: email });
   await expect(row).toContainText("Pending");
-  await expect(row).toContainText("North Star • Riverside");
+  await expect(row).toContainText("Lagoon & Bean • Lekki");
   await row.getByRole("button", { name: /Revoke invitation for/ }).click();
   const dialog = page.getByRole("alertdialog");
   await dialog.getByRole("button", { name: "Cancel" }).click();
@@ -113,7 +140,7 @@ test("Owners can update a manager’s role and cafés without a new invitation",
     await edit.click();
     await expect(dialog).toBeInViewport();
     await expect(dialog.getByRole("radio", { name: /Café Manager/ })).toBeChecked();
-    await expect(dialog.getByRole("checkbox", { name: /North Star • Downtown/ })).toBeChecked();
+    await expect(dialog.getByRole("checkbox", { name: /Lagoon & Bean • Victoria Island/ })).toBeChecked();
     await expect(save).toBeDisabled();
     await dialog.getByRole("radio", { name: /Chain Manager/ }).check();
     await save.click();
@@ -123,15 +150,15 @@ test("Owners can update a manager’s role and cafés without a new invitation",
     await edit.click();
     await dialog.getByRole("radio", { name: /Café Manager/ }).check();
     await expect(save).toBeDisabled();
-    await dialog.getByRole("checkbox", { name: /North Star • Riverside/ }).check();
+    await dialog.getByRole("checkbox", { name: /Lagoon & Bean • Lekki/ }).check();
     await save.click();
-    await expect(row).toContainText("North Star • Riverside");
+    await expect(row).toContainText("Lagoon & Bean • Lekki");
     await expect(row.getByRole("status")).toHaveText("Manager access updated.");
     await page.reload();
     await expect(row).toContainText("Café Manager");
     await edit.click();
-    await expect(dialog.getByRole("checkbox", { name: /North Star • Riverside/ })).toBeChecked();
-    await expect(dialog.getByRole("checkbox", { name: /North Star • Downtown/ })).not.toBeChecked();
+    await expect(dialog.getByRole("checkbox", { name: /Lagoon & Bean • Lekki/ })).toBeChecked();
+    await expect(dialog.getByRole("checkbox", { name: /Lagoon & Bean • Victoria Island/ })).not.toBeChecked();
   } finally {
     await client.query("delete from public.partner_assignments where membership_id=$1", [memberId]);
     await client.query("delete from public.partner_memberships where id=$1", [memberId]);
@@ -558,8 +585,9 @@ test("mobile stock rows show warnings and open movements with the item selected"
   const stock = page.getByRole("list", { name: "Stock items" });
   const firstRow = stock.getByRole("listitem").first();
   await expect(firstRow).toBeInViewport();
-  const row = stock.getByRole("listitem").filter({ hasText: "House espresso beans" });
-  await expect(row).toContainText("North Star");
+  const row = stock.getByRole("listitem")
+    .filter({ hasText: "House espresso beans" })
+    .filter({ hasText: "Lagoon & Bean • Victoria Island" });
   await expect(row).toContainText(/\d.* g/);
   await row.getByRole("button", { name: "Record movement for House espresso beans" }).click();
   const dialog = page.getByRole("dialog");
@@ -636,6 +664,65 @@ test("stock movements preview balances in the selected item's unit before saving
     savedMovement.getByRole("cell", { name: "Stock received", exact: true }),
   ).toBeVisible();
 });
+test("recording servings made deducts the ingredients and logs stock used", async ({ page }) => {
+  const client = await db("postgres");
+  const itemId = randomUUID();
+  const recipeId = randomUUID();
+  const name = `Batch fixture ${recipeId.slice(0, 8)}`;
+  const chain = "20000000-0000-4000-8000-000000000001";
+  try {
+    await client.query(
+      `insert into public.partner_items(id,chain_id,cafe_id,name,code,type,unit,balance)
+       values($1,$2,101,'Batch fixture beans',$3,'ingredient','g',100)`,
+      [itemId, chain, itemId],
+    );
+    await client.query(
+      "insert into public.partner_recipes(id,chain_id,name,yield,ingredients) values($1,$2,$3,2,$4)",
+      [recipeId, chain, name, JSON.stringify([{ item_id: itemId, quantity: 20, unit: "g" }])],
+    );
+    await page.goto("/partner/recipes");
+    const recipe = page.getByRole("article", { name, exact: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    const quickRecord = recipe.getByRole("button", { name: "Record servings", exact: true });
+    await quickRecord.click();
+    const batch = page.getByRole("dialog", { name: "Record servings" });
+    await expect(batch.getByLabel("Servings made")).toBeFocused();
+    await batch.getByLabel("Café", { exact: true }).selectOption("101");
+    const record = batch.getByRole("button", { name: "Save and deduct stock" });
+    await batch.getByLabel("Servings made").fill("11");
+    await expect(batch.getByText("Short by 10 g")).toBeVisible();
+    await expect(record).toBeDisabled();
+    await batch.getByLabel("Servings made").fill("3");
+    await expect(batch.getByText("30 g", { exact: true })).toBeVisible();
+    await record.click();
+    await expect(batch.getByText("Batch recorded. Stock deducted from 1 ingredient.")).toBeVisible();
+    await expect(record).toBeDisabled();
+    await expect(batch.getByLabel("Servings made")).toBeFocused();
+    await batch.getByRole("button", { name: "Close menu" }).click();
+    await expect(quickRecord).toBeFocused();
+    await quickRecord.click();
+    await expect(batch.getByLabel("Café", { exact: true })).toHaveValue("101");
+    await expect(batch.getByLabel("Servings made")).toHaveValue("");
+    await batch.getByRole("button", { name: "Close menu" }).click();
+    await recipe.getByRole("button", { name: "View recipe", exact: true }).click();
+    await recipe.getByRole("button", { name: "Preview ingredient quantities" }).click();
+    await expect(recipe.getByLabel("Target servings")).toHaveValue("2");
+    await expect(recipe.getByRole("button", { name: "Save and deduct stock" })).toHaveCount(0);
+    await page.goto("/partner/inventory?cafe_id=101");
+    await page.getByRole("tab", { name: "Activity" }).click();
+    const movement = page.getByRole("row").filter({ hasText: `${name} · 3 servings made` });
+    await expect(movement.getByRole("cell", { name: "Stock used", exact: true })).toBeVisible();
+    await expect(movement.getByRole("cell", { name: "70", exact: true })).toBeVisible();
+  } finally {
+    await client.query("delete from public.partner_movements where item_id=$1", [itemId]);
+    await client.query("delete from public.partner_audit where action='consume_recipe' and target=$1", [recipeId]);
+    await client.query("delete from public.partner_operations where action='consume_recipe' and input->>'recipe_id'=$1", [recipeId]);
+    await client.query("delete from public.partner_recipes where id=$1", [recipeId]);
+    await client.query("delete from public.partner_items where id=$1", [itemId]);
+    await client.end();
+  }
+});
+
 test("recipes can be created, found by ingredient, and edited from the library", async ({
   page,
 }) => {
@@ -676,10 +763,10 @@ test("recipes can be created, found by ingredient, and edited from the library",
     const search = page.getByLabel("Search recipes", { exact: true });
     await search.fill("House espresso beans");
     await expect(card).toContainText("Makes 1 serving · 2 ingredients");
-    await expect(card.getByRole("button", { name: "Scale recipe", exact: true })).toHaveCount(0);
+    await expect(card.getByRole("button", { name: "Preview ingredient quantities", exact: true })).toHaveCount(0);
     await card.getByRole("button", { name: "View recipe", exact: true }).click();
     await expect(card).toContainText("18 g");
-    await card.getByRole("button", { name: "Scale recipe", exact: true }).click();
+    await card.getByRole("button", { name: "Preview ingredient quantities", exact: true }).click();
     const target = card.getByLabel("Target servings", { exact: true });
     await expect(target).toHaveValue("1");
     await target.fill("2.5");
@@ -695,7 +782,7 @@ test("recipes can be created, found by ingredient, and edited from the library",
     );
     const downtown = stock.rows.find(({ cafe_id }) => cafe_id === 101);
     const riverside = stock.rows.find(({ cafe_id }) => cafe_id === 102);
-    if (!downtown) throw new Error("The Downtown recipe ingredient fixture is missing.");
+    if (!downtown) throw new Error("The Victoria Island recipe ingredient fixture is missing.");
     const quantityFormat = new Intl.NumberFormat("en", { maximumFractionDigits: 6 });
     const servings = Math.floor(Math.max(downtown.balance, riverside?.balance ?? 0) / 20) + 1;
     const onHand = card.getByText(/g on hand$/);
@@ -1012,18 +1099,20 @@ test("reward charts, café groups and CSV use the full filtered report", async (
       .reduce((sum, count) => sum + (Number(count.replaceAll(",", "")) || 0), 0);
     expect(plotted).toBeGreaterThanOrEqual(56);
     const breakdown = page.getByRole("region", { name: "Redemptions by café" });
-    await expect(breakdown.getByRole("link", { name: /North Star • Downtown/ })).toBeVisible();
+    await expect(breakdown.getByRole("link", { name: /Lagoon & Bean • Victoria Island/ })).toBeVisible();
     const events = page.getByRole("region", { name: "Redemption events", exact: true });
-    await expect(events.getByRole("list", { name: /Downtown/ })).toBeVisible();
-    await expect(events.getByRole("list", { name: /Riverside/ })).toBeVisible();
+    await expect(events.getByRole("list", { name: /Lekki/ })).toBeVisible();
     for (const width of [320, 390, 897, 1280]) {
       await page.setViewportSize({ width, height: 900 });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
-    await breakdown.getByRole("link", { name: /North Star • Riverside/ }).click();
+    await breakdown.getByRole("link", { name: /Lagoon & Bean • Victoria Island/ }).click();
+    await expect(events.getByRole("list", { name: /Victoria Island/ })).toBeVisible();
+    await page.goto("/partner/rewards?range=month");
+    await breakdown.getByRole("link", { name: /Lagoon & Bean • Lekki/ }).click();
     await expect(page.getByRole("combobox", { name: "Café", exact: true })).toHaveValue("102");
-    await expect(events.getByRole("list", { name: /Downtown/ })).toHaveCount(0);
-    await expect(events.getByRole("list", { name: /Riverside/ }).getByRole("listitem")).toHaveCount(50);
+    await expect(events.getByRole("list", { name: /Victoria Island/ })).toHaveCount(0);
+    await expect(events.getByRole("list", { name: /Lekki/ }).getByRole("listitem")).toHaveCount(50);
     const fullCafeCount = await breakdown.getByRole("listitem").innerText();
     await events.getByRole("link", { name: "Next" }).click();
     await expect(page).toHaveURL(/offset=50/);
@@ -1042,7 +1131,7 @@ test("reward charts, café groups and CSV use the full filtered report", async (
     for await (const chunk of await download.createReadStream()) chunks.push(chunk);
     const csv = Buffer.concat(chunks).toString("utf8");
     expect(csv).toContain('"Redemption timestamp (UTC)"');
-    expect(csv).toContain('"North Star • Riverside","102"');
+    expect(csv).toContain('"Lagoon & Bean • Lekki","102"');
     for (const reference of references) expect(csv).toContain(reference);
     expect(csv).not.toContain(otherCafe);
 
@@ -1061,8 +1150,8 @@ test("sales report syncs Nigeria demo orders and compares POS and mobile sales b
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto("/partner/sales");
   const demo = page.getByRole("region", { name: "Demo orders · Nigeria" });
-  await expect(demo.getByText("North Star • Downtown", { exact: true })).toBeVisible();
-  await expect(demo.getByText("North Star • Riverside", { exact: true })).toBeVisible();
+  await expect(demo.getByText("Lagoon & Bean • Victoria Island", { exact: true })).toBeVisible();
+  await expect(demo.getByText("Lagoon & Bean • Lekki", { exact: true })).toBeVisible();
   await demo.getByRole("button", { name: /sync demo orders/i }).click();
   await expect(demo.getByRole("status")).toHaveText(/Synced [\d,]+ demo orders\.|Demo orders are up to date/);
   await expect(demo.getByText("Last successful sync")).toBeVisible();
@@ -1077,7 +1166,7 @@ test("sales report syncs Nigeria demo orders and compares POS and mobile sales b
   await expect(page.getByRole("link", { name: "CSV fallback" })).toBeVisible();
   await page.getByRole("link", { name: "Compare sales channels" }).click();
   const comparison = page.getByRole("region", { name: "POS vs mobile sales by café" });
-  for (const name of ["North Star • Downtown", "North Star • Riverside"]) {
+  for (const name of ["Lagoon & Bean • Victoria Island", "Lagoon & Bean • Lekki"]) {
     const card = comparison.getByRole("heading", { name, exact: true }).locator("..");
     await expect(card.getByText("POS", { exact: true })).toBeVisible();
     await expect(card.getByText("Mobile", { exact: true })).toBeVisible();
@@ -1085,8 +1174,8 @@ test("sales report syncs Nigeria demo orders and compares POS and mobile sales b
   }
   await page.getByRole("combobox", { name: "Café", exact: true }).selectOption("102");
   await page.getByRole("button", { name: "Apply filters" }).click();
-  await expect(comparison.getByRole("heading", { name: "North Star • Riverside" })).toBeVisible();
-  await expect(comparison.getByRole("heading", { name: "North Star • Downtown" })).toHaveCount(0);
+  await expect(comparison.getByRole("heading", { name: "Lagoon & Bean • Lekki" })).toBeVisible();
+  await expect(comparison.getByRole("heading", { name: "Lagoon & Bean • Victoria Island" })).toHaveCount(0);
   const channelPicker = page.getByRole("combobox", { name: "Sales channel" });
   const recipes = page.getByRole("region", { name: "Top recipes by servings sold" });
   const channelTotals = comparison.locator("dd .font-medium");
@@ -1254,7 +1343,7 @@ test("sales report ranks imported recipe servings and follows the café filter",
     const breakdown = chart.getByRole("listitem").first().locator("details");
     if (await breakdown.getAttribute("open") === null) await breakdown.locator("summary").click();
     await expect(breakdown.locator("dl > div").filter({ hasText: cafeName }).locator("dd")).toHaveText("18");
-    await expect(breakdown.locator("dl > div").filter({ hasText: "North Star • Downtown" }).locator("dd")).toHaveText("No data");
+    await expect(breakdown.locator("dl > div").filter({ hasText: "Lagoon & Bean • Victoria Island" }).locator("dd")).toHaveText("No data");
     await page.getByRole("combobox", { name: "Café", exact: true }).selectOption(String(cafeId));
     await page.getByRole("button", { name: "Apply filters" }).click();
     await expect(breakdown.locator("dt")).toHaveText([cafeName]);
@@ -1282,12 +1371,12 @@ test("restock planner uses the selected horizon and copies café-specific quanti
   try {
     await client.query(
       `insert into public.partner_items(id,chain_id,cafe_id,name,code,type,unit,balance,threshold)
-       values($1::uuid,$2,101,$3,$1::uuid::text,'ingredient','g',20,5)`, [id, chain, name],
+       values($1::uuid,$2,101,$3,$1::uuid::text,'ingredient','g',20.123456,5.123456)`, [id, chain, name],
     );
     await client.query(
       `insert into public.partner_movements(chain_id,cafe_id,item_id,quantity,resulting_balance,type,actor,reason,created_at)
-       values($1,101,$2,111,111,'opening','10000000-0000-4000-8000-000000000001','Restock fixture',now()-interval '30 days'),
-             ($1,101,$2,-91,20,'consumption','10000000-0000-4000-8000-000000000001','Restock fixture',now()-interval '2 days')`,
+       values($1,101,$2,111.123456,111.123456,'opening','10000000-0000-4000-8000-000000000001','Restock fixture',now()-interval '30 days'),
+             ($1,101,$2,-91,20.123456,'consumption','10000000-0000-4000-8000-000000000001','Restock fixture',now()-interval '2 days')`,
       [chain, id],
     );
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -1298,6 +1387,8 @@ test("restock planner uses the selected horizon and copies café-specific quanti
     const cafe = planner.getByRole("combobox", { name: "Café", exact: true });
     await cafe.selectOption("101");
     const row = planner.getByRole("listitem").filter({ hasText: name });
+    await expect(row.getByText("20.1 g on hand · Threshold 5.1 g", { exact: true })).toBeVisible();
+    await expect(row.getByText("3.3 g used per day", { exact: false })).toBeVisible();
     await expect(row.getByText("8 g", { exact: true })).toBeVisible();
     await planner.getByLabel("Days of coverage").fill("14");
     await expect(row.getByText("31 g", { exact: true })).toBeVisible();

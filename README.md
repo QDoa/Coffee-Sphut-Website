@@ -1,3 +1,7 @@
+> Reference only, superseded by the v1 rebuild. Do not merge.
+
+The frozen v0 portal is preserved on `codex/partner-portal` at the annotated tag `partner-portal-v0-reference`. Continue the v1 rebuild on a new branch from the current application baseline. This reference includes the final local portal work and demo seed scripts. Generated local database contents, uploads and recordings live outside Git.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

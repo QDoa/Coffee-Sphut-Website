@@ -616,6 +616,45 @@ test("recipe stock checks match codes and units at an authorized café", () =>
     await denied(c, () => checkStock(101), /Paid recipe access required/);
   }));
 
+test("recording recipe consumption scales and combines deductions atomically and safely retries", () =>
+  transaction(async (c) => {
+    const beans = "40000000-0000-4000-8000-000000000001";
+    const milk = "40000000-0000-4000-8000-000000000002";
+    await actor(c, 1);
+    const recipe = await command(c, "recipe", {
+      name: "Batch test", yield: 2, ingredients: [
+        { item_id: beans, quantity: 18, unit: "g" },
+        { item_id: beans, quantity: 2, unit: "g" },
+        { item_id: milk, quantity: 500, unit: "ml" },
+      ],
+    });
+    const request = randomUUID();
+    const consume = async (cafe: number, servings: number, revision = recipe.revision) =>
+      (await c.query("select public.partner_consume_recipe($1,$2,$3,$4,$5,$6) as count",
+        [A, cafe, recipe.id, revision, servings, request])).rows[0].count;
+    const movements = async () => (await c.query(
+      "select item_id, quantity, type from public.partner_movements where reason='Batch test · 3 servings made' order by item_id",
+    )).rows;
+    await denied(c, () => consume(102, 3), /no matching stock item/);
+    await actor(c, 2);
+    await denied(c, () => consume(102, 3), /Paid access/);
+    await denied(c, () => consume(101, 3, recipe.revision + 1), /recipe changed/);
+    // Beans are sufficient for this batch, while milk is short.
+    await denied(c, () => consume(101, 20), /enough matching stock/);
+    assert.equal((await c.query("select balance from public.partner_items where id=$1", [beans])).rows[0].balance, "1000.000000");
+    assert.equal(await consume(101, 3), 2);
+    assert.equal(await consume(101, 3), 2);
+    assert.deepEqual(await movements(), [
+      { item_id: beans, quantity: "-30.000000", type: "consumption" },
+      { item_id: milk, quantity: "-750.000000", type: "consumption" },
+    ]);
+    await denied(c, () => consume(101, 2), /reused with different data/);
+    await c.query("RESET ROLE");
+    await c.query("update public.partner_accounts set plan='free' where chain_id=$1", [A]);
+    await actor(c, 2);
+    await denied(c, () => consume(101, 3), /Paid access/);
+  }));
+
 test("recipes enforce ownership, units, role, quantities, and do not deduct stock", () =>
   transaction(async (c) => {
     await actor(c, 1);
@@ -933,7 +972,7 @@ test("reward capture attributes redemption to B even when earned at A; reports u
     await c.query("select public.redeem_reward($1,$2)", [id, "local-only-102"]);
     const report = await snapshot(c, "rewards", { cafe_id: 102 });
     assert.equal(report.total, 1);
-    assert.deepEqual(report.reward_cafe_totals, [{ cafe_id: 102, cafe_name: "North Star • Riverside", total: 1 }]);
+    assert.deepEqual(report.reward_cafe_totals, [{ cafe_id: 102, cafe_name: "Lagoon & Bean • Lekki", total: 1 }]);
     assert.equal(report.reward_trend.length, 30);
     assert.equal(report.reward_trend[0].tracked, false);
     assert.equal(report.reward_trend.at(-1).total, 1);

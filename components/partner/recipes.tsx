@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { BookOpen, Calculator, ChevronDown, Pencil, Plus, Search } from "lucide-react";
-import { getRecipeStock } from "@/app/partner/actions";
+import { getRecipeStock, recordRecipeConsumption, type PortalActionState } from "@/app/partner/actions";
 import type { PortalData } from "@/lib/partner/portal";
 import { amount } from "@/lib/partner/stock";
 import {
@@ -31,27 +31,46 @@ function formatQuantity(quantity: number): string {
   return quantity > 0 && quantity < 0.000001 ? "<0.000001" : amount(quantity);
 }
 
+function deductionQuantity(quantity: number): number {
+  return Number(quantity.toFixed(6));
+}
+
 function RecipeAmounts({
   recipeId,
+  chainId,
+  revision,
+  recording,
   ingredients,
   names,
   servings,
   cafes,
 }: {
   recipeId: string;
+  chainId: string;
+  revision: number;
+  recording?: { cafeId: string; onCafeChange: (id: string) => void };
   ingredients: RecipeIngredient[];
   names: Map<string, string>;
   servings: number;
   cafes: PortalData["cafes"];
 }) {
   const id = useId();
-  const [target, setTarget] = useState<string | null>(null);
-  const [cafeId, setCafeId] = useState("");
+  const [target, setTarget] = useState<string | null>(recording ? "" : null);
+  const [cafeId, setCafeId] = useState(recording?.cafeId ?? "");
+  const [feedback, setFeedback] = useState<PortalActionState>({});
+  const [refresh, setRefresh] = useState(0);
+  const [saving, startSaving] = useTransition();
+  const servingsInput = useRef<HTMLInputElement>(null);
+  const attempt = useRef<{ key: string; request: string } | null>(null);
   const [response, setResponse] = useState<{
     cafeId: string;
     result: StockResult;
   } | null>(null);
   const stock = response?.cafeId === cafeId ? response.result : null;
+
+  useEffect(() => {
+    if (feedback.message && !saving) servingsInput.current?.focus();
+  }, [feedback.message, saving]);
 
   useEffect(() => {
     if (!cafeId) return;
@@ -70,7 +89,7 @@ function RecipeAmounts({
     return () => {
       cancelled = true;
     };
-  }, [cafeId, recipeId]);
+  }, [cafeId, recipeId, refresh]);
 
   const scaling = target !== null;
   const requested = Number(target);
@@ -105,41 +124,79 @@ function RecipeAmounts({
     [...rows.values()].every(({ quantity }) =>
       Number.isFinite(quantity * factor),
     );
+  const canRecord = Boolean(recording) && cafes.some((cafe) => String(cafe.id) === cafeId && cafe.is_active === true);
+  const canDeduct = canRecord && valid && requested < 1_000_000_000_000 &&
+    Boolean(stock?.items) && rows.size > 0 && [...rows.values()].every(({ quantity, available }) => {
+      const deduction = deductionQuantity(quantity * factor);
+      return available != null && deduction > 0 && deduction <= available;
+    });
+
+  function recordBatch() {
+    if (!canDeduct || saving) return;
+    const key = `${cafeId}:${requested}`;
+    if (attempt.current?.key !== key) attempt.current = { key, request: crypto.randomUUID() };
+    const request = attempt.current.request;
+    startSaving(async () => {
+      try {
+        const result = await recordRecipeConsumption({
+          p_chain: chainId, p_cafe: Number(cafeId), p_recipe: recipeId,
+          p_revision: revision, p_servings: requested, p_request: request,
+        });
+        setFeedback(result);
+        if (result.message) {
+          attempt.current = null;
+          setTarget("");
+        }
+        setResponse(null);
+        setRefresh((current) => current + 1);
+      } catch {
+        setFeedback({ error: "Could not confirm the save. Try again with the same café and servings." });
+      }
+    });
+  }
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      {!recording && <div className="flex flex-wrap items-center justify-between gap-2">
         <h4 className="text-sm font-medium">Ingredients</h4>
         <Button
           type="button"
           variant="ghost"
           className="min-h-11 text-primary"
+          disabled={saving}
           aria-expanded={scaling}
           aria-controls={scaling ? `${id}-calculator` : undefined}
           onClick={() => {
             setTarget(scaling ? null : String(servings));
             setCafeId("");
             setResponse(null);
+            setFeedback({});
           }}
         >
           <Calculator aria-hidden="true" />
-          {scaling ? "Done scaling" : "Scale recipe"}
+          {scaling ? "Hide quantity preview" : "Preview ingredient quantities"}
         </Button>
-      </div>
+      </div>}
       {scaling && (
         <div
           id={`${id}-calculator`}
           className="space-y-2 rounded-xl border bg-muted/30 p-3"
         >
-          <Label htmlFor={`${id}-servings`}>Target servings</Label>
+          <Label htmlFor={`${id}-servings`}>{recording ? "Servings made" : "Target servings"}</Label>
           <Input
+            ref={servingsInput}
             id={`${id}-servings`}
             type="number"
             inputMode="decimal"
             min="0"
             step="any"
             value={target}
-            onChange={(event) => setTarget(event.currentTarget.value)}
+            placeholder={recording ? "e.g. 6" : undefined}
+            disabled={saving}
+            onChange={(event) => {
+              setTarget(event.currentTarget.value);
+              setFeedback({});
+            }}
             aria-describedby={`${id}-serving-help`}
             aria-invalid={target !== "" && !valid}
             className="min-h-11 max-w-40 bg-background"
@@ -150,18 +207,21 @@ function RecipeAmounts({
             aria-live="polite"
           >
             {valid
-              ? `Preview for ${requested < 0.000001 ? target : amount(requested)} ${requested === 1 ? "serving" : "servings"}.`
-              : "Enter a valid number of servings greater than zero."}
+              ? `${recording ? "Stock to deduct for" : "Preview for"} ${requested < 0.000001 ? target : amount(requested)} ${requested === 1 ? "serving" : "servings"}.`
+              : recording && target === "" ? "Enter the number of servings already made." : "Enter a valid number of servings greater than zero."}
           </p>
           {cafes.length > 0 ? (
             <div className="space-y-2 pt-2">
-              <Label htmlFor={`${id}-cafe`}>Check stock at café</Label>
+              <Label htmlFor={`${id}-cafe`}>{recording ? "Café" : "Check stock at café"}</Label>
               <PartnerSelect
                 id={`${id}-cafe`}
                 value={cafeId}
+                disabled={saving}
                 onChange={(event) => {
                   setResponse(null);
                   setCafeId(event.currentTarget.value);
+                  recording?.onCafeChange(event.currentTarget.value);
+                  setFeedback({});
                 }}
               >
                 <option value="">Choose a café</option>
@@ -195,9 +255,10 @@ function RecipeAmounts({
           )}
         </div>
       )}
-      <ul className="divide-y border-y text-sm">
+      {(!recording || valid) && <ul className="divide-y border-y text-sm">
         {[...rows].map(([key, ingredient]) => {
-          const quantity = ingredient.quantity * factor;
+          const scaled = ingredient.quantity * factor;
+          const quantity = canRecord ? deductionQuantity(scaled) : scaled;
           const available = ingredient.available;
           const difference = available == null ? 0 : quantity - available;
           const tolerance =
@@ -239,7 +300,16 @@ function RecipeAmounts({
             </li>
           );
         })}
-      </ul>
+      </ul>}
+      {recording && (
+        <div className="sticky -bottom-6 space-y-2 border-t bg-background py-3">
+          <Button type="button" className="min-h-11 w-full sm:w-auto" disabled={!canDeduct || saving} onClick={recordBatch}>
+            {saving ? "Recording…" : "Save and deduct stock"}
+          </Button>
+          {feedback.error && <p role="alert" className="text-sm text-destructive">{feedback.error}</p>}
+          {feedback.message && <p role="status" className="text-sm font-medium">{feedback.message}</p>}
+        </div>
+      )}
     </div>
   );
 }
@@ -249,6 +319,8 @@ export function Recipes({ data }: { data: PortalData }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [batchId, setBatchId] = useState<string | null>(null);
+  const [lastCafe, setLastCafe] = useState("");
   const [notice, setNotice] = useState("");
   const [editor, setEditor] = useState<{
     recipe?: Recipe;
@@ -256,6 +328,10 @@ export function Recipes({ data }: { data: PortalData }) {
   } | null>(null);
   const opener = useRef<HTMLElement | null>(null);
   const searchInput = useRef<HTMLInputElement>(null);
+  const batch = data.recipes.find((recipe) => recipe.id === batchId && recipe.active === true);
+  const activeCafes = data.cafes.filter((cafe) => cafe.is_active === true);
+  const defaultCafe = activeCafes.some((cafe) => String(cafe.id) === lastCafe)
+    ? lastCafe : activeCafes.length === 1 ? String(activeCafes[0].id) : "";
   const names = new Map(
     data.ingredients.map((item) => [String(item.id), String(item.name)]),
   );
@@ -283,7 +359,7 @@ export function Recipes({ data }: { data: PortalData }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="max-w-xl space-y-1 text-sm text-muted-foreground">
           <p>Shared recipes keep preparation consistent across your cafés.</p>
-          <p>Use Inventory to record stock usage.</p>
+          <p>Record servings from a recipe card to update café stock.</p>
           <Link href="/partner/sales#recipe-sales" className="inline-block font-medium text-primary underline underline-offset-4">View recipe sales ranking</Link>
         </div>
         {canEdit ? (
@@ -297,7 +373,7 @@ export function Recipes({ data }: { data: PortalData }) {
             Add recipe
           </Button>
         ) : (
-          <Badge variant="outline">View only</Badge>
+          <Badge variant="outline">Recipes are read-only</Badge>
         )}
       </div>
       {canEdit && !data.ingredients.length && (
@@ -390,6 +466,14 @@ export function Recipes({ data }: { data: PortalData }) {
                     {ingredients.length === 1 ? "ingredient" : "ingredients"}
                   </p>
                   <div className="flex flex-wrap gap-2">
+                    {recipe.active === true && activeCafes.length > 0 && (
+                      <Button type="button" className="min-h-11" onClick={(event) => {
+                        opener.current = event.currentTarget;
+                        setBatchId(recipeId);
+                      }}>
+                        Record servings
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       variant="outline"
@@ -420,6 +504,8 @@ export function Recipes({ data }: { data: PortalData }) {
                         <RecipeAmounts
                           key={String(recipe.revision)}
                           recipeId={recipeId}
+                          chainId={String(data.chain_id)}
+                          revision={Number(recipe.revision)}
                           ingredients={ingredients}
                           names={names}
                           servings={servings}
@@ -466,6 +552,31 @@ export function Recipes({ data }: { data: PortalData }) {
           </div>
         )}
       </section>
+
+      <Sheet open={Boolean(batch)} onOpenChange={(open) => { if (!open) setBatchId(null); }}>
+        <SheetContent className="overflow-y-auto sm:max-w-lg" onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          (opener.current?.isConnected ? opener.current : searchInput.current)?.focus();
+        }}>
+          <SheetHeader>
+            <SheetTitle className="break-words pr-6">Record servings</SheetTitle>
+            <SheetDescription className="break-words">
+              {String(batch?.name ?? "")} · Saving deducts ingredients from the selected café.
+            </SheetDescription>
+          </SheetHeader>
+          {batch && <RecipeAmounts
+            key={`${batch.id}:${batch.revision}`}
+            recipeId={String(batch.id)}
+            chainId={String(data.chain_id)}
+            revision={Number(batch.revision)}
+            recording={{ cafeId: defaultCafe, onCafeChange: setLastCafe }}
+            ingredients={recipeIngredients(batch.ingredients)}
+            names={names}
+            servings={Number(batch.yield)}
+            cafes={activeCafes}
+          />}
+        </SheetContent>
+      </Sheet>
 
       {canEdit && (
         <Sheet

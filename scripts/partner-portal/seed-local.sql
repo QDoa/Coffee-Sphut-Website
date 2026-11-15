@@ -6,13 +6,13 @@ INSERT INTO auth.users(id,email) VALUES
  ('10000000-0000-4000-8000-000000000005','free@example.test');
 INSERT INTO public."AdminUser"(user_id,role) VALUES('10000000-0000-4000-8000-000000000004','admin');
 INSERT INTO public."Chains"(id,name) VALUES
- ('20000000-0000-4000-8000-000000000001','North Star Coffee'),
+ ('20000000-0000-4000-8000-000000000001','Lagoon & Bean Coffee'),
  ('20000000-0000-4000-8000-000000000002','Other Partner'),
  ('20000000-0000-4000-8000-000000000003','Free Partner');
 INSERT INTO public."Cafe"(id,chain_id,name,address,is_active,reward_code) VALUES
- (101,'20000000-0000-4000-8000-000000000001','North Star • Downtown','104 Victoria Avenue',true,'local-only-101'),
- (102,'20000000-0000-4000-8000-000000000001','North Star • Riverside','22 River Road',true,'local-only-102'),
- (103,'20000000-0000-4000-8000-000000000001','North Star • Old Town','8 Market Street',false,null),
+ (101,'20000000-0000-4000-8000-000000000001','Lagoon & Bean • Victoria Island','Adeola Odeku Street, Victoria Island, Lagos, Nigeria',true,'local-only-101'),
+ (102,'20000000-0000-4000-8000-000000000001','Lagoon & Bean • Lekki','Admiralty Way, Lekki Phase 1, Lagos, Nigeria',true,'local-only-102'),
+ (103,'20000000-0000-4000-8000-000000000001','Lagoon & Bean • Yaba','Herbert Macaulay Way, Yaba, Lagos, Nigeria',false,null),
  (201,'20000000-0000-4000-8000-000000000002','Other Partner Secret','Other address',true,null),
  (301,'20000000-0000-4000-8000-000000000003','Free One','First address',true,null),
  (302,'20000000-0000-4000-8000-000000000003','Free Two','Second address',true,null);
@@ -39,7 +39,7 @@ INSERT INTO public.partner_recipes(chain_id,name,yield,ingredients) VALUES
 INSERT INTO public."Rewards"(user_id,chain_id,earned_store,status,redeemed_cafe_id,redeemed_at)
  SELECT '10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001',101,'redeemed',102,now()-interval '1 day' FROM generate_series(1,4);
 
--- North Star daily sales demo, covering the last 29 completed business dates.
+-- Lagoon & Bean daily sales demo, covering the last 29 completed business dates.
 INSERT INTO public.partner_sales_daily(chain_id,cafe_id,sale_date,currency,gross_sales,discounts,refunds,tax,orders)
 SELECT a.chain_id, c.id, d.sale_date, 'NGN',
   n.orders * n.average_order, n.discounts, n.refunds,
@@ -59,7 +59,7 @@ CROSS JOIN LATERAL (
 WHERE a.chain_id = '20000000-0000-4000-8000-000000000001'
 ON CONFLICT (chain_id,cafe_id,sale_date) DO NOTHING;
 
--- North Star recipe sales from a synthetic item-level POS export.
+-- Lagoon & Bean recipe sales from a synthetic item-level POS export.
 WITH ranked_recipes AS (
   SELECT id, chain_id, row_number() OVER (ORDER BY name <> 'House latte', name, id) AS position
   FROM public.partner_recipes

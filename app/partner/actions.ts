@@ -58,6 +58,29 @@ const recipeStockSchema = z.array(
   }),
 );
 
+const recipeConsumptionSchema = z.object({
+  p_chain: z.uuid(),
+  p_cafe: z.number().int().positive(),
+  p_recipe: z.uuid(),
+  p_revision: z.number().int().positive(),
+  p_servings: z.number().positive().lt(1_000_000_000_000),
+  p_request: z.uuid(),
+});
+
+export async function recordRecipeConsumption(input: unknown): Promise<PortalActionState> {
+  const parsed = recipeConsumptionSchema.safeParse(input);
+  if (!parsed.success) return { error: "Choose an active café and enter a valid number of servings." };
+  const client = await portalClient();
+  const { data, error } = await client.rpc("partner_consume_recipe", parsed.data);
+  if (error) {
+    if (error.code === "PT409") revalidatePath("/partner/recipes");
+    return { error: ["PT409", "22023", "42501"].includes(error.code)
+      ? error.message : "Could not record this batch. Try again." };
+  }
+  revalidatePath("/partner", "layout");
+  return { message: `Batch recorded. Stock deducted from ${data} ${data === 1 ? "ingredient" : "ingredients"}.` };
+}
+
 export async function getRecipeStock(recipeId: string, cafeId: number) {
   if (
     !z.uuid().safeParse(recipeId).success ||

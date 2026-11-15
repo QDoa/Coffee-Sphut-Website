@@ -10,6 +10,7 @@ import { Recipes } from "@/components/partner/recipes";
 import { Team } from "@/components/partner/team";
 import { ReviewNotifications } from "@/components/partner/review-notifications";
 import { RequestFieldList, RequestPhotoGrid } from "@/components/partner/request-details";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { randomUUID } from "node:crypto";
@@ -21,7 +22,7 @@ import {
   portalStocktakeItems,
 } from "@/lib/partner/portal";
 import { Button } from "@/components/ui/button";
-import { isLocalPartnerPreview } from "@/lib/partner/preview";
+import { isLocalPartnerPreview, PARTNER_PREVIEW_RECORDING_COOKIE } from "@/lib/partner/preview";
 import { EMPTY_MEDIA, type MediaSelection } from "@/lib/partner/media";
 import { cafeRequestFields, cafeRequestPhotos } from "@/lib/partner/reviews";
 import { requestQueueQuery } from "@/lib/partner/request-queue";
@@ -73,6 +74,7 @@ export default async function WorkspacePage({
   const { section } = await params;
   const query = await searchParams;
   const preview = isLocalPartnerPreview();
+  const recording = preview && (await cookies()).get(PARTNER_PREVIEW_RECORDING_COOKIE)?.value === "1";
   if (
     ![
       "overview",
@@ -192,7 +194,7 @@ export default async function WorkspacePage({
       const name = String(payload.name ||
         data.cafes.find((cafe) => cafe.id === draft.cafe_id)?.name || "Café request");
       return (
-        <PartnerShell data={data} preview={preview} reviewUnread={notifications?.unread}>
+        <PartnerShell data={data} preview={preview} recording={recording} reviewUnread={notifications?.unread}>
           <Panel
             title={
               draft.cafe_id && payload.is_active === false
@@ -251,7 +253,7 @@ export default async function WorkspacePage({
       data.gallery = payload.gallery as string[];
   }
   return (
-    <PartnerShell data={data} preview={preview} reviewUnread={notifications?.unread}>
+    <PartnerShell data={data} preview={preview} recording={recording} reviewUnread={notifications?.unread}>
       {section === "overview" ? (
         <Dashboard data={data} setup={setup} />
       ) : section === "cafes" ? (

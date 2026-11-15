@@ -1,3 +1,5 @@
+export const PARTNER_PREVIEW_RECORDING_COOKIE = "partner_preview_recording";
+
 export function isLocalPartnerPreview(
   env: Record<string, string | undefined> = process.env,
 ): boolean {

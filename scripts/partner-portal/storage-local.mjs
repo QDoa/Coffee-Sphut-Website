@@ -45,6 +45,8 @@ const sql = (query) =>
     ],
     { input: query, encoding: "utf8" },
   ).trim();
+if (sql("select to_regclass('public.partner_media') is not null") !== "t")
+  throw new Error("Initialize the consolidated partner schema before starting Storage.");
 const hasObjects =
   sql("select to_regclass('storage.objects') is not null") === "t";
 const shim =
@@ -117,30 +119,16 @@ for (let i = 0; i < 30; i++) {
           "utf8",
         ),
       );
-      if (
-        sql("select to_regclass('public.partner_media') is not null") === "t"
-      ) {
-        const migration = readFileSync(
-          "supabase/migrations/20261105151503_partner_managed_images.sql",
-          "utf8",
-        );
-        sql(
-          migration.slice(
-            migration.indexOf("INSERT INTO storage.buckets"),
-            migration.indexOf("CREATE FUNCTION public.partner_media_reserve"),
-          ),
-        );
-      }
-    }
-    if (sql("select to_regclass('public.partner_media') is not null") === "f")
-      sql(
-        "BEGIN;" +
-          readFileSync(
-            "supabase/migrations/20261105151503_partner_managed_images.sql",
-            "utf8",
-          ) +
-          "COMMIT;",
+      const migration = readFileSync(
+        "supabase/migrations/20261110060852_partner_portal.sql",
+        "utf8",
       );
+      const begin = migration.indexOf("-- Begin partner draft storage setup");
+      const end = migration.indexOf("-- End partner draft storage setup");
+      if (begin < 0 || end <= begin)
+        throw new Error("The partner draft Storage setup section is missing.");
+      sql(migration.slice(begin, end));
+    }
     sql("NOTIFY pgrst, 'reload schema';");
     console.log("Synthetic Storage ready on loopback port 55435");
     process.exit(0);

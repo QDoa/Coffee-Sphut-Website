@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PartnerSelect } from "./partner-select";
 import type { PortalData } from "@/lib/partner/portal";
-import { amount, restockSuggestion, stockView } from "@/lib/partner/stock";
+import { restockSuggestion, stockView } from "@/lib/partner/stock";
+
+const RESTOCK_AMOUNT = new Intl.NumberFormat("en", { maximumFractionDigits: 1 });
 
 export function RestockPlanner({ data, cafeId }: { data: PortalData; cafeId?: string }) {
   const cafes = new Map(data.cafes.filter((row) => row.is_active === true)
@@ -30,7 +32,7 @@ export function RestockPlanner({ data, cafeId }: { data: PortalData; cafeId?: st
 
   async function copyList() {
     const lines = suggestions.map(({ item, quantity, needsReview }) =>
-      `${cafes.get(String(item.cafe_id))} · ${item.name} (${item.code}) · ${needsReview ? "Review quantity" : `${amount(quantity)} ${item.unit}`}`);
+      `${cafes.get(String(item.cafe_id))} · ${item.name} (${item.code}) · ${needsReview ? "Review quantity" : `${RESTOCK_AMOUNT.format(quantity)} ${item.unit}`}`);
     try {
       await navigator.clipboard.writeText([`Restock list · ${days} days of coverage`, ...lines].join("\n"));
       setFeedback("Restock list copied.");
@@ -83,15 +85,15 @@ export function RestockPlanner({ data, cafeId }: { data: PortalData; cafeId?: st
                   className="font-medium text-primary underline underline-offset-4">{String(item.name)}</Link>
                 <p className="mt-1 text-xs text-muted-foreground">{cafes.get(String(item.cafe_id))} · {String(item.code)}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {amount(balance)} {String(item.unit)} on hand · Threshold {amount(threshold)} {String(item.unit)}
+                  {RESTOCK_AMOUNT.format(balance)} {String(item.unit)} on hand · Threshold {RESTOCK_AMOUNT.format(threshold)} {String(item.unit)}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">{daily !== null && daily > 0
-                  ? `${amount(daily)} ${item.unit} used per day · ${runway}`
+                  ? `${RESTOCK_AMOUNT.format(daily)} ${item.unit} used per day · ${runway}`
                   : "No usage forecast. Check recent stock activity before ordering."}</p>
               </div>
               <div className="sm:text-right">
                 <p className="text-xs text-muted-foreground">Suggested restock</p>
-                <p className="font-semibold tabular-nums">{needsReview ? "Review quantity" : `${amount(quantity)} ${item.unit}`}</p>
+                <p className="font-semibold tabular-nums">{needsReview ? "Review quantity" : `${RESTOCK_AMOUNT.format(quantity)} ${item.unit}`}</p>
               </div>
             </li>
           ))}

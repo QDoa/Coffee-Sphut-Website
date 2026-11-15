@@ -1,6 +1,20 @@
+> Reference only, superseded by the v1 rebuild. Do not merge.
+
 # Partner portal implementation and validation report
 
 Initial report November 5, 2026 · Updated November 8, 2026 · Branch `codex/partner-portal`
+
+## Reference freeze
+
+On November 14, 2026, the final local portal work was captured for the annotated tag `partner-portal-v0-reference` on `codex/partner-portal`. Development continues with the v1 rebuild. The reference includes the consolidated migration, recipe consumption work, recording mode, Restock planner formatting, and Lagoon & Bean seed updates.
+
+The original v0.3 PRD was copied into this reference from the development checkout. The root README, portal README and PRD identify the reference status. Vercel Git deployment is disabled for this branch in `vercel.json`.
+
+Freeze validation passed TypeScript, 32 partner unit tests, targeted ESLint and Git whitespace checks. These checks preserve the current implementation as a reference. The complete browser and database suites were not rerun for the freeze.
+
+GitHub lists no open PRs or deployment records for this branch. Vercel CLI has no credentials on this machine, so project-level production branch settings and deployments created outside GitHub still require an authenticated Vercel check. The three superseded vendor login, café management and reward metrics tasks were archived in Notion.
+
+Generated local database contents, uploads, videos and environment files are excluded from the Git reference. Two unrelated untracked scratch files, `app/partner/Testing.` and `app/partner/interview.cpp`, are retained locally.
 
 ## Outcome
 
@@ -15,7 +29,7 @@ The local preview opens without sign-in:
 - Partner workspace: <http://127.0.0.1:3100/partner/overview>
 - Independent test staff reviewer: <http://127.0.0.1:3100/partner/preview-review>
 
-The preview uses synthetic North Star Coffee data, separate partner identities, café-specific inventory, recipes and reward events. Browser tests may leave synthetic requests and movements in that workspace.
+The preview uses synthetic Lagoon & Bean Coffee data, separate partner identities, café-specific inventory, recipes and reward events. Browser tests may leave synthetic requests and movements in that workspace.
 
 If the preview is stopped, start Docker Desktop, then run:
 
@@ -64,7 +78,7 @@ Inventory now has summary cards, item/code search, café/status filters, a stock
 
 Stock runway is current balance divided by daily recorded consumption plus wastage over up to 28 elapsed days since the first movement. It uses complete scoped history, independent of the latest-100 activity display. Receipts/counts/corrections do not count as consumption. Fewer than 24 hours of history shows **Building usage history**; no recorded usage shows no finite estimate. Items below threshold or with seven days or less remaining are highlighted. Forecasts assume complete records and steady usage. Paid, tenant and café assignment checks run on the database for every analytics request.
 
-Additional validation: stock-state unit test, real-database analytics/authorization test on a fresh migration replay, and responsive chart/filter/drawer workflows at 320, 390, 897 and 1280 pixels. Nine inherited database advisor warnings remain; none concern the new analytics. Deploy `20261105160940_partner_dashboard_insights.sql` alongside the application update. No hosted project was changed.
+Additional validation: stock-state unit test, real-database analytics/authorization test on a fresh migration replay, and responsive chart/filter/drawer workflows at 320, 390, 897 and 1280 pixels. Nine inherited database advisor warnings remain; none concern the new analytics. Dashboard insights are included in the consolidated partner portal migration. No hosted project was changed.
 
 ## Restock planner, Stocktake mode and onboarding checklist
 
@@ -81,7 +95,7 @@ Additional validation: stock-state unit test, real-database analytics/authorizat
 | `pnpm partner:test:browser` | 24 passed in the local preview, including the three new workflows and the mobile inventory navigation regression |
 | TypeScript, targeted ESLint and Git whitespace checks | Passed |
 
-The [stocktake migration](../../supabase/migrations/20261108222720_partner_stocktake.sql) was installed in the local preview and replay databases. Apply it before deploying Stocktake mode to a hosted environment. The local database security advisor reported four existing policy warnings and no findings for the stocktake functions.
+Stocktake was installed in the local preview and replay databases and is included in the [consolidated partner portal migration](../../supabase/migrations/20261110060852_partner_portal.sql). The local database security advisor reported four existing policy warnings and no findings for the stocktake functions.
 
 ## Managed image workflow completed in this follow-up
 
@@ -120,7 +134,7 @@ The results below record the original portal rollout validation. The November 8 
 - Multi-session tests passed for the final Free slot, competing consumption with insufficient combined stock, and a stock write waiting behind a downgrade.
 - 9 browser tests passed: every portal screen, pending-to-approved café publication, receipt feedback/history, interactive recipe creation, named draft resume/submit, private upload and reviewer preview/publication, authenticated administrator cleanup, and responsive inventory/image-editor layouts at 320, 390, 897 and 1280 pixels. Screenshots and browser traces are under ignored `.partner-portal/`.
 - 6 additional integration tests passed against real local Supabase Storage v1.80.2 and PostgREST v14.5: tenant/café scope, revocation, immutable/private files, injected partial-copy failure and idempotent retry, stale final approval rollback, draft/live reference protection, cleanup retries and encoded URL aliases.
-- All repository migrations, including `20261105151503_partner_managed_images.sql`, were replayed from scratch into `partner_replay`. The existing `supabase/tests/loyalty-handlers.sql` assertions passed there.
+- The repository migrations through managed images were replayed from scratch into `partner_replay`. The existing `supabase/tests/loyalty-handlers.sql` assertions passed there.
 - The earlier core-validation `pg_dump` was restored into a separate `partner_restore` database. Café/item/request/movement counts and fixture balance checksum matched, and a restored café-manager query returned only its assigned-café items. That drill preceded managed images; backup/restore of Storage bytes and the new media metadata remains a hosted acceptance gate.
 - Supabase advisors completed against the local post-cutoff schema: nine inherited notices, no ERROR-level results, and no notices attributed to new partner objects.
 - TypeScript and targeted ESLint passed. Full repository lint still reports 60 errors and 10 warnings in pre-existing code; changed files pass their targeted checks.
@@ -133,7 +147,7 @@ The SQL-only replay uses Auth/Storage fixture shims. Media integration/browser t
 
 1. Verify the intended hosted project and its current migration history. Local checkouts named Dev previously pointed at production; do not reuse their link or environment file by assumption.
 2. Back up and rehearse against representative data. Reconcile any missing existing migrations before applying the portal migration.
-3. Apply the additive `20261105053034_partner_portal.sql` and `20261105151503_partner_managed_images.sql` migrations to the selected Dev/staging target, regenerate/review types, and exercise its authorization/transaction tests there.
+3. Apply `20261110060852_partner_portal.sql` to the selected Dev/staging target after reconciling its baseline, regenerate/review types, and exercise its authorization/transaction tests there.
 4. Deploy the website and patched mobile v2 readers. Configure partner Auth callbacks/recovery URLs and verify real account sessions and recovery delivery.
 5. Coordinate the legacy client cutoff, apply `supabase/rollout/partner-private-boundary.sql`, and rerun public/customer/staff/partner compatibility tests.
 6. Exercise managed upload/review/retry/cleanup on the intended staging Storage service; agree operational ownership and automatic retention before scheduling cleanup. Follow [the media runbook](MEDIA_WORKFLOW.md). Approve inventory defaults before Paid pilot use.

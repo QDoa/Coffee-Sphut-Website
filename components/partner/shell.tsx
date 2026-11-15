@@ -42,11 +42,13 @@ const previewLinks = [...links, ["Staff review", "preview-review", ClipboardChec
 export function PartnerShell({
   data,
   preview,
+  recording,
   reviewUnread,
   children,
 }: {
   data: PortalData;
   preview: boolean;
+  recording: boolean;
   reviewUnread?: number;
   children: ReactNode;
 }) {
@@ -120,7 +122,7 @@ export function PartnerShell({
         </div>
       </aside>
       <div className="min-w-0 lg:pl-64">
-        {preview && (
+        {preview && !recording && (
           <div className="bg-amber-100 px-4 py-2 text-center text-xs text-amber-950">
             Local test workspace · synthetic data · sign-in disabled for this
             loopback preview only{" "}

@@ -1567,6 +1567,10 @@ export type Database = {
         Args: { p_chain: string }
         Returns: number
       }
+      partner_consume_recipe: {
+        Args: { p_chain: string; p_cafe: number; p_recipe: string; p_revision: number; p_servings: number; p_request: string }
+        Returns: number
+      }
       partner_role: { Args: { p_chain: string }; Returns: string }
       partner_team_assignments: {
         Args: { p_chain: string }

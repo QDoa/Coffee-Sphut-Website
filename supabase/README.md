@@ -91,10 +91,10 @@ client with mocked HTTP responses, including database failures and missing RPCs.
 
 ## Partner portal migration and rollout
 
-`20261105053034_partner_portal.sql` adds the partner tables, RLS, transactional
-commands, café revision checks, redemption attribution, and safe v2 public reads.
-Apply it before deploying the new partner website readers. Hosted deployment is
-not performed by the local test scripts.
+`20261110060852_partner_portal.sql` installs the partner portal schema and
+backfills in one transaction after the existing application migrations.
+Apply it before deploying the partner website readers. The local test scripts
+operate on an isolated fixture.
 
 `rollout/partner-private-boundary.sql` is intentionally outside automatic
 migrations: it disables legacy public readers only after the mobile v2 rollout.

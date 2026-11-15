@@ -1,3 +1,5 @@
+> Reference only, superseded by the v1 rebuild. Do not merge.
+
 # Partner portal implementation
 
 Current status (November 5, 2026): see the [implementation and validation report](IMPLEMENTATION_REPORT.md) for the working portal, test results, preview instructions and remaining production gates. The P0/P1 notes below are historical preparation evidence.
