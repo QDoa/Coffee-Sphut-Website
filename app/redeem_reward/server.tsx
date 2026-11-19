@@ -65,7 +65,7 @@ export async function redeemRewardRequest(
           properties: {
             reward_id: data,
             chain_id: rewardRow.chain_id ?? undefined,
-            cafe_id: rewardRow.earned_store ?? undefined,
+            earned_cafe_id: rewardRow.earned_store ?? undefined,
             source_screen: "redeem_reward",
           },
         });

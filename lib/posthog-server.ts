@@ -1,6 +1,9 @@
 import { PostHog } from "posthog-node";
 
 const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
+const POSTHOG_CAPTURE_MAX_RETRIES = 1;
+const POSTHOG_REQUEST_TIMEOUT_MS = 2000;
+const POSTHOG_SHUTDOWN_TIMEOUT_MS = 2500;
 const BLOCKED_PROPERTY_KEYS = new Set([
   "email",
   "first_name",
@@ -54,7 +57,7 @@ export interface CaptureServerEventParams {
 }
 
 /**
- * Captures a server-side PostHog event and flushes immediately.
+ * Captures a server-side PostHog event immediately with bounded timeout/retries.
  * Never throws so analytics failures cannot disrupt customer reward flows.
  */
 export async function captureServerEvent({
@@ -69,21 +72,26 @@ export async function captureServerEvent({
 
   const client = new PostHog(config.apiKey, {
     host: config.host,
-    flushAt: 1,
     flushInterval: 0,
+    captureMaxRetries: POSTHOG_CAPTURE_MAX_RETRIES,
+    requestTimeout: POSTHOG_REQUEST_TIMEOUT_MS,
+  });
+
+  client.on("error", (error) => {
+    console.error("PostHog server capture failed", { event, error });
   });
 
   try {
-    client.capture({
+    await client.captureImmediate({
       distinctId: distinctId.trim(),
       event,
       properties: {
+        ...sanitizeProperties(properties),
         platform: "web_server",
         is_anonymous: false,
-        ...sanitizeProperties(properties),
       },
     });
-    await client.shutdown();
+    await client.shutdown(POSTHOG_SHUTDOWN_TIMEOUT_MS);
   } catch (error) {
     console.error("PostHog server capture failed", { event, error });
   }

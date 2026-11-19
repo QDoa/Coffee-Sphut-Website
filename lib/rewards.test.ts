@@ -6,6 +6,7 @@ import {
   redeemRewardRequest,
   rewardAvailable,
 } from "@/app/redeem_reward/server";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 const ID = "aa9546aa-c36a-4ef2-bc71-eb660d44f43e";
 
@@ -199,7 +200,7 @@ test("stamp action captures stamp_earned in PostHog with the customer user_id", 
     const url = new URL(request.url);
     if (url.hostname === "us.i.posthog.com") {
       posthogPayloads.push(await parsePostHogBody(request));
-      return Response.json({ status: 1 }, { status: 200 });
+      return Response.json({ results: {} }, { status: 200 });
     }
     return Response.json("txn-uuid-123", { status: 200 });
   });
@@ -250,7 +251,7 @@ test("redemption action captures reward_redeemed in PostHog for the reward owner
     const url = new URL(request.url);
     if (url.hostname === "us.i.posthog.com") {
       posthogPayloads.push(await parsePostHogBody(request));
-      return Response.json({ status: 1 }, { status: 200 });
+      return Response.json({ results: {} }, { status: 200 });
     }
     if (url.pathname === "/rest/v1/Rewards") {
       return Response.json(
@@ -273,8 +274,60 @@ test("redemption action captures reward_redeemed in PostHog for the reward owner
   const props = event?.properties as Record<string, unknown>;
   assert.equal(props.reward_id, ID);
   assert.equal(props.chain_id, chainId);
-  assert.equal(props.cafe_id, 42);
+  assert.equal(props.earned_cafe_id, 42);
+  assert.equal(props.cafe_id, undefined);
   assert.equal(props.source_screen, "redeem_reward");
+  assert.equal(props.platform, "web_server");
+  assert.equal(props.is_anonymous, false);
+});
+
+test("captureServerEvent strips PII and blocked keys and preserves envelope properties", async (t) => {
+  const previousPostHogKey = process.env.POSTHOG_API_KEY;
+  const previousPostHogHost = process.env.POSTHOG_HOST;
+  process.env.POSTHOG_API_KEY = "phc_test_key";
+  process.env.POSTHOG_HOST = "https://us.i.posthog.com";
+  t.after(() => {
+    if (previousPostHogKey === undefined) delete process.env.POSTHOG_API_KEY;
+    else process.env.POSTHOG_API_KEY = previousPostHogKey;
+    if (previousPostHogHost === undefined) delete process.env.POSTHOG_HOST;
+    else process.env.POSTHOG_HOST = previousPostHogHost;
+  });
+
+  const posthogPayloads: Array<Record<string, unknown>> = [];
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+    const request = new Request(input, init);
+    posthogPayloads.push(await parsePostHogBody(request));
+    return Response.json({ results: {} }, { status: 200 });
+  });
+
+  await captureServerEvent({
+    distinctId: ID,
+    event: "stamp_earned",
+    properties: {
+      transaction_id: "txn-999",
+      email: "user@example.com",
+      first_name: "Ada",
+      last_name: "Lovelace",
+      full_name: "Ada Lovelace",
+      phone: "+1234567890",
+      phone_number: "+1234567890",
+      cafe_code: "secret-vendor-code",
+      platform: "ios",
+      is_anonymous: true,
+    },
+  });
+
+  assert.equal(posthogPayloads.length, 1);
+  const event = extractPostHogEvents(posthogPayloads[0])[0];
+  const props = event?.properties as Record<string, unknown>;
+  assert.equal(props.transaction_id, "txn-999");
+  assert.equal(props.email, undefined);
+  assert.equal(props.first_name, undefined);
+  assert.equal(props.last_name, undefined);
+  assert.equal(props.full_name, undefined);
+  assert.equal(props.phone, undefined);
+  assert.equal(props.phone_number, undefined);
+  assert.equal(props.cafe_code, undefined);
   assert.equal(props.platform, "web_server");
   assert.equal(props.is_anonymous, false);
 });
@@ -295,11 +348,16 @@ test("PostHog ingestion failures do not break stamp or redemption responses", as
     else process.env.POSTHOG_API_KEY = previousPostHogKey;
   });
 
-  t.mock.method(console, "error", () => {});
+  const loggedErrors: unknown[][] = [];
+  t.mock.method(console, "error", (...args: unknown[]) => {
+    loggedErrors.push(args);
+  });
+  let posthogAttempts = 0;
   t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
     const request = new Request(input, init);
     const url = new URL(request.url);
     if (url.hostname === "us.i.posthog.com") {
+      posthogAttempts += 1;
       throw new Error("PostHog unreachable");
     }
     if (url.pathname === "/rest/v1/Rewards") {
@@ -310,4 +368,6 @@ test("PostHog ingestion failures do not break stamp or redemption responses", as
 
   assert.deepEqual(await addRewardTransaction(cafeForm(), ID), { data: ID, error: null });
   assert.deepEqual(await redeemRewardRequest(cafeForm(), ID), { data: ID, error: null });
+  assert.equal(posthogAttempts, 4);
+  assert.ok(loggedErrors.some((args) => args[0] === "PostHog server capture failed"));
 });
