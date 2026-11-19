@@ -2,6 +2,7 @@
 
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { rewardErrorMessage } from "@/lib/reward-errors";
+import { captureServerEvent, isPostHogConfigured } from "@/lib/posthog-server";
 
 interface RedemptionResult {
   data: string | null;
@@ -47,6 +48,31 @@ export async function redeemRewardRequest(
         ? rewardErrorMessage(error, "redemption")
         : "The database did not confirm redemption. Please try again.",
     };
+  }
+
+  if (isPostHogConfigured()) {
+    try {
+      const { data: rewardRow } = await supabase
+        .from("Rewards")
+        .select("user_id, chain_id, earned_store")
+        .eq("id", rewardId)
+        .maybeSingle();
+
+      if (typeof rewardRow?.user_id === "string" && rewardRow.user_id) {
+        await captureServerEvent({
+          distinctId: rewardRow.user_id,
+          event: "reward_redeemed",
+          properties: {
+            reward_id: data,
+            chain_id: rewardRow.chain_id ?? undefined,
+            earned_cafe_id: rewardRow.earned_store ?? undefined,
+            source_screen: "redeem_reward",
+          },
+        });
+      }
+    } catch (analyticsError) {
+      console.error("Reward redemption analytics failed", analyticsError);
+    }
   }
 
   return { data, error: null };
