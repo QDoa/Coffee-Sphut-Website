@@ -2,6 +2,7 @@
 
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { rewardErrorMessage } from "@/lib/reward-errors";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 interface StampResult {
   data: string | null;
@@ -34,6 +35,15 @@ export async function addRewardTransaction(
         : "The database did not confirm the stamp. Please try again.",
     };
   }
+
+  await captureServerEvent({
+    distinctId: userId,
+    event: "stamp_earned",
+    properties: {
+      transaction_id: data,
+      source_screen: "vendor_reward",
+    },
+  });
 
   return { data, error: null };
 }
